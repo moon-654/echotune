@@ -409,6 +409,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/dashboard/department-ratios", async (req, res) => {
+    try {
+      const employees = await storage.getAllEmployees();
+      const totalEmployees = employees.length;
+      
+      const departmentCounts = employees.reduce((acc, emp) => {
+        acc[emp.department] = (acc[emp.department] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>);
+
+      const departmentRatios = Object.entries(departmentCounts).map(([department, count]) => ({
+        department,
+        count,
+        percentage: Math.round((count / totalEmployees) * 100 * 10) / 10
+      }));
+
+      res.json({
+        totalEmployees,
+        departments: departmentRatios
+      });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch department ratios" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

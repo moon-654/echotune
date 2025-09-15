@@ -4,8 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { Download, FileText, BarChart3, PieChart } from "lucide-react";
+import { Download, FileText, BarChart3, PieChart, Users } from "lucide-react";
 import SkillRadarChart from "@/components/charts/radar-chart";
+import { PieChart as RechartsPieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from "recharts";
 
 interface DepartmentSkills {
   department: string;
@@ -21,6 +22,17 @@ interface DepartmentSkills {
   };
 }
 
+interface DepartmentRatio {
+  department: string;
+  count: number;
+  percentage: number;
+}
+
+interface DepartmentRatiosResponse {
+  totalEmployees: number;
+  departments: DepartmentRatio[];
+}
+
 export default function Reports() {
   const [reportType, setReportType] = useState("");
   const [period, setPeriod] = useState("");
@@ -28,11 +40,18 @@ export default function Reports() {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
 
+  // Define colors for pie chart
+  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82CA9D'];
+
   const { data: departmentSkills, isLoading } = useQuery<DepartmentSkills[]>({
     queryKey: ['/api/dashboard/department-skills']
   });
 
-  if (isLoading) {
+  const { data: departmentRatios, isLoading: isLoadingRatios } = useQuery<DepartmentRatiosResponse>({
+    queryKey: ['/api/dashboard/department-ratios']
+  });
+
+  if (isLoading || isLoadingRatios) {
     return (
       <div className="p-6">
         <div className="animate-pulse space-y-6">
@@ -151,21 +170,60 @@ export default function Reports() {
           </CardContent>
         </Card>
 
-        {/* Training Completion Trends - Placeholder */}
-        <Card data-testid="chart-completion-trends">
+        {/* Department Ratios Chart */}
+        <Card data-testid="chart-department-ratios">
           <CardHeader>
             <CardTitle className="flex items-center">
-              <PieChart className="w-5 h-5 mr-2" />
-              월별 교육 완료 추이
+              <Users className="w-5 h-5 mr-2" />
+              부서별 인원 비율
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="h-64 flex items-center justify-center text-muted-foreground">
-              <div className="text-center">
-                <PieChart className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                <p>교육 완료 데이터 분석 중...</p>
-                <p className="text-sm">Google Sheets 연동 후 표시됩니다</p>
-              </div>
+            <div className="h-64">
+              {departmentRatios && departmentRatios.departments.length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <RechartsPieChart>
+                    <Pie
+                      data={departmentRatios.departments}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      label={({ name, percent }) => `${name} (${(percent * 100).toFixed(1)}%)`}
+                      outerRadius={80}
+                      fill="#8884d8"
+                      dataKey="count"
+                      nameKey="department"
+                    >
+                      {departmentRatios.departments.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip 
+                      formatter={(value: number, name: string) => [
+                        `${value}명 (${departmentRatios.departments.find(d => d.department === name)?.percentage || 0}%)`,
+                        '인원수'
+                      ]}
+                      labelFormatter={(label: string) => `부서: ${label}`}
+                    />
+                    <Legend />
+                  </RechartsPieChart>
+                </ResponsiveContainer>
+              ) : departmentRatios && departmentRatios.departments.length === 0 ? (
+                <div className="h-64 flex items-center justify-center text-muted-foreground">
+                  <div className="text-center">
+                    <Users className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                    <p>표시할 부서 데이터가 없습니다</p>
+                    <p className="text-sm">직원이 등록되면 부서별 비율이 표시됩니다</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="h-64 flex items-center justify-center text-muted-foreground">
+                  <div className="text-center">
+                    <Users className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                    <p>부서별 비율 데이터 로딩 중...</p>
+                  </div>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
