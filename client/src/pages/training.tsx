@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Plus, Upload, BookOpen, Clock, Users, Calendar } from "lucide-react";
 import TrainingTable from "@/components/training/training-table";
+import TrainingFormDialog from "@/components/training/training-form-dialog";
 import type { TrainingHistory } from "@shared/schema";
 
 interface TrainingStats {
@@ -55,10 +56,12 @@ export default function Training() {
             <Upload className="w-4 h-4 mr-2" />
             엑셀 가져오기
           </Button>
-          <Button data-testid="button-add-training">
-            <Plus className="w-4 h-4 mr-2" />
-            새 교육 추가
-          </Button>
+          <TrainingFormDialog>
+            <Button data-testid="button-add-training">
+              <Plus className="w-4 h-4 mr-2" />
+              새 교육 추가
+            </Button>
+          </TrainingFormDialog>
         </div>
       </div>
 
@@ -118,10 +121,12 @@ export default function Training() {
               <BookOpen className="w-12 h-12 mx-auto mb-4 opacity-50" />
               <h3 className="text-lg font-medium mb-2">등록된 교육과정이 없습니다</h3>
               <p className="text-sm mb-4">새로운 교육과정을 추가하여 시작하세요.</p>
-              <Button>
-                <Plus className="w-4 h-4 mr-2" />
-                교육과정 추가
-              </Button>
+              <TrainingFormDialog>
+                <Button>
+                  <Plus className="w-4 h-4 mr-2" />
+                  교육과정 추가
+                </Button>
+              </TrainingFormDialog>
             </div>
           )}
         </CardContent>

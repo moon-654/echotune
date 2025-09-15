@@ -103,6 +103,9 @@ export const insertEmployeeSchema = createInsertSchema(employees).omit({
 export const insertTrainingHistorySchema = createInsertSchema(trainingHistory).omit({
   id: true,
   createdAt: true
+}).extend({
+  startDate: z.string().datetime().optional().nullable().transform((val) => val ? new Date(val) : null),
+  completionDate: z.string().datetime().optional().nullable().transform((val) => val ? new Date(val) : null)
 });
 
 export const insertCertificationSchema = createInsertSchema(certifications).omit({

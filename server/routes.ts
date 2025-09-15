@@ -95,11 +95,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/training", async (req, res) => {
     try {
+      console.log("Training POST request body:", JSON.stringify(req.body, null, 2));
       const trainingData = insertTrainingHistorySchema.parse(req.body);
       const training = await storage.createTrainingHistory(trainingData);
       res.status(201).json(training);
     } catch (error) {
-      res.status(400).json({ error: "Invalid training data" });
+      console.error("Training validation error:", error);
+      if (error instanceof Error) {
+        res.status(400).json({ error: `Invalid training data: ${error.message}` });
+      } else {
+        res.status(400).json({ error: "Invalid training data" });
+      }
     }
   });
 
