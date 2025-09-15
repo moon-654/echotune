@@ -20,7 +20,7 @@ export default function Employees() {
   const filteredEmployees = employees?.filter(employee => {
     const matchesSearch = employee.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          employee.position.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesDepartment = !departmentFilter || employee.department === departmentFilter;
+    const matchesDepartment = !departmentFilter || departmentFilter === "all" || employee.department === departmentFilter;
     // Note: Skill level filtering would require skill calculation data
     return matchesSearch && matchesDepartment;
   }) || [];
@@ -29,8 +29,8 @@ export default function Employees() {
 
   const handleResetFilters = () => {
     setSearchTerm("");
-    setDepartmentFilter("");
-    setSkillLevelFilter("");
+    setDepartmentFilter("all");
+    setSkillLevelFilter("all");
   };
 
   if (isLoading) {
@@ -84,7 +84,7 @@ export default function Employees() {
                 <SelectValue placeholder="모든 부서" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">모든 부서</SelectItem>
+                <SelectItem value="all">모든 부서</SelectItem>
                 {departments.map(dept => (
                   <SelectItem key={dept} value={dept}>{dept}</SelectItem>
                 ))}
@@ -96,7 +96,7 @@ export default function Employees() {
                 <SelectValue placeholder="모든 능력치" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">모든 능력치</SelectItem>
+                <SelectItem value="all">모든 능력치</SelectItem>
                 <SelectItem value="high">우수 (80+)</SelectItem>
                 <SelectItem value="medium">보통 (60-79)</SelectItem>
                 <SelectItem value="low">개선필요 (40-59)</SelectItem>

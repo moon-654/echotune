@@ -18,7 +18,7 @@ export default function TrainingTable({ trainings }: TrainingTableProps) {
   const filteredTrainings = trainings.filter(training => {
     const matchesSearch = training.courseName.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          training.provider.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = !statusFilter || training.status === statusFilter;
+    const matchesStatus = !statusFilter || statusFilter === "all" || training.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
 
@@ -82,7 +82,7 @@ export default function TrainingTable({ trainings }: TrainingTableProps) {
             <SelectValue placeholder="모든 상태" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">모든 상태</SelectItem>
+            <SelectItem value="all">모든 상태</SelectItem>
             <SelectItem value="completed">완료</SelectItem>
             <SelectItem value="ongoing">진행중</SelectItem>
             <SelectItem value="planned">예정</SelectItem>
