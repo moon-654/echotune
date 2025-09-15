@@ -136,6 +136,51 @@ export class MemStorage implements IStorage {
     ];
 
     sampleEmployees.forEach(emp => this.employees.set(emp.id, emp));
+
+    // Create sample skill calculations for employees
+    const sampleSkillCalculations: SkillCalculation[] = [
+      {
+        id: "calc1",
+        employeeId: "emp1",
+        experienceScore: 85,
+        certificationScore: 75,
+        languageScore: 70,
+        trainingScore: 80,
+        technicalScore: 90,
+        softSkillScore: 85,
+        overallScore: 81,
+        calculatedBy: null,
+        lastCalculatedAt: new Date()
+      },
+      {
+        id: "calc2", 
+        employeeId: "emp2",
+        experienceScore: 75,
+        certificationScore: 80,
+        languageScore: 85,
+        trainingScore: 90,
+        technicalScore: 70,
+        softSkillScore: 95,
+        overallScore: 82,
+        calculatedBy: null,
+        lastCalculatedAt: new Date()
+      },
+      {
+        id: "calc3",
+        employeeId: "emp3", 
+        experienceScore: 90,
+        certificationScore: 85,
+        languageScore: 65,
+        trainingScore: 85,
+        technicalScore: 75,
+        softSkillScore: 88,
+        overallScore: 81,
+        calculatedBy: null,
+        lastCalculatedAt: new Date()
+      }
+    ];
+
+    sampleSkillCalculations.forEach(calc => this.skillCalculations.set(calc.id, calc));
   }
 
   async getEmployee(id: string): Promise<Employee | undefined> {
