@@ -1,0 +1,423 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: hsl(0, 0%, 100%);
+  --foreground: hsl(222.2, 84%, 4.9%);
+  --card: hsl(0, 0%, 100%);
+  --card-foreground: hsl(222.2, 84%, 4.9%);
+  --popover: hsl(0, 0%, 100%);
+  --popover-foreground: hsl(222.2, 84%, 4.9%);
+  --primary: hsl(221.2, 83.2%, 53.3%);
+  --primary-foreground: hsl(210, 40%, 98%);
+  --secondary: hsl(210, 40%, 96%);
+  --secondary-foreground: hsl(222.2, 84%, 4.9%);
+  --muted: hsl(210, 40%, 96%);
+  --muted-foreground: hsl(215.4, 16.3%, 46.9%);
+  --accent: hsl(210, 40%, 96%);
+  --accent-foreground: hsl(222.2, 84%, 4.9%);
+  --destructive: hsl(0, 84.2%, 60.2%);
+  --destructive-foreground: hsl(210, 40%, 98%);
+  --border: hsl(214.3, 31.8%, 91.4%);
+  --input: hsl(214.3, 31.8%, 91.4%);
+  --ring: hsl(221.2, 83.2%, 53.3%);
+  --radius: 0.5rem;
+  --chart-1: hsl(221.2, 83.2%, 53.3%);
+  --chart-2: hsl(159.7826, 100%, 36.0784%);
+  --chart-3: hsl(42.0290, 92.8251%, 56.2745%);
+  --chart-4: hsl(147.1429, 78.5047%, 41.9608%);
+  --chart-5: hsl(341.4894, 75.2000%, 50.9804%);
+  --sidebar: hsl(180, 6.6667%, 97.0588%);
+  --sidebar-foreground: hsl(210, 25%, 7.8431%);
+  --sidebar-primary: hsl(221.2, 83.2%, 53.3%);
+  --sidebar-primary-foreground: hsl(210, 40%, 98%);
+  --sidebar-accent: hsl(210, 40%, 96%);
+  --sidebar-accent-foreground: hsl(221.2, 83.2%, 53.3%);
+  --sidebar-border: hsl(214.3, 31.8%, 91.4%);
+  --sidebar-ring: hsl(221.2, 83.2%, 53.3%);
+  --font-sans: 'Inter', system-ui, sans-serif;
+  --font-serif: ui-serif, Georgia, serif;
+  --font-mono: ui-monospace, 'Cascadia Code', monospace;
+  --tracking-normal: 0em;
+  --spacing: 0.25rem;
+}
+
+.dark {
+  --background: hsl(222.2, 84%, 4.9%);
+  --foreground: hsl(210, 40%, 98%);
+  --card: hsl(222.2, 84%, 4.9%);
+  --card-foreground: hsl(210, 40%, 98%);
+  --popover: hsl(222.2, 84%, 4.9%);
+  --popover-foreground: hsl(210, 40%, 98%);
+  --primary: hsl(217.2, 91.2%, 59.8%);
+  --primary-foreground: hsl(222.2, 84%, 4.9%);
+  --secondary: hsl(217.2, 32.6%, 17.5%);
+  --secondary-foreground: hsl(210, 40%, 98%);
+  --muted: hsl(217.2, 32.6%, 17.5%);
+  --muted-foreground: hsl(215, 20.2%, 65.1%);
+  --accent: hsl(217.2, 32.6%, 17.5%);
+  --accent-foreground: hsl(210, 40%, 98%);
+  --destructive: hsl(0, 62.8%, 30.6%);
+  --destructive-foreground: hsl(210, 40%, 98%);
+  --border: hsl(217.2, 32.6%, 17.5%);
+  --input: hsl(217.2, 32.6%, 17.5%);
+  --ring: hsl(224.3, 76.3%, 94.1%);
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply font-sans antialiased bg-background text-foreground;
+  }
+}
+
+/* OrgChart Custom Styles */
+.org-chart-container {
+  font-family: var(--font-sans);
+}
+
+.org-chart-node {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+  transition: all 0.2s ease-in-out;
+}
+
+.org-chart-node:hover {
+  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+  transform: translateY(-2px);
+}
+
+/* Skill Indicator Styles */
+.skill-indicator {
+  border-radius: 50%;
+  width: 12px;
+  height: 12px;
+  display: inline-block;
+  margin-right: 4px;
+  transition: all 0.2s ease-in-out;
+}
+
+.skill-indicator:hover {
+  transform: scale(1.2);
+}
+
+.skill-high { 
+  background-color: hsl(142.1, 76.2%, 36.3%);
+}
+
+.skill-medium { 
+  background-color: hsl(47.9, 95.8%, 53.1%);
+}
+
+.skill-low { 
+  background-color: hsl(0, 84.2%, 60.2%);
+}
+
+.skill-none { 
+  background-color: hsl(210, 40%, 56%);
+}
+
+/* Chart Animations */
+.chart-enter {
+  animation: fadeInUp 0.5s ease-out;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Progress Bar Styles */
+.progress-bar {
+  background: hsl(210, 40%, 94%);
+  border-radius: 9999px;
+  height: 8px;
+  overflow: hidden;
+  position: relative;
+}
+
+.progress-fill {
+  height: 100%;
+  border-radius: 9999px;
+  transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+}
+
+.progress-fill::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(45deg, transparent 25%, rgba(255,255,255,0.2) 25%, rgba(255,255,255,0.2) 50%, transparent 50%, transparent 75%, rgba(255,255,255,0.2) 75%, rgba(255,255,255,0.2));
+  background-size: 20px 20px;
+  animation: progressStripes 1s linear infinite;
+}
+
+@keyframes progressStripes {
+  0% {
+    background-position: 0 0;
+  }
+  100% {
+    background-position: 20px 0;
+  }
+}
+
+/* Card Hover Effects */
+.card-hover {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.card-hover:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 10px 10px -5px rgb(0 0 0 / 0.04);
+}
+
+/* Radar Chart Container */
+.radar-chart-container {
+  position: relative;
+}
+
+.radar-chart-container .recharts-radar-polygon {
+  transition: all 0.3s ease;
+}
+
+.radar-chart-container .recharts-radar-polygon:hover {
+  filter: brightness(1.1);
+}
+
+/* Status Badge Variants */
+.status-completed {
+  background-color: hsl(142.1, 76.2%, 36.3% / 0.1);
+  color: hsl(142.1, 76.2%, 36.3%);
+}
+
+.status-ongoing {
+  background-color: hsl(47.9, 95.8%, 53.1% / 0.1);
+  color: hsl(45.4, 93.4%, 47.5%);
+}
+
+.status-planned {
+  background-color: hsl(221.2, 83.2%, 53.3% / 0.1);
+  color: hsl(221.2, 83.2%, 53.3%);
+}
+
+.status-cancelled {
+  background-color: hsl(0, 84.2%, 60.2% / 0.1);
+  color: hsl(0, 84.2%, 60.2%);
+}
+
+/* Table Enhancements */
+.table-row-hover {
+  transition: background-color 0.2s ease;
+}
+
+.table-row-hover:hover {
+  background-color: hsl(210, 40%, 98%);
+}
+
+/* Sidebar Enhancements */
+.sidebar-nav-item {
+  position: relative;
+  overflow: hidden;
+}
+
+.sidebar-nav-item::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+  transition: left 0.5s ease;
+}
+
+.sidebar-nav-item:hover::before {
+  left: 100%;
+}
+
+/* Loading Animations */
+.loading-shimmer {
+  background: linear-gradient(90deg, hsl(210, 40%, 96%) 25%, hsl(210, 40%, 98%) 50%, hsl(210, 40%, 96%) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+/* Form Enhancements */
+.form-input-focus {
+  transition: all 0.2s ease;
+}
+
+.form-input-focus:focus {
+  box-shadow: 0 0 0 3px hsl(221.2, 83.2%, 53.3% / 0.1);
+  border-color: hsl(221.2, 83.2%, 53.3%);
+}
+
+/* Button Enhancements */
+.button-primary {
+  position: relative;
+  overflow: hidden;
+}
+
+.button-primary::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  transition: width 0.3s ease, height 0.3s ease;
+}
+
+.button-primary:hover::before {
+  width: 100%;
+  height: 100%;
+}
+
+/* Tooltip Styles */
+.tooltip-content {
+  background: hsl(222.2, 84%, 4.9%);
+  color: hsl(210, 40%, 98%);
+  font-size: 0.875rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--radius);
+  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+  z-index: 50;
+}
+
+/* Dark Mode Adjustments */
+.dark .skill-indicator {
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.1);
+}
+
+.dark .progress-bar {
+  background: hsl(217.2, 32.6%, 17.5%);
+}
+
+.dark .table-row-hover:hover {
+  background-color: hsl(217.2, 32.6%, 17.5%);
+}
+
+.dark .loading-shimmer {
+  background: linear-gradient(90deg, hsl(217.2, 32.6%, 17.5%) 25%, hsl(215, 20.2%, 20%) 50%, hsl(217.2, 32.6%, 17.5%) 75%);
+}
+
+/* Mobile Responsive Adjustments */
+@media (max-width: 768px) {
+  .org-chart-container {
+    padding: 1rem;
+  }
+  
+  .skill-indicator {
+    width: 10px;
+    height: 10px;
+    margin-right: 2px;
+  }
+  
+  .progress-bar {
+    height: 6px;
+  }
+}
+
+/* Print Styles */
+@media print {
+  .org-chart-container {
+    background: white !important;
+  }
+  
+  .skill-indicator {
+    border: 1px solid #000;
+  }
+  
+  .chart-enter {
+    animation: none;
+  }
+}
+
+/* Accessibility Enhancements */
+@media (prefers-reduced-motion: reduce) {
+  .chart-enter,
+  .skill-indicator,
+  .org-chart-node,
+  .card-hover,
+  .progress-fill,
+  .button-primary::before {
+    animation: none;
+    transition: none;
+  }
+}
+
+/* High Contrast Mode */
+@media (prefers-contrast: high) {
+  .skill-high { 
+    background-color: #008000;
+    border: 2px solid #004000;
+  }
+  
+  .skill-medium { 
+    background-color: #FFA500;
+    border: 2px solid #CC8400;
+  }
+  
+  .skill-low { 
+    background-color: #FF0000;
+    border: 2px solid #CC0000;
+  }
+  
+  .skill-none { 
+    background-color: #808080;
+    border: 2px solid #404040;
+  }
+}
+
+/* Focus Visible for Better Accessibility */
+.focus-visible:focus {
+  outline: 2px solid hsl(221.2, 83.2%, 53.3%);
+  outline-offset: 2px;
+}
+
+/* Custom Scrollbar */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: hsl(210, 40%, 96%);
+  border-radius: 3px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: hsl(215.4, 16.3%, 46.9%);
+  border-radius: 3px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: hsl(221.2, 83.2%, 53.3%);
+}
