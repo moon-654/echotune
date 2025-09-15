@@ -1,6 +1,8 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
+import multer from "multer";
+import * as XLSX from "xlsx";
 import { 
   insertEmployeeSchema, 
   insertTrainingHistorySchema,
@@ -9,6 +11,58 @@ import {
   insertSkillSchema,
   insertSkillCalculationSchema 
 } from "@shared/schema";
+
+// Helper function to parse Excel dates
+function parseExcelDate(cellValue: any): string | null {
+  if (!cellValue) return null;
+  
+  try {
+    // If it's already a Date object (from cellDates: true)
+    if (cellValue instanceof Date) {
+      return cellValue.toISOString();
+    }
+    
+    // If it's a string that can be parsed as a date
+    if (typeof cellValue === 'string') {
+      const parsedDate = new Date(cellValue);
+      if (!isNaN(parsedDate.getTime())) {
+        return parsedDate.toISOString();
+      }
+    }
+    
+    // If it's a number (Excel serial date)
+    if (typeof cellValue === 'number') {
+      // Excel serial date: days since January 1, 1900 (with leap year bug)
+      const excelEpoch = new Date(1900, 0, 1);
+      const daysSinceEpoch = cellValue - 1; // Subtract 1 due to Excel's leap year bug
+      const jsDate = new Date(excelEpoch.getTime() + daysSinceEpoch * 24 * 60 * 60 * 1000);
+      return jsDate.toISOString();
+    }
+    
+    return null;
+  } catch (error) {
+    console.error('Date parsing error:', error, 'for value:', cellValue);
+    return null;
+  }
+}
+
+// Configure multer for file uploads
+const upload = multer({ 
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
+  fileFilter: (req, file, cb) => {
+    const allowedMimes = [
+      'application/vnd.ms-excel',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'text/csv'
+    ];
+    if (allowedMimes.includes(file.mimetype) || file.originalname.match(/\.(xlsx|xls|csv)$/i)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only Excel and CSV files are allowed'));
+    }
+  }
+});
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Employee routes
@@ -106,6 +160,139 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } else {
         res.status(400).json({ error: "Invalid training data" });
       }
+    }
+  });
+
+  // Training file upload route
+  app.post("/api/training/upload", upload.single('file'), async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ error: "파일이 없습니다." });
+      }
+
+      console.log("Processing uploaded file:", req.file.originalname);
+      
+      let workbook: XLSX.WorkBook;
+      
+      // Parse the uploaded file based on its type
+      if (req.file.mimetype === 'text/csv' || req.file.originalname.endsWith('.csv')) {
+        const csvData = req.file.buffer.toString('utf8');
+        workbook = XLSX.read(csvData, { type: 'string', cellDates: true, cellNF: true });
+      } else {
+        workbook = XLSX.read(req.file.buffer, { type: 'buffer', cellDates: true, cellNF: true });
+      }
+
+      const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+      const rawData = XLSX.utils.sheet_to_json(worksheet, { header: 1, raw: false, dateNF: 'yyyy-mm-dd' });
+
+      if (rawData.length < 2) {
+        return res.status(400).json({ error: "파일에 데이터가 없습니다." });
+      }
+
+      const headers = rawData[0] as string[];
+      const dataRows = rawData.slice(1);
+
+      // Expected headers mapping (Korean to English)
+      const headerMap: Record<string, string> = {
+        '직원ID': 'employeeId',
+        '교육과정명': 'courseName', 
+        '교육기관': 'provider',
+        '유형': 'type',
+        '카테고리': 'category',
+        '시작일': 'startDate',
+        '완료일': 'completionDate',
+        '교육시간': 'duration',
+        '점수': 'score',
+        '상태': 'status',
+        '수료증URL': 'certificateUrl',
+        '비고': 'notes'
+      };
+
+      // Map header indices
+      const headerIndices: Record<string, number> = {};
+      headers.forEach((header, index) => {
+        const mappedHeader = headerMap[header.trim()];
+        if (mappedHeader) {
+          headerIndices[mappedHeader] = index;
+        }
+      });
+
+      // Check required columns
+      const requiredHeaders = ['employeeId', 'courseName', 'provider', 'type', 'category'];
+      const missingHeaders = requiredHeaders.filter(header => !(header in headerIndices));
+      
+      if (missingHeaders.length > 0) {
+        const missingKorean = missingHeaders.map(header => 
+          Object.keys(headerMap).find(k => headerMap[k] === header)
+        );
+        return res.status(400).json({ 
+          error: `필수 컬럼이 누락되었습니다: ${missingKorean.join(', ')}` 
+        });
+      }
+
+      const results: Array<{ success: boolean; data?: any; error?: string; row: number }> = [];
+
+      // Process each data row
+      for (let i = 0; i < dataRows.length; i++) {
+        const row = dataRows[i] as any[];
+        const rowNumber = i + 2; // +2 because we start from row 1 (0-indexed) and skip header
+
+        try {
+          const trainingData: any = {
+            employeeId: row[headerIndices.employeeId]?.toString().trim(),
+            courseName: row[headerIndices.courseName]?.toString().trim(),
+            provider: row[headerIndices.provider]?.toString().trim(),
+            type: row[headerIndices.type]?.toString().trim() || 'optional',
+            category: row[headerIndices.category]?.toString().trim() || 'other',
+            startDate: headerIndices.startDate !== undefined ? 
+              (row[headerIndices.startDate] ? parseExcelDate(row[headerIndices.startDate]) : null) : null,
+            completionDate: headerIndices.completionDate !== undefined ? 
+              (row[headerIndices.completionDate] ? parseExcelDate(row[headerIndices.completionDate]) : null) : null,
+            duration: headerIndices.duration !== undefined ? 
+              (row[headerIndices.duration] ? Number(row[headerIndices.duration]) : null) : null,
+            score: headerIndices.score !== undefined ? 
+              (row[headerIndices.score] ? Number(row[headerIndices.score]) : null) : null,
+            status: (row[headerIndices.status]?.toString().trim() || 'planned'),
+            certificateUrl: headerIndices.certificateUrl !== undefined ? 
+              row[headerIndices.certificateUrl]?.toString().trim() || null : null,
+            notes: headerIndices.notes !== undefined ? 
+              row[headerIndices.notes]?.toString().trim() || null : null
+          };
+
+          // Skip empty rows
+          if (!trainingData.employeeId || !trainingData.courseName) {
+            continue;
+          }
+
+          // Validate with schema
+          const validatedData = insertTrainingHistorySchema.parse(trainingData);
+          const training = await storage.createTrainingHistory(validatedData);
+          
+          results.push({ success: true, data: training, row: rowNumber });
+        } catch (error) {
+          console.error(`Row ${rowNumber} validation error:`, error);
+          const errorMessage = error instanceof Error ? error.message : "데이터 형식 오류";
+          results.push({ success: false, error: errorMessage, row: rowNumber });
+        }
+      }
+
+      const successCount = results.filter(r => r.success).length;
+      const errorCount = results.filter(r => !r.success).length;
+      const errors = results.filter(r => !r.success).map(r => ({ row: r.row, message: r.error || "알 수 없는 오류" }));
+
+      console.log(`Upload completed: ${successCount} success, ${errorCount} errors`);
+
+      res.status(200).json({
+        success: errorCount === 0,
+        totalRows: results.length,
+        successCount,
+        errorCount,
+        errors: errors.slice(0, 10) // Limit to first 10 errors
+      });
+
+    } catch (error) {
+      console.error("File upload error:", error);
+      res.status(500).json({ error: "파일 처리 중 오류가 발생했습니다." });
     }
   });
 

@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Plus, Upload, BookOpen, Clock, Users, Calendar } from "lucide-react";
 import TrainingTable from "@/components/training/training-table";
 import TrainingFormDialog from "@/components/training/training-form-dialog";
+import TrainingUploadDialog from "@/components/training/training-upload-dialog";
 import type { TrainingHistory } from "@shared/schema";
 
 interface TrainingStats {
@@ -52,10 +53,12 @@ export default function Training() {
           <p className="text-muted-foreground">교육 과정 및 이수 현황 관리</p>
         </div>
         <div className="flex space-x-2">
-          <Button variant="outline" data-testid="button-import-training">
-            <Upload className="w-4 h-4 mr-2" />
-            엑셀 가져오기
-          </Button>
+          <TrainingUploadDialog>
+            <Button variant="outline" data-testid="button-import-training">
+              <Upload className="w-4 h-4 mr-2" />
+              엑셀 가져오기
+            </Button>
+          </TrainingUploadDialog>
           <TrainingFormDialog>
             <Button data-testid="button-add-training">
               <Plus className="w-4 h-4 mr-2" />

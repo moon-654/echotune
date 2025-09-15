@@ -1,0 +1,6 @@
+직원ID,교육과정명,교육기관,유형,카테고리,시작일,완료일,교육시간,점수,상태,수료증URL,비고
+emp1,Java 고급 프로그래밍,한국소프트웨어진흥원,required,technical,2024-01-15,2024-02-15,40,95,completed,https://example.com/cert1,우수한 성과
+emp2,리더십 개발 과정,경영연구원,optional,leadership,2024-03-01,2024-03-30,20,88,completed,,팀 관리 역량 향상
+emp3,정보보안 기초,정보보안원,required,security,2024-02-10,2024-02-25,16,92,completed,https://example.com/cert3,보안 인식 개선
+emp1,React 프론트엔드 개발,테크아카데미,optional,technical,2024-04-01,,30,,ongoing,,진행 중인 과정
+emp2,디지털 마케팅 전략,마케팅협회,required,marketing,2024-05-01,2024-05-15,24,85,completed,,새로운 마케팅 전략 학습
