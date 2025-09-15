@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Download, FileText, BarChart3, PieChart } from "lucide-react";
-import RadarChart from "@/components/charts/radar-chart";
+import SkillRadarChart from "@/components/charts/radar-chart";
 
 interface DepartmentSkills {
   department: string;
@@ -141,7 +141,7 @@ export default function Reports() {
           <CardContent>
             <div className="h-64">
               {departmentSkills && (
-                <RadarChart 
+                <SkillRadarChart 
                   data={departmentSkills} 
                   dataKey="averageSkills"
                   nameKey="department"

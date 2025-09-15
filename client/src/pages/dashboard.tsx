@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users, BookOpen, Clock, Award } from "lucide-react";
-import RadarChart from "@/components/charts/radar-chart";
+import SkillRadarChart from "@/components/charts/radar-chart";
 
 interface DashboardStats {
   totalEmployees: number;
@@ -148,7 +148,7 @@ export default function Dashboard() {
           <CardContent>
             <div className="h-80">
               {departmentSkills && (
-                <RadarChart 
+                <SkillRadarChart 
                   data={departmentSkills} 
                   dataKey="averageSkills"
                   nameKey="department"

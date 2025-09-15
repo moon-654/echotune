@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { X, Edit, FileText, Award, Clock, Globe } from "lucide-react";
-import RadarChart from "@/components/charts/radar-chart";
+import SkillRadarChart from "@/components/charts/radar-chart";
 
 interface EmployeePanelProps {
   employeeId: string;
@@ -194,7 +194,7 @@ export default function EmployeePanel({ employeeId, onClose }: EmployeePanelProp
             </CardHeader>
             <CardContent>
               <div className="h-64">
-                <RadarChart 
+                <SkillRadarChart 
                   data={radarData}
                   dataKey="averageSkills"
                   nameKey="name"
