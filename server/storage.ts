@@ -89,13 +89,19 @@ export class MemStorage implements IStorage {
   }
 
   private initializeSampleData() {
-    // Create sample employees
+    // Create sample employees with new hierarchy structure
+    // 부서장 -> 팀장 -> 팀원 구조
     const sampleEmployees: Employee[] = [
+      // IT 부서장 (팀 없음)
       {
         id: "emp1",
+        employeeNumber: "001",
+        departmentCode: "IT",
+        teamCode: "", // 부서장은 팀이 없음
         name: "김철수",
-        position: "시니어 개발자",
-        department: "IT팀",
+        position: "IT부서장",
+        department: "IT부서",
+        team: "", // 부서장은 팀이 없음
         email: "kim.cs@ashimori.co.kr",
         phone: "010-1234-5678",
         hireDate: new Date("2018-03-15"),
@@ -105,15 +111,20 @@ export class MemStorage implements IStorage {
         createdAt: new Date(),
         updatedAt: new Date()
       },
+      // IT부서 하위 팀장들
       {
         id: "emp2",
+        employeeNumber: "002",
+        departmentCode: "IT",
+        teamCode: "IT01",
         name: "박영희",
-        position: "마케팅 팀장",
-        department: "마케팅팀",
+        position: "개발팀장",
+        department: "IT부서",
+        team: "개발팀",
         email: "park.yh@ashimori.co.kr",
         phone: "010-2345-6789",
         hireDate: new Date("2019-06-01"),
-        managerId: null,
+        managerId: "emp1", // IT부서장 하위
         photoUrl: null,
         isActive: true,
         createdAt: new Date(),
@@ -121,13 +132,73 @@ export class MemStorage implements IStorage {
       },
       {
         id: "emp3",
+        employeeNumber: "003",
+        departmentCode: "IT",
+        teamCode: "IT02",
         name: "이민호",
-        position: "영업 팀장",
-        department: "영업팀",
+        position: "인프라팀장",
+        department: "IT부서",
+        team: "인프라팀",
         email: "lee.mh@ashimori.co.kr",
         phone: "010-3456-7890",
         hireDate: new Date("2017-09-10"),
-        managerId: null,
+        managerId: "emp1", // IT부서장 하위
+        photoUrl: null,
+        isActive: true,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      },
+      // 개발팀 하위 팀원들
+      {
+        id: "emp4",
+        employeeNumber: "004",
+        departmentCode: "IT",
+        teamCode: "IT01",
+        name: "이자식",
+        position: "개발팀 사원",
+        department: "IT부서",
+        team: "개발팀",
+        email: "lee.js@ashimori.co.kr",
+        phone: "010-4567-8901",
+        hireDate: new Date("2020-01-15"),
+        managerId: "emp2", // 개발팀장 하위
+        photoUrl: null,
+        isActive: true,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      },
+      {
+        id: "emp5",
+        employeeNumber: "005",
+        departmentCode: "IT",
+        teamCode: "IT01",
+        name: "최수진",
+        position: "개발팀 사원",
+        department: "IT부서",
+        team: "개발팀",
+        email: "choi.sj@ashimori.co.kr",
+        phone: "010-5678-9012",
+        hireDate: new Date("2021-03-01"),
+        managerId: "emp2", // 개발팀장 하위
+        photoUrl: null,
+        isActive: true,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      },
+      // 인프라팀 하위 팀원들
+      {
+        id: "emp6",
+        employeeNumber: "006",
+        departmentCode: "IT",
+        teamCode: "IT02",
+        name: "정민수",
+        position: "인프라팀 사원",
+        department: "IT부서",
+        team: "인프라팀",
+        email: "jung.ms@ashimori.co.kr",
+        phone: "010-6789-0123",
+        hireDate: new Date("2020-07-15"),
+        managerId: "emp3", // 인프라팀장 하위
         photoUrl: null,
         isActive: true,
         createdAt: new Date(),
@@ -177,6 +248,19 @@ export class MemStorage implements IStorage {
         overallScore: 81,
         calculatedBy: null,
         lastCalculatedAt: new Date()
+      },
+      {
+        id: "calc4",
+        employeeId: "emp4",
+        experienceScore: 60,
+        certificationScore: 70,
+        languageScore: 75,
+        trainingScore: 65,
+        technicalScore: 80,
+        softSkillScore: 70,
+        overallScore: 70,
+        calculatedBy: null,
+        lastCalculatedAt: new Date()
       }
     ];
 
@@ -218,16 +302,33 @@ export class MemStorage implements IStorage {
   }
 
   async updateEmployee(id: string, updates: Partial<InsertEmployee>): Promise<Employee> {
+    console.log('🗃️ Storage.updateEmployee 호출됨');
+    console.log('🆔 업데이트할 ID:', id);
+    console.log('📝 업데이트 데이터:', updates);
+    
     const existing = this.employees.get(id);
     if (!existing) {
+      console.error('❌ 직원을 찾을 수 없음:', id);
       throw new Error(`Employee ${id} not found`);
     }
+    
+    console.log('👤 기존 직원 데이터:', existing);
+    
     const updated: Employee = {
       ...existing,
       ...updates,
       updatedAt: new Date()
     };
+    
+    console.log('🔄 업데이트된 직원 데이터:', updated);
+    
     this.employees.set(id, updated);
+    console.log('✅ Storage에 저장 완료');
+    
+    // 저장 후 검증
+    const saved = this.employees.get(id);
+    console.log('🔍 저장 후 검증:', saved);
+    
     return updated;
   }
 

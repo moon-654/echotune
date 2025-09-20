@@ -114,11 +114,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.put("/api/employees/:id", async (req, res) => {
     try {
+      console.log('🛠️ PUT /api/employees/:id 호출됨');
+      console.log('📝 요청 ID:', req.params.id);
+      console.log('📝 요청 Body:', req.body);
+      
       const employeeData = insertEmployeeSchema.partial().parse(req.body);
+      console.log('✅ 스키마 검증 완료:', employeeData);
+      
       const employee = await storage.updateEmployee(req.params.id, employeeData);
+      console.log('💾 데이터베이스 업데이트 완료:', employee);
+      
       res.json(employee);
     } catch (error) {
-      res.status(400).json({ error: "Failed to update employee" });
+      console.error('❌ 직원 업데이트 실패:', error);
+      res.status(400).json({ error: "Failed to update employee", details: error.message });
     }
   });
 

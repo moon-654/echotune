@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Search, ZoomIn, ZoomOut, RotateCcw } from "lucide-react";
-import OrgChartComponent from "@/components/orgchart/org-chart";
+import D3OrgChart from "@/components/orgchart/d3-org-chart";
 import EmployeePanel from "@/components/orgchart/employee-panel";
 import type { Employee } from "@shared/schema";
 
@@ -137,7 +137,7 @@ export default function OrgChart() {
         </div>
 
         {/* Org Chart */}
-        <OrgChartComponent
+        <D3OrgChart
           employees={employees || []}
           searchTerm={searchTerm}
           zoomLevel={zoomLevel}

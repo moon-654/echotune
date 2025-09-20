@@ -5,9 +5,13 @@ import { z } from "zod";
 
 export const employees = pgTable("employees", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  employeeNumber: varchar("employee_number").notNull().unique(), // 사원번호 (예: 001, 002, 003)
+  departmentCode: varchar("department_code").notNull(), // 부서코드 (예: IT, MK, SL)
+  teamCode: varchar("team_code").notNull(), // 팀코드 (예: IT01, MK01, SL01)
   name: text("name").notNull(),
   position: text("position").notNull(),
   department: text("department").notNull(),
+  team: text("team").notNull(), // 팀명
   email: text("email"),
   phone: text("phone"),
   hireDate: timestamp("hire_date"),
