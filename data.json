@@ -7,17 +7,17 @@
       "teamCode": "",
       "name": "이지사",
       "position": "지사장",
-      "department": "본사",
+      "department": "아시모리코리아",
       "team": "",
       "email": "lee.ceo@ashimori.co.kr",
       "phone": "010-0000-0000",
       "hireDate": "2015-01-01T00:00:00.000Z",
       "managerId": null,
       "photoUrl": null,
-      "isDepartmentHead": false,
+      "isDepartmentHead": true,
       "isActive": true,
       "createdAt": "2025-09-21T00:04:14.912Z",
-      "updatedAt": "2025-09-21T01:14:55.413Z"
+      "updatedAt": "2025-09-21T12:53:22.213Z"
     },
     "emp1": {
       "id": "emp1",

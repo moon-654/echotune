@@ -897,11 +897,8 @@ export default function D3OrgChart({ employees, searchTerm, zoomLevel, onEmploye
   }, [employees]);
 
   // 노드 콘텐츠 생성 (개선된 디자인)
-  // 종속 직원 수 계산 함수 (전체 하위 조직 포함)
-  const getSubordinateCount = (nodeId: string, allEmployees: any[]) => {
-    // 직접 보고하는 직원들 찾기
-    const directReports = allEmployees.filter(emp => emp.managerId === nodeId);
-    
+  // 총원 수 계산 함수 (자신 포함 + 전체 하위 조직)
+  const getTotalMemberCount = (nodeId: string, allEmployees: any[]) => {
     // 재귀적으로 모든 하위 직원 수 계산
     const countAllSubordinates = (managerId: string): number => {
       const directSubordinates = allEmployees.filter(emp => emp.managerId === managerId);
@@ -915,7 +912,9 @@ export default function D3OrgChart({ employees, searchTerm, zoomLevel, onEmploye
       return totalCount;
     };
     
-    return countAllSubordinates(nodeId);
+    // 자신 + 모든 하위 직원 수
+    const subordinateCount = countAllSubordinates(nodeId);
+    return subordinateCount + 1; // 자신 포함
   };
 
   const generateNodeContent = (d: any) => {
@@ -1128,8 +1127,8 @@ export default function D3OrgChart({ employees, searchTerm, zoomLevel, onEmploye
                 ${d.data.position}
               </div>
               ${(() => {
-                const subordinateCount = getSubordinateCount(d.data.id, employees);
-                if (subordinateCount > 0) {
+                const totalMemberCount = getTotalMemberCount(d.data.id, employees);
+                if (totalMemberCount > 1) { // 자신만 있는 경우(1명)는 표시하지 않음
                   return `
                   <div style="
                     background: linear-gradient(135deg, #4285f4, #34a853);
@@ -1141,7 +1140,7 @@ export default function D3OrgChart({ employees, searchTerm, zoomLevel, onEmploye
                     box-shadow: 0 1px 3px rgba(0,0,0,0.2);
                     white-space: nowrap;
                   ">
-                    하위 ${subordinateCount}명
+                    총원 ${totalMemberCount}명
                   </div>`;
                 }
                 return '';
@@ -2212,8 +2211,8 @@ export default function D3OrgChart({ employees, searchTerm, zoomLevel, onEmploye
 
     chartInstance.current = chart;
     
-    // 저장된 보기 상태 불러오기 비활성화 - 잘못된 노드 상태 복원 방지
-    // loadSavedViewState();
+    // 저장된 보기 상태 불러오기
+    loadSavedViewState();
     
     // 차트 렌더링 후 편집 함수 등록
     console.log('✏️ editNode 함수 등록 중...');
@@ -2449,18 +2448,31 @@ export default function D3OrgChart({ employees, searchTerm, zoomLevel, onEmploye
                 svg.select('g').attr('transform', viewState.gTransform);
               }
               
-              // 노드 상태 복원 비활성화 - 모든 노드가 expanded: false로 설정된 상태를 방지
-              // if (viewState.nodeStates && chartInstance.current) {
-              //   const chartData = chartInstance.current.getChartState().data;
-              //   viewState.nodeStates.forEach((nodeState: any) => {
-              //     const node = chartData.find((n: any) => n.id === nodeState.id);
-              //     if (node) {
-              //       node.expanded = nodeState.expanded;
-              //     }
-              //   });
-              //   console.log('✅ 노드 상태 복원 완료 (위치 유지)');
-              // }
-              console.log('✅ 노드 상태 복원 비활성화 - 현재 상태 유지');
+              // 노드 상태 복원 (조건부)
+              if (viewState.nodeStates && chartInstance.current) {
+                const chartData = chartInstance.current.getChartState().data;
+                let hasExpandedNodes = false;
+                
+                // 확장된 노드가 있는지 확인
+                viewState.nodeStates.forEach((nodeState: any) => {
+                  if (nodeState.expanded) {
+                    hasExpandedNodes = true;
+                  }
+                });
+                
+                // 확장된 노드가 있는 경우에만 상태 복원
+                if (hasExpandedNodes) {
+                  viewState.nodeStates.forEach((nodeState: any) => {
+                    const node = chartData.find((n: any) => n.id === nodeState.id);
+                    if (node) {
+                      node.expanded = nodeState.expanded;
+                    }
+                  });
+                  console.log('✅ 노드 상태 복원 완료');
+                } else {
+                  console.log('✅ 노드 상태 복원 건너뜀 - 모든 노드가 축소된 상태');
+                }
+              }
               
               console.log('✅ 저장된 보기 상태 복원 완료');
             }
