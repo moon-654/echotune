@@ -490,18 +490,18 @@
     "83e93792-3201-43d2-bed9-b352875a38dc": {
       "id": "83e93792-3201-43d2-bed9-b352875a38dc",
       "employeeNumber": "334295",
-      "departmentCode": "PM",
+      "departmentCode": "RD",
       "teamCode": "RD02",
       "name": "신신생산",
       "position": "사원",
-      "department": "생산관리부문",
+      "department": "기술연구소",
       "team": "생산관리",
       "email": "",
       "phone": "",
-      "managerId": "emp10",
+      "managerId": "emp2",
       "isActive": true,
       "createdAt": "2025-09-21T10:37:49.842Z",
-      "updatedAt": "2025-09-21T10:37:49.842Z"
+      "updatedAt": "2025-09-21T12:01:10.604Z"
     },
     "5fecc100-db39-4557-a4fb-1ea291397093": {
       "id": "5fecc100-db39-4557-a4fb-1ea291397093",
@@ -742,6 +742,22 @@
       "isActive": true,
       "createdAt": "2025-09-21T11:32:48.799Z",
       "updatedAt": "2025-09-21T11:32:48.799Z"
+    },
+    "d832e5ba-06dc-4a2c-87cf-36ef13e234a9": {
+      "id": "d832e5ba-06dc-4a2c-87cf-36ef13e234a9",
+      "employeeNumber": "12315",
+      "departmentCode": "PM",
+      "teamCode": "RD02",
+      "name": "구신상",
+      "position": "사원",
+      "department": "생산관리부문",
+      "team": "생산관리",
+      "email": "",
+      "phone": "",
+      "managerId": "8be903b0-56ad-4a0e-8892-f04d3f98da44",
+      "isActive": true,
+      "createdAt": "2025-09-21T12:01:28.731Z",
+      "updatedAt": "2025-09-21T12:01:28.731Z"
     }
   },
   "trainingHistory": {},
@@ -755,7 +771,7 @@
   "projects": {},
   "viewState": {
     "transform": "scale(1)",
-    "gTransform": "translate(15,151) scale(1)",
+    "gTransform": "translate(46,120) scale(1)",
     "zoomLevel": 100,
     "nodeStates": [
       {
@@ -905,8 +921,36 @@
       {
         "id": "a1c4af0c-0fe9-41c9-b019-acbffed7a0c3",
         "expanded": false
+      },
+      {
+        "id": "ec60b733-0fb4-48e1-ae25-597c3a23d4f8",
+        "expanded": false
+      },
+      {
+        "id": "d2b5029e-d630-489d-8d05-2983f5518984",
+        "expanded": false
+      },
+      {
+        "id": "eeb20810-49a4-4218-a50e-ee28e4bfe560",
+        "expanded": false
+      },
+      {
+        "id": "a30200f2-2837-4354-bba1-9d18a6e7b935",
+        "expanded": false
+      },
+      {
+        "id": "f10f3ebb-7060-41ea-986f-4503b4171b05",
+        "expanded": false
+      },
+      {
+        "id": "a01b24c4-c6b9-445a-9a66-db6260d5cb93",
+        "expanded": false
+      },
+      {
+        "id": "7a827876-3399-4fdb-87eb-974942e9fea6",
+        "expanded": false
       }
     ],
-    "timestamp": "2025-09-21T10:50:25.659Z"
+    "timestamp": "2025-09-21T11:45:39.716Z"
   }
 }
