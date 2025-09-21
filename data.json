@@ -491,17 +491,17 @@
       "id": "83e93792-3201-43d2-bed9-b352875a38dc",
       "employeeNumber": "334295",
       "departmentCode": "RD",
-      "teamCode": "RD02",
+      "teamCode": "SL1",
       "name": "신신생산",
       "position": "사원",
       "department": "기술연구소",
-      "team": "생산관리",
+      "team": "기술팀",
       "email": "",
       "phone": "",
-      "managerId": "emp2",
+      "managerId": "emp8",
       "isActive": true,
       "createdAt": "2025-09-21T10:37:49.842Z",
-      "updatedAt": "2025-09-21T12:01:10.604Z"
+      "updatedAt": "2025-09-21T12:16:05.267Z"
     },
     "5fecc100-db39-4557-a4fb-1ea291397093": {
       "id": "5fecc100-db39-4557-a4fb-1ea291397093",
@@ -758,6 +758,182 @@
       "isActive": true,
       "createdAt": "2025-09-21T12:01:28.731Z",
       "updatedAt": "2025-09-21T12:01:28.731Z"
+    },
+    "a2e3efba-7eb4-41c4-bea8-2c3fbb808aab": {
+      "id": "a2e3efba-7eb4-41c4-bea8-2c3fbb808aab",
+      "employeeNumber": "2412421",
+      "departmentCode": "RD",
+      "teamCode": "",
+      "name": "구미호",
+      "position": "사원",
+      "department": "기술연구소",
+      "team": "",
+      "email": "",
+      "phone": "",
+      "managerId": "14054958-20f3-4f7f-bb66-d71f4995a925",
+      "isActive": true,
+      "createdAt": "2025-09-21T12:07:53.295Z",
+      "updatedAt": "2025-09-21T12:07:53.295Z"
+    },
+    "65d36960-35e6-41f6-a049-54253d82f5be": {
+      "id": "65d36960-35e6-41f6-a049-54253d82f5be",
+      "employeeNumber": "3532",
+      "departmentCode": "RD",
+      "teamCode": "",
+      "name": "박효신",
+      "position": "사원",
+      "department": "기술연구소",
+      "team": "",
+      "email": "",
+      "phone": "",
+      "managerId": "14054958-20f3-4f7f-bb66-d71f4995a925",
+      "isActive": true,
+      "createdAt": "2025-09-21T12:11:44.931Z",
+      "updatedAt": "2025-09-21T12:11:44.931Z"
+    },
+    "d3b678a0-2dfe-4262-8c3c-ade478da76cc": {
+      "id": "d3b678a0-2dfe-4262-8c3c-ade478da76cc",
+      "employeeNumber": "456465",
+      "departmentCode": "RD",
+      "teamCode": "SL1",
+      "name": "신신고고",
+      "position": "사원",
+      "department": "기술연구소",
+      "team": "기술팀",
+      "email": "",
+      "phone": "",
+      "managerId": "eeb20810-49a4-4218-a50e-ee28e4bfe560",
+      "isActive": true,
+      "createdAt": "2025-09-21T12:16:24.999Z",
+      "updatedAt": "2025-09-21T12:16:24.999Z"
+    },
+    "00888a92-47e2-4cc8-9b8b-215a2a0b0bb3": {
+      "id": "00888a92-47e2-4cc8-9b8b-215a2a0b0bb3",
+      "employeeNumber": "2351",
+      "departmentCode": "RD",
+      "teamCode": "",
+      "name": "팔미호",
+      "position": "사원",
+      "department": "기술연구소",
+      "team": "",
+      "email": "",
+      "phone": "",
+      "managerId": "14054958-20f3-4f7f-bb66-d71f4995a925",
+      "isActive": true,
+      "createdAt": "2025-09-21T12:18:32.027Z",
+      "updatedAt": "2025-09-21T12:18:32.027Z"
+    },
+    "ff57a59f-3349-43c1-be68-509c91cf3a5e": {
+      "id": "ff57a59f-3349-43c1-be68-509c91cf3a5e",
+      "employeeNumber": "4478",
+      "departmentCode": "PM",
+      "teamCode": "RD02",
+      "name": "고구마",
+      "position": "사원",
+      "department": "생산관리부문",
+      "team": "생산관리",
+      "email": "",
+      "phone": "",
+      "managerId": "emp10",
+      "isActive": true,
+      "createdAt": "2025-09-21T12:21:37.783Z",
+      "updatedAt": "2025-09-21T12:21:37.783Z"
+    },
+    "fefaa9a4-5e63-4dbe-8853-c50062f0d710": {
+      "id": "fefaa9a4-5e63-4dbe-8853-c50062f0d710",
+      "employeeNumber": "2353252",
+      "departmentCode": "PM",
+      "teamCode": "RD02",
+      "name": "감자",
+      "position": "사원",
+      "department": "생산관리부문",
+      "team": "생산관리",
+      "email": "",
+      "phone": "",
+      "managerId": "56271c10-4eaf-4986-a7a5-d6a98d84677f",
+      "isActive": true,
+      "createdAt": "2025-09-21T12:24:19.664Z",
+      "updatedAt": "2025-09-21T12:34:15.969Z"
+    },
+    "56271c10-4eaf-4986-a7a5-d6a98d84677f": {
+      "id": "56271c10-4eaf-4986-a7a5-d6a98d84677f",
+      "employeeNumber": "2323",
+      "departmentCode": "PM",
+      "teamCode": "",
+      "name": "카고메",
+      "position": "사원",
+      "department": "생산관리부문",
+      "team": "",
+      "email": "",
+      "phone": "",
+      "managerId": "emp4",
+      "isActive": true,
+      "createdAt": "2025-09-21T12:24:50.377Z",
+      "updatedAt": "2025-09-21T12:24:50.377Z"
+    },
+    "367551f7-5e96-40ae-87c0-5997cc985908": {
+      "id": "367551f7-5e96-40ae-87c0-5997cc985908",
+      "employeeNumber": "35345",
+      "departmentCode": "PM",
+      "teamCode": "",
+      "name": "스즈메",
+      "position": "사원",
+      "department": "생산관리부문",
+      "team": "",
+      "email": "",
+      "phone": "",
+      "managerId": "56271c10-4eaf-4986-a7a5-d6a98d84677f",
+      "isActive": true,
+      "createdAt": "2025-09-21T12:33:00.368Z",
+      "updatedAt": "2025-09-21T12:33:00.368Z"
+    },
+    "6cb4a92b-6d53-4f7c-86d8-0262e6b9dd87": {
+      "id": "6cb4a92b-6d53-4f7c-86d8-0262e6b9dd87",
+      "employeeNumber": "234324",
+      "departmentCode": "PM",
+      "teamCode": "RD02",
+      "name": "스즈메1",
+      "position": "사원",
+      "department": "생산관리부문",
+      "team": "생산관리",
+      "email": "",
+      "phone": "",
+      "managerId": "emp10",
+      "isActive": true,
+      "createdAt": "2025-09-21T12:33:11.187Z",
+      "updatedAt": "2025-09-21T12:34:13.388Z"
+    },
+    "8ba0432f-39c3-47eb-b706-cccd586a31c6": {
+      "id": "8ba0432f-39c3-47eb-b706-cccd586a31c6",
+      "employeeNumber": "325325",
+      "departmentCode": "PM",
+      "teamCode": "",
+      "name": "휲파람",
+      "position": "사원",
+      "department": "생산관리부문",
+      "team": "",
+      "email": "",
+      "phone": "",
+      "managerId": "56271c10-4eaf-4986-a7a5-d6a98d84677f",
+      "isActive": true,
+      "createdAt": "2025-09-21T12:33:17.120Z",
+      "updatedAt": "2025-09-21T12:34:05.617Z"
+    },
+    "37ad4ae2-e9bd-4194-9127-e710ea266638": {
+      "id": "37ad4ae2-e9bd-4194-9127-e710ea266638",
+      "employeeNumber": "132432",
+      "departmentCode": "PM",
+      "teamCode": "",
+      "name": "고나리",
+      "position": "사원",
+      "department": "생산관리부문",
+      "team": "",
+      "email": "",
+      "phone": "",
+      "managerId": "56271c10-4eaf-4986-a7a5-d6a98d84677f",
+      "isActive": true,
+      "createdAt": "2025-09-21T12:33:24.392Z",
+      "updatedAt": "2025-09-21T12:34:04.156Z"
     }
   },
   "trainingHistory": {},
@@ -771,7 +947,7 @@
   "projects": {},
   "viewState": {
     "transform": "scale(1)",
-    "gTransform": "translate(46,120) scale(1)",
+    "gTransform": "translate(-7,131) scale(1)",
     "zoomLevel": 100,
     "nodeStates": [
       {
@@ -949,8 +1125,20 @@
       {
         "id": "7a827876-3399-4fdb-87eb-974942e9fea6",
         "expanded": false
+      },
+      {
+        "id": "d832e5ba-06dc-4a2c-87cf-36ef13e234a9",
+        "expanded": false
+      },
+      {
+        "id": "a2e3efba-7eb4-41c4-bea8-2c3fbb808aab",
+        "expanded": false
+      },
+      {
+        "id": "65d36960-35e6-41f6-a049-54253d82f5be",
+        "expanded": false
       }
     ],
-    "timestamp": "2025-09-21T11:45:39.716Z"
+    "timestamp": "2025-09-21T12:14:14.301Z"
   }
 }
