@@ -37,7 +37,7 @@ export default function OrgChartComponent({
   const getRoleStyle = (role: string) => {
     switch (role) {
       case 'CEO':
-        return { color: '#FF6B35', bg: '#FFF3E0', border: '#FFB74D', label: '지사장' };
+        return { color: '#FF6B35', bg: '#FFF3E0', border: '#FFB74D', label: 'CEO' };
       case 'DEPARTMENT_HEAD':
         return { color: '#1976D2', bg: '#E3F2FD', border: '#2196F3', label: '부문장' };
       case 'TEAM_LEADER':

@@ -45,7 +45,7 @@
       "teamCode": null,
       "name": "박연구",
       "position": "연구소장",
-      "department": "연구소",
+      "department": "기술연구소",
       "team": "",
       "email": "park.rd@ashimori.co.kr",
       "phone": "010-2345-6789",
@@ -54,8 +54,8 @@
       "photoUrl": null,
       "isActive": true,
       "createdAt": "2025-09-21T00:04:14.912Z",
-      "updatedAt": "2025-09-21T09:19:10.999Z",
-      "isDepartmentHead": false
+      "updatedAt": "2025-09-21T09:31:43.366Z",
+      "isDepartmentHead": true
     },
     "emp3": {
       "id": "emp3",
@@ -140,7 +140,7 @@
       "teamCode": "RD02",
       "name": "김개발",
       "position": "개발팀장",
-      "department": "연구소",
+      "department": "기술연구소",
       "team": "연구팀",
       "email": "kim.dev@ashimori.co.kr",
       "phone": "010-7890-1234",
@@ -149,8 +149,8 @@
       "photoUrl": null,
       "isActive": true,
       "createdAt": "2025-09-21T00:04:14.912Z",
-      "updatedAt": "2025-09-21T09:19:21.500Z",
-      "isDepartmentHead": false
+      "updatedAt": "2025-09-21T09:31:49.966Z",
+      "isDepartmentHead": true
     },
     "emp8": {
       "id": "emp8",
@@ -235,7 +235,7 @@
       "teamCode": "RD02",
       "name": "박개발",
       "position": "개발팀 사원",
-      "department": "본사",
+      "department": "기술연구소",
       "team": "연구팀",
       "email": "park.dev@ashimori.co.kr",
       "phone": "010-2345-6789",
@@ -244,8 +244,8 @@
       "photoUrl": null,
       "isActive": true,
       "createdAt": "2025-09-21T00:04:14.912Z",
-      "updatedAt": "2025-09-21T08:57:01.595Z",
-      "isDepartmentHead": false
+      "updatedAt": "2025-09-21T09:32:00.614Z",
+      "isDepartmentHead": true
     }
   },
   "trainingHistory": {},
@@ -256,5 +256,65 @@
   "patents": {},
   "publications": {},
   "awards": {},
-  "projects": {}
+  "projects": {},
+  "viewState": {
+    "transform": "scale(1)",
+    "gTransform": "translate(-12,132) scale(1)",
+    "zoomLevel": 100,
+    "nodeStates": [
+      {
+        "id": "emp0",
+        "expanded": false
+      },
+      {
+        "id": "emp1",
+        "expanded": false
+      },
+      {
+        "id": "emp2",
+        "expanded": false
+      },
+      {
+        "id": "emp3",
+        "expanded": false
+      },
+      {
+        "id": "emp4",
+        "expanded": false
+      },
+      {
+        "id": "emp5",
+        "expanded": false
+      },
+      {
+        "id": "emp6",
+        "expanded": false
+      },
+      {
+        "id": "emp7",
+        "expanded": false
+      },
+      {
+        "id": "emp8",
+        "expanded": false
+      },
+      {
+        "id": "emp9",
+        "expanded": false
+      },
+      {
+        "id": "emp10",
+        "expanded": false
+      },
+      {
+        "id": "emp11",
+        "expanded": false
+      },
+      {
+        "id": "emp12",
+        "expanded": false
+      }
+    ],
+    "timestamp": "2025-09-21T09:51:31.327Z"
+  }
 }

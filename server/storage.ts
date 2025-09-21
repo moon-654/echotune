@@ -28,10 +28,14 @@ export interface IStorage {
   // Employee methods
   getEmployee(id: string): Promise<Employee | undefined>;
   getAllEmployees(): Promise<Employee[]>;
+  
+  // View state methods
+  saveViewState(viewState: any): void;
+  getViewState(): any;
   createEmployee(employee: InsertEmployee): Promise<Employee>;
   updateEmployee(id: string, employee: Partial<InsertEmployee>): Promise<Employee>;
   deleteEmployee(id: string): Promise<boolean>;
-  
+
   // Training History methods
   getTrainingHistory(id: string): Promise<TrainingHistory | undefined>;
   getAllTrainingHistory(): Promise<TrainingHistory[]>;
@@ -39,7 +43,7 @@ export interface IStorage {
   createTrainingHistory(training: InsertTrainingHistory): Promise<TrainingHistory>;
   updateTrainingHistory(id: string, training: Partial<InsertTrainingHistory>): Promise<TrainingHistory>;
   deleteTrainingHistory(id: string): Promise<boolean>;
-  
+
   // Certification methods
   getCertification(id: string): Promise<Certification | undefined>;
   getAllCertifications(): Promise<Certification[]>;
@@ -47,7 +51,7 @@ export interface IStorage {
   createCertification(certification: InsertCertification): Promise<Certification>;
   updateCertification(id: string, certification: Partial<InsertCertification>): Promise<Certification>;
   deleteCertification(id: string): Promise<boolean>;
-  
+
   // Language methods
   getLanguage(id: string): Promise<Language | undefined>;
   getAllLanguages(): Promise<Language[]>;
@@ -55,7 +59,7 @@ export interface IStorage {
   createLanguage(language: InsertLanguage): Promise<Language>;
   updateLanguage(id: string, language: Partial<InsertLanguage>): Promise<Language>;
   deleteLanguage(id: string): Promise<boolean>;
-  
+
   // Skill methods
   getSkill(id: string): Promise<Skill | undefined>;
   getAllSkills(): Promise<Skill[]>;
@@ -63,7 +67,7 @@ export interface IStorage {
   createSkill(skill: InsertSkill): Promise<Skill>;
   updateSkill(id: string, skill: Partial<InsertSkill>): Promise<Skill>;
   deleteSkill(id: string): Promise<boolean>;
-  
+
   // Skill Calculation methods
   getSkillCalculation(id: string): Promise<SkillCalculation | undefined>;
   getAllSkillCalculations(): Promise<SkillCalculation[]>;
@@ -130,6 +134,7 @@ export class MemStorage implements IStorage {
   private publications: Map<string, Publication>;
   private awards: Map<string, Award>;
   private projects: Map<string, Project>;
+  private viewState: any;
   private dataFile: string;
 
   constructor() {
@@ -143,6 +148,7 @@ export class MemStorage implements IStorage {
     this.publications = new Map();
     this.awards = new Map();
     this.projects = new Map();
+    this.viewState = null;
     this.dataFile = join(process.cwd(), 'data.json');
     
     // Load data from file or initialize with sample data
@@ -174,6 +180,12 @@ export class MemStorage implements IStorage {
           });
         }
         
+        // Load view state if exists
+        if (data.viewState) {
+          this.viewState = data.viewState;
+          console.log('✅ 보기 상태 로드 완료');
+        }
+        
         console.log('📁 데이터 파일에서 로드 완료');
         return;
       } else {
@@ -200,7 +212,8 @@ export class MemStorage implements IStorage {
         patents: Object.fromEntries(this.patents),
         publications: Object.fromEntries(this.publications),
         awards: Object.fromEntries(this.awards),
-        projects: Object.fromEntries(this.projects)
+        projects: Object.fromEntries(this.projects),
+        viewState: this.viewState
       };
       
       writeFileSync(this.dataFile, JSON.stringify(data, null, 2));
@@ -736,8 +749,8 @@ export class MemStorage implements IStorage {
     const existing = this.skillCalculations.get(id);
     if (!existing) throw new Error('Skill calculation not found');
     
-    const updated: SkillCalculation = {
-      ...existing,
+      const updated: SkillCalculation = {
+        ...existing,
       ...calculation,
       updatedAt: new Date()
     };
@@ -868,7 +881,7 @@ export class MemStorage implements IStorage {
       updatedAt: new Date()
     };
     this.awards.set(id, updated);
-    return updated;
+      return updated;
   }
 
   async deleteAward(id: string): Promise<boolean> {
@@ -889,7 +902,7 @@ export class MemStorage implements IStorage {
   }
 
   async createProject(project: InsertProject): Promise<Project> {
-    const id = randomUUID();
+      const id = randomUUID();
     const newProject: Project = {
       id,
       ...project,
@@ -969,6 +982,28 @@ export class MemStorage implements IStorage {
       awards,
       projects
     };
+  }
+
+  // 보기 상태 저장
+  saveViewState(viewState: any): void {
+    try {
+      this.viewState = viewState;
+      this.saveData();
+      console.log('✅ 보기 상태 저장 완료:', viewState);
+    } catch (error) {
+      console.error('❌ 보기 상태 저장 중 오류:', error);
+      throw error;
+    }
+  }
+
+  // 보기 상태 불러오기
+  getViewState(): any {
+    try {
+      return this.viewState || null;
+    } catch (error) {
+      console.error('❌ 보기 상태 불러오기 중 오류:', error);
+      return null;
+    }
   }
 }
 

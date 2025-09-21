@@ -70,7 +70,7 @@ export default function D3OrgChart({ employees, searchTerm, zoomLevel, onEmploye
           department: formData.department,
           team: formData.team,
           employeeNumber: formData.employeeNumber,
-          isDepartmentHead: formData.isDepartmentHead
+          isDepartmentHead: Boolean(formData.isDepartmentHead)
         }),
       });
 
@@ -78,9 +78,9 @@ export default function D3OrgChart({ employees, searchTerm, zoomLevel, onEmploye
         console.log('✅ 직원 정보가 성공적으로 업데이트되었습니다.');
         
         // 부모 컴포넌트의 데이터 새로고침
-        queryClient.invalidateQueries({ queryKey: ['/api/employees'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/employees'] });
         
-        toast({
+      toast({
           title: "성공",
           description: "직원 정보가 업데이트되었습니다.",
         });
@@ -727,7 +727,7 @@ export default function D3OrgChart({ employees, searchTerm, zoomLevel, onEmploye
                   display: inline-block;
                   border: 1px solid #c8e6c9;
                 ">
-                  부서장
+                  팀 정보 없음
                 </div>`;
               } else {
                 // 부모 노드의 팀 정보를 찾아서 표시
@@ -1776,6 +1776,9 @@ export default function D3OrgChart({ employees, searchTerm, zoomLevel, onEmploye
 
     chartInstance.current = chart;
     
+    // 저장된 보기 상태 불러오기
+    loadSavedViewState();
+    
     // 차트 렌더링 후 편집 함수 등록
     console.log('✏️ editNode 함수 등록 중...');
     (window as any).editNode = async (nodeId: string) => {
@@ -1859,6 +1862,137 @@ export default function D3OrgChart({ employees, searchTerm, zoomLevel, onEmploye
     }
   }, [transformEmployeesData]);
 
+  // 현재 보기 저장 함수
+  const saveCurrentView = async () => {
+    if (!chartInstance.current || !chartRef.current) return;
+    
+    try {
+      const svg = d3.select(chartRef.current).select('svg');
+      const svgNode = svg.node() as SVGElement;
+      
+      if (svgNode) {
+        // 현재 transform 값 가져오기
+        const transform = svg.style('transform') || '';
+        const gTransform = svg.select('g').attr('transform') || '';
+        
+        // 현재 줌 레벨
+        const currentZoom = zoomLevel;
+        
+        // 현재 노드들의 확장/축소 상태
+        const chartData = chartInstance.current.getChartState().data;
+        const nodeStates = chartData.map((node: any) => ({
+          id: node.id,
+          expanded: node.expanded || false
+        }));
+        
+        const viewState = {
+          transform,
+          gTransform,
+          zoomLevel: currentZoom,
+          nodeStates,
+          timestamp: new Date().toISOString()
+        };
+        
+        console.log('💾 현재 보기 상태:', viewState);
+        
+        // 서버에 보기 상태 저장
+        const response = await fetch('/api/save-view-state', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(viewState)
+        });
+        
+        if (response.ok) {
+          toast({
+            title: "보기 저장 완료",
+            description: "현재 보기 상태가 저장되었습니다.",
+          });
+          console.log('✅ 보기 상태 저장 완료');
+        } else {
+          throw new Error('보기 상태 저장 실패');
+        }
+      }
+    } catch (error) {
+      console.error('❌ 보기 상태 저장 중 오류:', error);
+      toast({
+        title: "저장 실패",
+        description: "보기 상태 저장에 실패했습니다.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  // 모두 열기 함수
+  const expandAll = () => {
+    if (chartInstance.current) {
+      console.log('📂 모든 노드 열기');
+      chartInstance.current.expandAll();
+      toast({
+        title: "모두 열기",
+        description: "모든 노드가 확장되었습니다.",
+      });
+    }
+  };
+
+  // 모두 닫기 함수
+  const collapseAll = () => {
+    if (chartInstance.current) {
+      console.log('📁 모든 노드 닫기');
+      chartInstance.current.collapseAll();
+      toast({
+        title: "모두 닫기",
+        description: "모든 노드가 축소되었습니다.",
+      });
+    }
+  };
+
+  // 저장된 보기 상태 불러오기
+  const loadSavedViewState = async () => {
+    try {
+      const response = await fetch('/api/load-view-state');
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success && result.viewState) {
+          const viewState = result.viewState;
+          console.log('📂 저장된 보기 상태 불러오기:', viewState);
+          
+          // 저장된 보기 상태 적용
+          setTimeout(() => {
+            if (chartRef.current && viewState) {
+              const svg = d3.select(chartRef.current).select('svg');
+              
+              // Transform 적용
+              if (viewState.transform) {
+                svg.style('transform', viewState.transform);
+              }
+              if (viewState.gTransform) {
+                svg.select('g').attr('transform', viewState.gTransform);
+              }
+              
+              // 노드 상태 복원
+              if (viewState.nodeStates && chartInstance.current) {
+                const chartData = chartInstance.current.getChartState().data;
+                viewState.nodeStates.forEach((nodeState: any) => {
+                  const node = chartData.find((n: any) => n.id === nodeState.id);
+                  if (node) {
+                    node.expanded = nodeState.expanded;
+                  }
+                });
+                chartInstance.current.render();
+              }
+              
+              console.log('✅ 저장된 보기 상태 복원 완료');
+            }
+          }, 200);
+        }
+      }
+    } catch (error) {
+      console.error('❌ 보기 상태 불러오기 중 오류:', error);
+    }
+  };
+
   return (
     <div className="relative w-full h-full">
       {/* 드래그 앤 드롭 CSS 스타일 */}
@@ -1898,6 +2032,32 @@ export default function D3OrgChart({ employees, searchTerm, zoomLevel, onEmploye
         }
       `}</style>
       
+      {/* 조직도 뷰 컨트롤 패널 - 왼쪽 하단 */}
+      <div className="absolute bottom-4 left-4 z-20 bg-card border border-border rounded-lg p-3 shadow-lg">
+        <div className="flex flex-col gap-2">
+          <div className="flex gap-2">
+            <button 
+              onClick={saveCurrentView}
+              className="px-3 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 text-sm"
+            >
+              현재 보기 저장
+            </button>
+            <button 
+              onClick={expandAll}
+              className="px-3 py-2 bg-green-500 text-white rounded hover:bg-green-600 text-sm"
+            >
+              모두 열기
+            </button>
+            <button 
+              onClick={collapseAll}
+              className="px-3 py-2 bg-orange-500 text-white rounded hover:bg-orange-600 text-sm"
+            >
+              모두 닫기
+            </button>
+          </div>
+        </div>
+      </div>
+
       {/* 드래그 앤 드롭 컨트롤 패널 */}
       <div className="absolute top-4 right-4 z-20 bg-card border border-border rounded-lg p-3 shadow-lg">
         <div className="flex flex-col gap-2">

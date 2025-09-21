@@ -126,6 +126,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // 보기 상태 저장 (POST)
+  app.post("/api/save-view-state", async (req, res) => {
+    try {
+      const viewState = req.body;
+      console.log('💾 보기 상태 저장 요청:', viewState);
+      
+      // 보기 상태를 storage에 저장
+      storage.saveViewState(viewState);
+      
+      res.json({ 
+        success: true, 
+        message: "보기 상태가 저장되었습니다.",
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error('❌ 보기 상태 저장 중 오류:', error);
+      res.status(500).json({ 
+        success: false, 
+        message: "보기 상태 저장에 실패했습니다.",
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
+  // 보기 상태 불러오기 (GET)
+  app.get("/api/load-view-state", async (req, res) => {
+    try {
+      const viewState = storage.getViewState();
+      console.log('📂 보기 상태 불러오기:', viewState);
+      
+      res.json({ 
+        success: true, 
+        viewState: viewState || null
+      });
+    } catch (error) {
+      console.error('❌ 보기 상태 불러오기 중 오류:', error);
+      res.status(500).json({ 
+        success: false, 
+        message: "보기 상태 불러오기에 실패했습니다.",
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
 app.put("/api/employees/:id", async (req, res) => {
   try {
     console.log('🛠️ PUT /api/employees/:id 호출됨');
@@ -154,6 +198,14 @@ app.put("/api/employees/:id", async (req, res) => {
         cleanedBody[key] = undefined;
       }
     });
+    
+    // boolean 필드들을 올바른 타입으로 변환
+    if (cleanedBody.isDepartmentHead !== undefined) {
+      cleanedBody.isDepartmentHead = cleanedBody.isDepartmentHead === 'true' || cleanedBody.isDepartmentHead === true;
+    }
+    if (cleanedBody.isActive !== undefined) {
+      cleanedBody.isActive = cleanedBody.isActive === 'true' || cleanedBody.isActive === true;
+    }
     
     console.log('🧹 정리된 요청 데이터:', cleanedBody);
     
