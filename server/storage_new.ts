@@ -1,6 +1,4 @@
 import { randomUUID } from "crypto";
-import { writeFileSync, readFileSync, existsSync } from "fs";
-import { join } from "path";
 import type { 
   Employee, 
   InsertEmployee, 
@@ -130,7 +128,6 @@ export class MemStorage implements IStorage {
   private publications: Map<string, Publication>;
   private awards: Map<string, Award>;
   private projects: Map<string, Project>;
-  private dataFile: string;
 
   constructor() {
     this.employees = new Map();
@@ -143,79 +140,13 @@ export class MemStorage implements IStorage {
     this.publications = new Map();
     this.awards = new Map();
     this.projects = new Map();
-    this.dataFile = join(process.cwd(), 'data.json');
     
-    // Load data from file or initialize with sample data
-    this.loadData();
-  }
-
-  private loadData() {
-    try {
-      console.log('📁 데이터 파일 경로:', this.dataFile);
-      console.log('📁 파일 존재 여부:', existsSync(this.dataFile));
-      
-      if (existsSync(this.dataFile)) {
-        console.log('📁 기존 데이터 파일 로드 중...');
-        const data = JSON.parse(readFileSync(this.dataFile, 'utf8'));
-        console.log('📁 로드된 데이터 키:', Object.keys(data));
-        
-        // Load employees
-        if (data.employees) {
-          Object.entries(data.employees).forEach(([id, employee]) => {
-            this.employees.set(id, employee as Employee);
-          });
-          console.log(`✅ ${this.employees.size}명의 직원 데이터 로드 완료`);
-        }
-        
-        // Load other data if exists
-        if (data.trainingHistory) {
-          Object.entries(data.trainingHistory).forEach(([id, item]) => {
-            this.trainingHistory.set(id, item as TrainingHistory);
-          });
-        }
-        
-        console.log('📁 데이터 파일에서 로드 완료');
-        return;
-      } else {
-        console.log('📁 데이터 파일이 존재하지 않음');
-      }
-    } catch (error) {
-      console.error('❌ 데이터 파일 로드 실패:', error);
-    }
-    
-    // Initialize with sample data if no file exists
-    console.log('📁 샘플 데이터로 초기화...');
+    // Initialize with sample data structure
     this.initializeSampleData();
   }
 
-  private saveData() {
-    try {
-      const data = {
-        employees: Object.fromEntries(this.employees),
-        trainingHistory: Object.fromEntries(this.trainingHistory),
-        certifications: Object.fromEntries(this.certifications),
-        languages: Object.fromEntries(this.languages),
-        skills: Object.fromEntries(this.skills),
-        skillCalculations: Object.fromEntries(this.skillCalculations),
-        patents: Object.fromEntries(this.patents),
-        publications: Object.fromEntries(this.publications),
-        awards: Object.fromEntries(this.awards),
-        projects: Object.fromEntries(this.projects)
-      };
-      
-      writeFileSync(this.dataFile, JSON.stringify(data, null, 2));
-      console.log('💾 데이터 파일 저장 완료');
-    } catch (error) {
-      console.error('❌ 데이터 파일 저장 실패:', error);
-    }
-  }
-
   private initializeSampleData() {
-    // 체계적인 조직 구조: 지사장 -> 4개 부문장 -> 팀장 -> 팀원
-    // 고유 코드 체계:
-    // - 부서 코드: HQ(본사), SL(영업), RD(연구), QC(품질), PM(생산)
-    // - 팀 코드: 부서코드 + 2자리 숫자 (예: SL01, RD01)
-    // - 직원 ID: emp + 2자리 숫자 (emp00 ~ emp99)
+    // 새로운 조직 구조: 지사장 -> 4개 부문장 -> 팀장 -> 팀원
     const sampleEmployees: Employee[] = [
       // 지사장 (최상위)
       {
@@ -501,37 +432,15 @@ export class MemStorage implements IStorage {
   }
 
   async updateEmployee(id: string, employee: Partial<InsertEmployee>): Promise<Employee> {
-    console.log('🗃️ Storage.updateEmployee 호출됨');
-    console.log('🆔 업데이트할 ID:', id);
-    console.log('📝 업데이트 데이터:', employee);
-    
     const existing = this.employees.get(id);
-    if (!existing) {
-      console.error('❌ 직원을 찾을 수 없음:', id);
-      throw new Error(`Employee ${id} not found`);
-    }
-    
-    console.log('👤 기존 직원 데이터:', existing);
+    if (!existing) throw new Error('Employee not found');
     
     const updated: Employee = {
       ...existing,
       ...employee,
       updatedAt: new Date()
     };
-    
-    console.log('🔄 업데이트된 직원 데이터:', updated);
-    
     this.employees.set(id, updated);
-    console.log('✅ Storage에 저장 완료');
-    
-    // 파일에 영구 저장
-    this.saveData();
-    console.log('💾 파일에 영구 저장 완료');
-    
-    // 저장 후 검증
-    const saved = this.employees.get(id);
-    console.log('🔍 저장 후 검증:', saved);
-    
     return updated;
   }
 

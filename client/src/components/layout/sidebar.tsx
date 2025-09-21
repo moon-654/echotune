@@ -6,13 +6,17 @@ import {
   Users, 
   BookOpen, 
   BarChart3,
-  User
+  User,
+  Building2,
+  UserCheck
 } from "lucide-react";
 
 const navigation = [
   { name: "대시보드", href: "/dashboard", icon: LayoutDashboard },
   { name: "조직도", href: "/orgchart", icon: Table },
   { name: "직원 관리", href: "/employees", icon: Users },
+  { name: "부서 관리", href: "/departments", icon: Building2 },
+  { name: "팀 관리", href: "/teams", icon: UserCheck },
   { name: "교육 관리", href: "/training", icon: BookOpen },
   { name: "보고서", href: "/reports", icon: BarChart3 },
 ];

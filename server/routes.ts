@@ -72,6 +72,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const employees = department 
         ? await storage.getEmployeesByDepartment(department)
         : await storage.getAllEmployees();
+      
+      // 김국내 데이터 디버깅
+      const kimDomestic = employees.find(emp => emp.id === 'emp11');
+      if (kimDomestic) {
+        console.log('🔍 김국내 API 응답 데이터:', {
+          id: kimDomestic.id,
+          name: kimDomestic.name,
+          team: kimDomestic.team,
+          teamCode: kimDomestic.teamCode,
+          department: kimDomestic.department,
+          managerId: kimDomestic.managerId
+        });
+      }
+      
       res.json(employees);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch employees" });
@@ -112,24 +126,73 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/employees/:id", async (req, res) => {
-    try {
-      console.log('🛠️ PUT /api/employees/:id 호출됨');
-      console.log('📝 요청 ID:', req.params.id);
-      console.log('📝 요청 Body:', req.body);
-      
-      const employeeData = insertEmployeeSchema.partial().parse(req.body);
-      console.log('✅ 스키마 검증 완료:', employeeData);
-      
-      const employee = await storage.updateEmployee(req.params.id, employeeData);
-      console.log('💾 데이터베이스 업데이트 완료:', employee);
-      
-      res.json(employee);
-    } catch (error) {
-      console.error('❌ 직원 업데이트 실패:', error);
-      res.status(400).json({ error: "Failed to update employee", details: error.message });
-    }
-  });
+app.put("/api/employees/:id", async (req, res) => {
+  try {
+    console.log('🛠️ PUT /api/employees/:id 호출됨');
+    console.log('📝 요청 ID:', req.params.id);
+    console.log('📝 요청 Body:', req.body);
+    
+    // 기존 직원 데이터 확인
+    const existingEmployee = await storage.getEmployee(req.params.id);
+    console.log('👤 기존 직원 데이터:', {
+      id: existingEmployee?.id,
+      name: existingEmployee?.name,
+      position: existingEmployee?.position,
+      department: existingEmployee?.department,
+      departmentCode: existingEmployee?.departmentCode,
+      team: existingEmployee?.team,
+      teamCode: existingEmployee?.teamCode,
+      managerId: existingEmployee?.managerId
+    });
+    
+    const employeeData = insertEmployeeSchema.partial().parse(req.body);
+    console.log('✅ 스키마 검증 완료:', employeeData);
+    
+    console.log('🔄 업데이트 전후 비교:');
+    console.log('📋 managerId:', { 기존: existingEmployee?.managerId, 요청: employeeData.managerId });
+    console.log('📋 departmentCode:', { 기존: existingEmployee?.departmentCode, 요청: employeeData.departmentCode });
+    console.log('📋 department:', { 기존: existingEmployee?.department, 요청: employeeData.department });
+    console.log('📋 teamCode:', { 기존: existingEmployee?.teamCode, 요청: employeeData.teamCode });
+    console.log('📋 team:', { 기존: existingEmployee?.team, 요청: employeeData.team });
+    
+    const employee = await storage.updateEmployee(req.params.id, employeeData);
+    console.log('💾 데이터베이스 업데이트 완료:', {
+      id: employee.id,
+      name: employee.name,
+      position: employee.position,
+      department: employee.department,
+      departmentCode: employee.departmentCode,
+      team: employee.team,
+      teamCode: employee.teamCode,
+      managerId: employee.managerId
+    });
+    
+    // 업데이트 후 데이터 재확인
+    const updatedEmployee = await storage.getEmployee(req.params.id);
+    console.log('🔍 업데이트 후 직원 데이터:', {
+      id: updatedEmployee?.id,
+      name: updatedEmployee?.name,
+      position: updatedEmployee?.position,
+      department: updatedEmployee?.department,
+      departmentCode: updatedEmployee?.departmentCode,
+      team: updatedEmployee?.team,
+      teamCode: updatedEmployee?.teamCode,
+      managerId: updatedEmployee?.managerId
+    });
+    
+    console.log('🔍 최종 변경사항 검증:');
+    console.log('✅ managerId 변경:', { 기존: existingEmployee?.managerId, 결과: updatedEmployee?.managerId, 성공: existingEmployee?.managerId !== updatedEmployee?.managerId });
+    console.log('✅ departmentCode 변경:', { 기존: existingEmployee?.departmentCode, 결과: updatedEmployee?.departmentCode, 성공: existingEmployee?.departmentCode !== updatedEmployee?.departmentCode });
+    console.log('✅ department 변경:', { 기존: existingEmployee?.department, 결과: updatedEmployee?.department, 성공: existingEmployee?.department !== updatedEmployee?.department });
+    console.log('✅ teamCode 변경:', { 기존: existingEmployee?.teamCode, 결과: updatedEmployee?.teamCode, 성공: existingEmployee?.teamCode !== updatedEmployee?.teamCode });
+    console.log('✅ team 변경:', { 기존: existingEmployee?.team, 결과: updatedEmployee?.team, 성공: existingEmployee?.team !== updatedEmployee?.team });
+    
+    res.json(employee);
+  } catch (error) {
+    console.error('❌ 직원 업데이트 실패:', error);
+    res.status(400).json({ error: "Failed to update employee", details: error.message });
+  }
+});
 
   app.delete("/api/employees/:id", async (req, res) => {
     try {
@@ -635,6 +698,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ error: "Failed to fetch department ratios" });
     }
   });
+
+  // 부서/팀 관리는 클라이언트 사이드에서 로컬 스토리지로 처리
 
   const httpServer = createServer(app);
   return httpServer;

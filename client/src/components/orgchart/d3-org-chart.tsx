@@ -1,7 +1,16 @@
 import { useEffect, useRef, useState, useMemo } from "react";
 import * as d3 from "d3";
 import { OrgChart } from "d3-org-chart";
+import { Plus } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useToast } from "@/hooks/use-toast";
+import SimpleEditModal from './simple-edit-modal';
 import type { Employee } from "@shared/schema";
+import { DepartmentTeamManager } from "@/lib/departments-teams";
 
 interface D3OrgChartProps {
   employees: Employee[];
@@ -11,9 +20,25 @@ interface D3OrgChartProps {
 }
 
 export default function D3OrgChart({ employees, searchTerm, zoomLevel, onEmployeeSelect }: D3OrgChartProps) {
+  
+  // 직원 역할 판별 함수 (체크박스 기반)
+  const getEmployeeRole = (employee: any): 'CEO' | 'DEPARTMENT_HEAD' | 'TEAM_LEADER' | 'TEAM_MEMBER' => {
+    // 1. 지사장: managerId가 null
+    if (!employee.managerId) return 'CEO';
+    
+    // 2. 부문장: 체크박스로 명시적으로 설정된 경우
+    if (isDepartmentHead(employee.id)) {
+      return 'DEPARTMENT_HEAD';
+    }
+    
+    // 3. 팀장 vs 팀원: 하위 직원 존재 여부로 판별
+    const hasSubordinates = employees.some((emp: any) => emp.managerId === employee.id);
+    return hasSubordinates ? 'TEAM_LEADER' : 'TEAM_MEMBER';
+  };
   const chartRef = useRef<HTMLDivElement>(null);
   const chartInstance = useRef<any>(null);
-  
+  const { toast } = useToast();
+
   // 드래그 앤 드롭 상태 (index1.html과 동일)
   const [dragEnabled, setDragEnabled] = useState(false);
   const [dragNode, setDragNode] = useState<any>(null);
@@ -22,25 +47,373 @@ export default function D3OrgChart({ employees, searchTerm, zoomLevel, onEmploye
   const [dragStartY, setDragStartY] = useState(0);
   const [isDragStarting, setIsDragStarting] = useState(false);
   const [undoActions, setUndoActions] = useState<any[]>([]);
+  
+  // 간단한 편집 모달 상태
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingEmployee, setEditingEmployee] = useState<any>(null);
+
+  // 편집 모달 저장 함수
+  const handleEditSave = async (formData: any) => {
+    if (!editingEmployee) return;
+
+    try {
+      const response = await fetch(`/api/employees/${editingEmployee.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: formData.name,
+          position: formData.position,
+          department: formData.department,
+          team: formData.team,
+          isDepartmentHead: formData.isDepartmentHead
+        }),
+      });
+
+      if (response.ok) {
+        console.log('✅ 직원 정보가 성공적으로 업데이트되었습니다.');
+      toast({
+          title: "성공",
+          description: "직원 정보가 업데이트되었습니다.",
+        });
+        
+        // 부문장 상태 업데이트
+        if (formData.isDepartmentHead) {
+          setDepartmentHeads(prev => new Set([...prev, editingEmployee.id]));
+        } else {
+          setDepartmentHeads(prev => {
+            const newSet = new Set(prev);
+            newSet.delete(editingEmployee.id);
+            return newSet;
+          });
+        }
+        
+        // 차트 다시 그리기
+        if (chartInstance.current) {
+          chartInstance.current.render().expandAll();
+        }
+      } else {
+        console.error('❌ 직원 정보 업데이트 실패:', response.statusText);
+      toast({
+          title: "오류",
+          description: "직원 정보 업데이트에 실패했습니다.",
+        variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error('❌ 직원 정보 업데이트 중 오류 발생:', error);
+      toast({
+        title: "오류",
+        description: "직원 정보 업데이트 중 오류가 발생했습니다.",
+        variant: "destructive",
+      });
+    }
+  };
   const [redoActions, setRedoActions] = useState<any[]>([]);
+  
+  // 부문장 상태 관리
+  const [departmentHeads, setDepartmentHeads] = useState<Set<string>>(new Set());
+  
+  // 부문장 체크박스 토글 함수
+  const toggleDepartmentHead = (employeeId: string) => {
+    console.log('🔄 부문장 토글 함수 호출:', employeeId);
+    setDepartmentHeads(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(employeeId)) {
+        newSet.delete(employeeId);
+        console.log('❌ 부문장 해제:', employeeId);
+      } else {
+        newSet.add(employeeId);
+        console.log('✅ 부문장 설정:', employeeId);
+      }
+      console.log('📋 현재 부문장 목록:', Array.from(newSet));
+      return newSet;
+    });
+  };
+  
+  // 부문장 여부 확인 함수
+  const isDepartmentHead = (employeeId: string) => {
+    return departmentHeads.has(employeeId);
+  };
+  
+  // 전역 함수 등록 (체크박스에서 호출)
+  useEffect(() => {
+    console.log('🌐 전역 함수 등록 중...');
+    (window as any).toggleDepartmentHead = (employeeId: string) => {
+      console.log('🌐 전역 함수 호출:', employeeId);
+      setDepartmentHeads(prev => {
+        const newSet = new Set(prev);
+        if (newSet.has(employeeId)) {
+          newSet.delete(employeeId);
+        } else {
+          newSet.add(employeeId);
+        }
+        return newSet;
+      });
+    };
+    console.log('✅ 전역 함수 등록 완료');
+    console.log('🔍 window.toggleDepartmentHead 존재:', !!window.toggleDepartmentHead);
+    console.log('🔍 window.editNode 존재:', !!window.editNode);
+    return () => {
+      console.log('🗑️ 전역 함수 삭제');
+      delete (window as any).toggleDepartmentHead;
+    };
+  }, []);
+
+  // 부문장 상태 변경 시 차트 재렌더링
+  useEffect(() => {
+    if (chartInstance.current && dragEnabled) {
+      console.log('🔄 부문장 상태 변경으로 차트 재렌더링');
+      const data = transformEmployeesData;
+      chartInstance.current.data(data).render();
+    }
+  }, [departmentHeads, dragEnabled]);
+  
+  // 부서/팀/직원 추가 모달 상태
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [addModalType, setAddModalType] = useState<'department' | 'team' | 'employee' | 'new-employee'>('department');
+  const [addModalData, setAddModalData] = useState({ 
+    code: '', 
+    name: '', 
+    departmentCode: '',
+    department: '',
+    teamCode: '',
+    team: '',
+    inheritFrom: ''
+  });
+  const [departments, setDepartments] = useState<any[]>([]);
+  const [teams, setTeams] = useState<any[]>([]);
+
+  // 부서/팀 데이터 로드
+  useEffect(() => {
+    const deptData = DepartmentTeamManager.getAllDepartments();
+    const teamData = DepartmentTeamManager.getAllTeams();
+    setDepartments(deptData);
+    setTeams(teamData);
+  }, []);
+
+  // 부서 추가 함수
+  const handleAddDepartment = () => {
+    try {
+      DepartmentTeamManager.addDepartment(addModalData.code, addModalData.name);
+      const deptData = DepartmentTeamManager.getAllDepartments();
+      setDepartments(deptData);
+      setShowAddModal(false);
+      setAddModalData({ code: '', name: '', departmentCode: '' });
+      toast({ title: "부서가 추가되었습니다." });
+    } catch (error) {
+      toast({
+        title: "부서 추가 실패", 
+        description: error instanceof Error ? error.message : "알 수 없는 오류",
+        variant: "destructive" 
+      });
+    }
+  };
+
+  // 팀 추가 함수
+  const handleAddTeam = () => {
+    try {
+      DepartmentTeamManager.addTeam(addModalData.code, addModalData.name, addModalData.departmentCode);
+      const teamData = DepartmentTeamManager.getAllTeams();
+      setTeams(teamData);
+      setShowAddModal(false);
+      setAddModalData({ code: '', name: '', departmentCode: '' });
+      toast({ title: "팀이 추가되었습니다." });
+    } catch (error) {
+      toast({
+        title: "팀 추가 실패", 
+        description: error instanceof Error ? error.message : "알 수 없는 오류",
+        variant: "destructive" 
+      });
+    }
+  };
+
+  // 직원 추가 함수
+  const handleAddEmployee = async () => {
+    if (!addModalData.code || !addModalData.name) {
+      toast({
+        title: "입력 오류",
+        description: "사원번호와 직원명을 입력해주세요.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    try {
+      const response = await fetch('/api/employees', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          employeeNumber: addModalData.code,
+          name: addModalData.name,
+          position: '사원',
+          departmentCode: addModalData.departmentCode,
+          department: addModalData.department,
+          teamCode: addModalData.teamCode,
+          team: addModalData.team,
+          email: '',
+          phone: '',
+          isActive: true
+        })
+      });
+
+      if (response.ok) {
+      toast({
+          title: "직원 추가 완료",
+          description: "새 직원이 성공적으로 추가되었습니다.",
+        });
+        setShowAddModal(false);
+        setAddModalData({ code: '', name: '', departmentCode: '', department: '', teamCode: '', team: '', inheritFrom: '' });
+        // 페이지 새로고침으로 데이터 업데이트
+        window.location.reload();
+      } else {
+        throw new Error('직원 추가 실패');
+      }
+    } catch (error) {
+      console.error('직원 추가 실패:', error);
+      toast({
+        title: "직원 추가 실패",
+        description: "직원 추가 중 오류가 발생했습니다.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  // 신규 직원 추가 함수 (기존 직원의 부서/팀 상속)
+  const handleAddNewEmployee = async () => {
+    if (!addModalData.code || !addModalData.name) {
+      toast({
+        title: "입력 오류",
+        description: "사원번호와 직원명을 입력해주세요.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    try {
+      const response = await fetch('/api/employees', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          employeeNumber: addModalData.code,
+          name: addModalData.name,
+          position: '사원',
+          departmentCode: addModalData.departmentCode,
+          department: addModalData.department,
+          teamCode: addModalData.teamCode,
+          team: addModalData.team,
+          email: '',
+          phone: '',
+          isActive: true
+        })
+      });
+
+      if (response.ok) {
+      toast({
+          title: "신규 직원 추가 완료",
+          description: `${addModalData.department} ${addModalData.team}에 새 직원이 추가되었습니다.`,
+        });
+        setShowAddModal(false);
+        setAddModalData({ code: '', name: '', departmentCode: '', department: '', teamCode: '', team: '', inheritFrom: '' });
+        // 페이지 새로고침으로 데이터 업데이트
+        window.location.reload();
+      } else {
+        throw new Error('신규 직원 추가 실패');
+      }
+    } catch (error) {
+      console.error('신규 직원 추가 실패:', error);
+      toast({
+        title: "신규 직원 추가 실패",
+        description: "신규 직원 추가 중 오류가 발생했습니다.",
+        variant: "destructive"
+      });
+    }
+  };
 
   // 데이터 변환 (팀 기반 조직도 구조)
   const transformEmployeesData = useMemo(() => {
     if (!employees || employees.length === 0) return [];
     
-    console.log('🏢 조직도 데이터 변환 시작');
-    console.log('👥 전체 직원 수:', employees.length);
-    
-    // 직원 데이터를 문자열로 변환
+    // 직원 데이터를 문자열로 변환 (팀 정보 보존)
     const stringData = employees.map(emp => {
       const newEmp: any = {};
       for (const key in emp) {
         if (Object.prototype.hasOwnProperty.call(emp, key)) {
-          newEmp[key] = emp[key] === null || emp[key] === undefined ? "" : String(emp[key]);
+          // team 필드는 null이어도 빈 문자열로 변환하지 않음
+          if (key === 'team' && emp[key] === null) {
+            newEmp[key] = null;
+          } else {
+            newEmp[key] = emp[key] === null || emp[key] === undefined ? "" : String(emp[key]);
+          }
         }
       }
       return newEmp;
     });
+
+       // 조직 정리 모드에서 (+) 노드 추가
+       if (dragEnabled) {
+         // 부서 추가 노드 (최상위 레벨)
+         const addDepartmentNode = {
+           id: 'add-department',
+           name: '부서 추가',
+           position: '부서 추가',
+           department: '부서 추가',
+           team: '',
+           _isAddNode: true,
+           _addType: 'department',
+           parentId: ''
+         };
+         
+         // 팀 추가 노드 (각 부서 하위에)
+         const addTeamNodes = stringData
+           .filter(emp => !emp.team || emp.team === '') // 부서장들
+           .map(emp => ({
+             id: `add-team-${emp.id}`,
+             name: '팀 추가',
+             position: '팀 추가',
+      department: emp.department,
+             team: '',
+             _isAddNode: true,
+             _addType: 'team',
+             parentId: emp.id
+           }));
+         
+         // 직원 추가 노드 (각 팀 하위에)
+         const addEmployeeNodes = stringData
+           .filter(emp => emp.team && emp.team !== '') // 팀장들
+           .map(emp => ({
+             id: `add-employee-${emp.id}`,
+             name: '직원 추가',
+             position: '직원 추가',
+             department: emp.department,
+             team: emp.team,
+             _isAddNode: true,
+             _addType: 'employee',
+             parentId: emp.id
+           }));
+         
+         // 기존 직원 노드에 신규 직원 추가 노드 (같은 부서/팀)
+         const addNewEmployeeNodes = stringData
+           .filter(emp => emp.team && emp.team !== '') // 팀원들
+           .map(emp => ({
+             id: `add-new-employee-${emp.id}`,
+             name: '신규 직원 추가',
+             position: '신규 직원 추가',
+             department: emp.department,
+             team: emp.team,
+             _isAddNode: true,
+             _addType: 'new-employee',
+             parentId: emp.id,
+             _inheritFrom: emp.id // 부서/팀 정보를 상속받을 원본 직원 ID
+           }));
+         
+         stringData.push(addDepartmentNode, ...addTeamNodes, ...addEmployeeNodes, ...addNewEmployeeNodes);
+       }
 
     // 팀별로 그룹화
     const teamGroups = new Map<string, any[]>();
@@ -52,13 +425,10 @@ export default function D3OrgChart({ employees, searchTerm, zoomLevel, onEmploye
       teamGroups.get(teamKey)!.push(emp);
     });
 
-    console.log('📊 팀별 그룹:', Array.from(teamGroups.keys()));
-
     // 각 팀에서 계층 구조 설정
     const processedData: any[] = [];
     
     teamGroups.forEach((teamMembers, teamName) => {
-      console.log(`\n🏷️ ${teamName} 팀 처리 중 (${teamMembers.length}명)`);
       
       // 팀장 찾기 (managerId가 null이거나 다른 팀의 managerId를 가진 경우)
       const teamLeaders = teamMembers.filter(emp => {
@@ -69,9 +439,6 @@ export default function D3OrgChart({ employees, searchTerm, zoomLevel, onEmploye
       
       // 팀원들 (팀장이 아닌 경우)
       const teamMembers_only = teamMembers.filter(emp => !teamLeaders.includes(emp));
-      
-      console.log(`👑 ${teamName} 팀장:`, teamLeaders.map(l => l.name));
-      console.log(`👥 ${teamName} 팀원:`, teamMembers_only.map(m => m.name));
       
       // 팀장이 여러 명인 경우, 첫 번째를 메인 팀장으로 설정
       if (teamLeaders.length > 1) {
@@ -115,8 +482,6 @@ export default function D3OrgChart({ employees, searchTerm, zoomLevel, onEmploye
     );
     
     if (departmentHeads.length > 0) {
-      console.log('🏢 부서장들:', departmentHeads.map(d => d.name));
-      
       // 부서장들을 최상위로 설정
       departmentHeads.forEach(head => {
         head.parentId = "";
@@ -141,11 +506,8 @@ export default function D3OrgChart({ employees, searchTerm, zoomLevel, onEmploye
 
     // Multiple roots 문제 해결: 단일 루트 노드 보장
     const rootNodes = processedData.filter(emp => emp.parentId === "");
-    console.log('🌳 루트 노드들:', rootNodes.map(r => r.name));
     
     if (rootNodes.length > 1) {
-      console.log('⚠️ Multiple roots 감지, 단일 루트로 통합 중...');
-      
       // 첫 번째 노드를 메인 루트로 설정
       const mainRoot = rootNodes[0];
       mainRoot.parentId = "";
@@ -154,12 +516,9 @@ export default function D3OrgChart({ employees, searchTerm, zoomLevel, onEmploye
       const otherRoots = rootNodes.slice(1);
       otherRoots.forEach(emp => {
         emp.parentId = mainRoot.id;
-        console.log(`🔗 ${emp.name}을 ${mainRoot.name} 하위로 이동`);
       });
       
-      console.log('✅ Multiple roots 문제 해결 완료');
     } else if (rootNodes.length === 0) {
-      console.log('⚠️ 루트 노드가 없음, 첫 번째 노드를 루트로 설정');
       if (processedData.length > 0) {
         processedData[0].parentId = "";
       }
@@ -167,28 +526,65 @@ export default function D3OrgChart({ employees, searchTerm, zoomLevel, onEmploye
 
     // 최종 검증
     const finalRootNodes = processedData.filter(emp => emp.parentId === "");
-    console.log('✅ 최종 루트 노드 수:', finalRootNodes.length);
-    console.log('✅ 최종 루트 노드들:', finalRootNodes.map(r => r.name));
-
-    console.log('✅ 조직도 데이터 변환 완료');
-    console.log('📊 최종 데이터:', processedData.map(d => ({
-      name: d.name,
-      position: d.position,
-      team: d.team,
-      parentId: d.parentId
-    })));
 
     return processedData;
   }, [employees]);
 
   // 노드 콘텐츠 생성 (개선된 디자인)
   const generateNodeContent = (d: any) => {
+    // (+) 노드인 경우
+    if (d.data._isAddNode) {
+    return `
+        <div class="node-container" style="
+          width: 280px;
+          height: 140px;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        ">
+          <div class="content-container" style="
+            width: 260px;
+            height: 120px;
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(147, 197, 253, 0.1) 100%);
+            border-radius: 16px;
+            border: 2px dashed #3b82f6;
+            box-shadow: 0 8px 25px rgba(59, 130, 246, 0.2);
+        position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+          cursor: pointer;
+          display: flex;
+            flex-direction: column;
+          justify-content: center;
+          align-items: center;
+            color: #3b82f6;
+          ">
+            <div style="
+              font-size: 48px;
+              font-weight: bold;
+              margin-bottom: 8px;
+              opacity: 0.8;
+            ">+</div>
+            <div style="
+              font-size: 14px;
+              font-weight: 600;
+              text-align: center;
+              opacity: 0.9;
+            ">${d.data._addType === 'department' ? '부서 추가' : 
+               d.data._addType === 'team' ? '팀 추가' : 
+               d.data._addType === 'employee' ? '직원 추가' : '신규 직원 추가'}</div>
+          </div>
+        </div>
+      `;
+    }
+
     return `
       <div class="node-container" style="
         width: 280px;
         height: 140px;
         display: flex;
-        justify-content: center;
+          justify-content: center;
         align-items: center;
         font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
       ">
@@ -207,7 +603,8 @@ export default function D3OrgChart({ employees, searchTerm, zoomLevel, onEmploye
           overflow: hidden;
           transition: all 0.3s ease;
       ">
-          <!-- 상단 편집 버튼 -->
+          
+          <!-- 상단 직원 번호 -->
           <div style="
           position: absolute; 
             top: 8px;
@@ -216,18 +613,6 @@ export default function D3OrgChart({ employees, searchTerm, zoomLevel, onEmploye
           align-items: center;
             gap: 4px;
           ">
-            <div onclick="editNode('${d.data.id}')" style="
-          cursor: pointer;
-              padding: 4px 6px;
-              border-radius: 6px;
-              background-color: #f1f3f4;
-          font-size: 12px;
-              transition: all 0.2s ease;
-              border: 1px solid #e0e0e0;
-            " onmouseover="this.style.backgroundColor='#e8f0fe'; this.style.borderColor='#4285f4';" 
-               onmouseout="this.style.backgroundColor='#f1f3f4'; this.style.borderColor='#e0e0e0';">
-              ✏️
-            </div>
             <div style="
               font-size: 8px;
               color: #9aa0a6;
@@ -236,10 +621,45 @@ export default function D3OrgChart({ employees, searchTerm, zoomLevel, onEmploye
               border-radius: 4px;
               border: 1px solid #e0e0e0;
             ">
-              #${d.data.id}
+              #${d.data.employeeNumber || d.data.id}
             </div>
           </div>
-
+          
+          <!-- 편집 버튼 (우하단, 드래그 영역 밖, 조직 정리 모드에서만) -->
+          ${dragEnabled ? `
+            <div style="
+          position: absolute; 
+              bottom: 2px;
+              right: 4px;
+              z-index: 10;
+              pointer-events: auto;
+            ">
+              <button 
+                onclick="console.log('✏️ 편집 버튼 클릭:', '${d.data.id}'); if(window.editNode) { window.editNode('${d.data.id}'); } else { console.error('❌ editNode 함수가 없습니다!'); }"
+                style="
+                  width: 24px;
+                  height: 24px;
+          border-radius: 50%; 
+                  background: #4285f4;
+                  color: white;
+                  border: none;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 10px;
+                  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+                  transition: all 0.2s ease;
+                  pointer-events: auto;
+                "
+                onmouseover="this.style.background='#3367d6'; this.style.transform='scale(1.1)'"
+                onmouseout="this.style.background='#4285f4'; this.style.transform='scale(1)'"
+              >
+                📝
+              </button>
+            </div>
+        ` : ''}
+        
           <!-- 프로필 이미지 -->
           <div style="
           position: absolute; 
@@ -247,7 +667,7 @@ export default function D3OrgChart({ employees, searchTerm, zoomLevel, onEmploye
             left: 16px;
             width: 50px;
             height: 50px;
-          border-radius: 50%; 
+            border-radius: 50%; 
             overflow: hidden;
             border: 3px solid #ffffff;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
@@ -295,6 +715,7 @@ export default function D3OrgChart({ employees, searchTerm, zoomLevel, onEmploye
               ${d.data.department || '부서 정보 없음'}
         </div>
         
+        
             <!-- 팀 정보 (부서장이 아닌 경우만 표시) -->
             ${(() => {
               // 부모 노드의 팀 정보를 가져와서 표시
@@ -318,7 +739,21 @@ export default function D3OrgChart({ employees, searchTerm, zoomLevel, onEmploye
                 // 부모 노드의 팀 정보를 찾아서 표시
                 const chartData = chartInstance.current?.getChartState().data;
                 const parentNode = chartData?.find((n: any) => n.id === parentId);
-                const teamName = parentNode?.team || d.data.team || '팀 정보 없음';
+                
+                // 팀 정보 우선순위: 1) 부모 노드의 팀, 2) 현재 노드의 팀, 3) 기본값
+                let teamName = '팀 정보 없음';
+                if (parentNode?.team && parentNode.team !== '') {
+                  teamName = parentNode.team;
+                } else if (d.data.team && d.data.team !== '') {
+                  teamName = d.data.team;
+                }
+                
+                console.log(`🔍 팀 정보 표시:`, {
+                  직원: d.data.name,
+                  부모노드팀: parentNode?.team,
+                  현재노드팀: d.data.team,
+                  최종표시: teamName
+                });
                 
                 return `
                 <div style="
@@ -374,6 +809,24 @@ export default function D3OrgChart({ employees, searchTerm, zoomLevel, onEmploye
 
   // 드래그 앤 드롭 함수들 (index1.html과 동일)
   const onDragStart = (element: any, d: any, node: any) => {
+    // 체크박스나 편집 버튼 클릭 시 드래그 방지
+    const event = (window as any).d3?.event;
+    const target = event?.sourceEvent?.target;
+    console.log('🎯 드래그 시작 체크:', target?.tagName, target?.type, target?.onclick);
+    
+    if (target && (
+      target.type === 'checkbox' || 
+      target.closest('label') || 
+      target.closest('button') ||
+      target.closest('[onclick*="editNode"]') ||
+      target.closest('[onclick*="toggleDepartmentHead"]') ||
+      target.onclick?.toString().includes('editNode') ||
+      target.onclick?.toString().includes('toggleDepartmentHead')
+    )) {
+      console.log('🚫 드래그 방지됨');
+      return;
+    }
+    
     setDragNode(node);
     setDropNode(null);
     setIsDragStarting(true);
@@ -383,23 +836,25 @@ export default function D3OrgChart({ employees, searchTerm, zoomLevel, onEmploye
     g.style('opacity', '0.7');
     g.style('cursor', 'grabbing');
     
-    // 초기 위치 설정
+    // 초기 위치 설정 (더 정확한 방식)
     const transform = g.attr('transform');
+    let startX = 0, startY = 0;
+    
     if (transform && transform !== 'translate(0,0)') {
       const translate = transform.match(/translate\(([^,]+),([^)]+)\)/);
       if (translate) {
-        const startX = parseFloat(translate[1]);
-        const startY = parseFloat(translate[2]);
-        setDragStartX(startX);
-        setDragStartY(startY);
-      } else {
-        setDragStartX(0);
-        setDragStartY(0);
+        startX = parseFloat(translate[1]);
+        startY = parseFloat(translate[2]);
       }
     } else {
-      setDragStartX(node.x || 0);
-      setDragStartY(node.y || 0);
+      startX = node.x || 0;
+      startY = node.y || 0;
     }
+    
+    setDragStartX(startX);
+    setDragStartY(startY);
+    
+    console.log('🎯 드래그 시작 위치:', { startX, startY, nodeId: node.id });
     
     // 차트 컨테이너에 dragging-active 클래스 추가
     const chartContainer = document.querySelector('.chart-container');
@@ -410,7 +865,12 @@ export default function D3OrgChart({ employees, searchTerm, zoomLevel, onEmploye
 
   const onDrag = (element: any, dragEvent: any) => {
     const currentDragNode = dragEvent.subject;
-    if (!currentDragNode) return;
+    if (!currentDragNode) {
+      console.log('❌ 드래그 중인 노드가 없음');
+      return;
+    }
+    
+    console.log('🔄 드래그 중 - 노드 확인:', currentDragNode?.data?.id);
     
     const g = d3.select(element);
     let currentDropNode = null;
@@ -427,29 +887,13 @@ export default function D3OrgChart({ employees, searchTerm, zoomLevel, onEmploye
       // 드래그 중인 노드를 최상위로 이동
       g.raise();
       
-      // 하위 노드들과 링크 제거
-      const state = chartInstance.current?.getChartState();
-      const descendants = dragEvent.subject.descendants();
-      const linksToRemove = [...(descendants || []), dragEvent.subject];
-      const nodesToRemove = descendants?.filter(
-        (x: any) => x.data.id !== dragEvent.subject.id
-      );
-
-      // 관련 링크 제거
-      if (state?.['linksWrapper']) {
-        state['linksWrapper']
-          .selectAll('path.link')
-          .data(linksToRemove, (d: any) => state.nodeId(d))
-          .remove();
-      }
-
-      // 하위 노드들 제거
-      if (nodesToRemove && state?.['nodesWrapper']) {
-        state['nodesWrapper']
-          .selectAll('g.node')
-          .data(nodesToRemove, (d: any) => state.nodeId(d))
-          .remove();
-      }
+      // 드래그 중인 노드의 시각적 피드백 설정
+      g.style('opacity', '0.8');
+      g.style('z-index', '1000');
+      g.classed('dragging', true);
+      
+      // 드래그 중인 노드가 제거되지 않도록 보호
+      console.log('🔒 드래그 시작 - 노드 보호:', currentDragNode?.data?.id);
     }
     
     // 드롭 대상 검색을 위한 좌표 계산
@@ -499,7 +943,12 @@ export default function D3OrgChart({ employees, searchTerm, zoomLevel, onEmploye
 
     setDropNode(currentDropNode);
     
-    // 노드의 현재 transform에서 직접 위치 가져오기
+    // 드래그 중인 노드의 시각적 피드백 설정
+    g.style('opacity', '0.8');
+    g.style('z-index', '1000');
+    g.classed('dragging', true);
+    
+    // 안정적인 위치 계산 방식
     const currentTransform = g.attr('transform');
     let currentX = 0, currentY = 0;
     
@@ -511,9 +960,17 @@ export default function D3OrgChart({ employees, searchTerm, zoomLevel, onEmploye
       }
     }
     
-    // D3의 dx, dy는 누적값이므로 현재 위치에서 직접 더하면 됨
+    // 현재 위치에서 상대적 이동량만 더하기
     const newX = currentX + parseFloat(dragEvent.dx);
     const newY = currentY + parseFloat(dragEvent.dy);
+    
+    console.log('🔄 드래그 위치 업데이트:', {
+      nodeId: currentDragNode?.data?.id,
+      currentX, currentY,
+      dx: parseFloat(dragEvent.dx),
+      dy: parseFloat(dragEvent.dy),
+      newX, newY
+    });
     
     // 노드의 transform 속성 업데이트
     g.attr('transform', `translate(${newX}, ${newY})`);
@@ -536,6 +993,7 @@ export default function D3OrgChart({ employees, searchTerm, zoomLevel, onEmploye
     g.classed('dragging', false);
     g.style('opacity', '1');
     g.style('cursor', 'grab');
+    g.style('z-index', 'auto');
 
     const currentDragNode = dragEvent.subject;
     if (!currentDragNode) {
@@ -652,7 +1110,6 @@ export default function D3OrgChart({ employees, searchTerm, zoomLevel, onEmploye
   };
 
   const enableDrag = () => {
-    console.log('🎯 드래그 모드 활성화');
     setDragEnabled(true);
     const chartContainer = document.querySelector('.chart-container');
     if (chartContainer) {
@@ -660,8 +1117,10 @@ export default function D3OrgChart({ employees, searchTerm, zoomLevel, onEmploye
     }
   };
 
-  const disableDrag = () => {
-    console.log('🎯 드래그 모드 비활성화');
+  const disableDrag = async () => {
+    // 완료 버튼 클릭 시 저장 실행
+    await saveData();
+    
     setDragEnabled(false);
     const chartContainer = document.querySelector('.chart-container');
     if (chartContainer) {
@@ -695,7 +1154,6 @@ export default function D3OrgChart({ employees, searchTerm, zoomLevel, onEmploye
       setUndoActions(prev => prev.slice(0, -1));
       
       chartInstance.current?.render();
-      console.log('🔄 Undo 실행:', action);
     }
   };
 
@@ -723,19 +1181,25 @@ export default function D3OrgChart({ employees, searchTerm, zoomLevel, onEmploye
       setRedoActions(prev => prev.slice(0, -1));
       
       chartInstance.current?.render();
-      console.log('🔄 Redo 실행:', action);
     }
   };
 
   const cancelDrag = () => {
     if (undoActions.length === 0) {
-      disableDrag();
+      // 변경사항이 없으면 저장하지 않고 모드만 종료
+      setDragEnabled(false);
+      const chartContainer = document.querySelector('.chart-container');
+      if (chartContainer) {
+        chartContainer.classList.remove('drag-enabled');
+      }
+    setUndoActions([]);
+    setRedoActions([]);
       return;
     }
 
     const data = chartInstance.current?.getChartState().data;
     
-    // 모든 undo 액션을 역순으로 실행
+    // 모든 undo 액션을 역순으로 실행하여 원래 상태로 복원
     [...undoActions].reverse().forEach((action) => {
       const node = data?.find((x: any) => x.id === action.id);
       if (node) {
@@ -743,27 +1207,393 @@ export default function D3OrgChart({ employees, searchTerm, zoomLevel, onEmploye
       }
     });
 
-    disableDrag();
-    chartInstance.current?.render();
-    console.log('🔄 드래그 취소 - 모든 변경사항 되돌림');
+    // 취소 시에는 저장하지 않고 모드만 종료
+    setDragEnabled(false);
+    const chartContainer = document.querySelector('.chart-container');
+    if (chartContainer) {
+      chartContainer.classList.remove('drag-enabled');
+    }
+    setUndoActions([]);
+    setRedoActions([]);
+    
+    // 차트 다시 렌더링
+    if (chartInstance.current) {
+      chartInstance.current.render();
+    }
   };
 
 
 
-  const saveData = () => {
-    const data = chartInstance.current?.getChartState().data;
+  const saveData = async () => {
+    console.log('🔄 saveData 함수 시작');
     
-    const cleanData = data?.map((d: any) => ({
-      id: d.id,
-      parentId: d.parentId,
-      name: d.name,
-      position: d.position,
-      image: d.image
-    }));
+    // 방법 1: 차트 데이터에서 가져오기
+    const data = chartInstance.current?.getChartState().data;
+    console.log('📊 차트 데이터:', data);
+    
+    // 방법 2: undoActions에서 변경사항 추출
+    console.log('📝 undoActions:', undoActions);
+    
+    if (undoActions.length === 0) {
+      console.log('❌ 변경사항이 없음');
+      toast({
+        title: "저장 완료",
+        description: "변경사항이 없어 저장할 필요가 없습니다.",
+      });
+      return;
+    }
+    
+    // undoActions를 사용한 저장 방법
+    try {
+      console.log('🔄 undoActions를 사용한 저장 시작');
+      console.log('📝 undoActions 상세:', undoActions);
+      
+      if (undoActions.length === 0) {
+        console.log('❌ undoActions가 비어있음');
+      toast({
+          title: "저장 실패",
+          description: "변경사항이 없습니다.",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      const updatePromises = undoActions.map(async (action, index) => {
+        const employeeId = action.id;
+        const newManagerId = action.parentId;
+        
+        console.log(`🔄 [${index + 1}/${undoActions.length}] 직원 ${employeeId} 업데이트 시작`);
+        console.log(`📝 요청 데이터: { managerId: "${newManagerId}" }`);
+        
+        // 현재 직원 정보 확인
+        const currentEmployee = employees.find(emp => emp.id === employeeId);
+        console.log(`👤 현재 직원 정보:`, {
+          id: currentEmployee?.id,
+          name: currentEmployee?.name,
+          position: currentEmployee?.position,
+          department: currentEmployee?.department,
+          departmentCode: currentEmployee?.departmentCode,
+          team: currentEmployee?.team,
+          teamCode: currentEmployee?.teamCode,
+          managerId: currentEmployee?.managerId
+        });
+        
+        // 새로운 매니저의 팀 정보 가져오기
+        const newManager = employees.find(emp => emp.id === newManagerId);
+        console.log(`👤 새로운 매니저 정보:`, {
+          id: newManager?.id,
+          name: newManager?.name,
+          position: newManager?.position,
+          department: newManager?.department,
+          departmentCode: newManager?.departmentCode,
+          team: newManager?.team,
+          teamCode: newManager?.teamCode,
+          managerId: newManager?.managerId
+        });
+        
+        const updateData: any = { managerId: newManagerId };
+        
+        if (newManager) {
+          console.log(`🔍 매니저 정보 분석 시작...`);
+          
+          // 새로운 매니저의 부서 정보로 업데이트 (항상)
+          updateData.departmentCode = newManager.departmentCode;
+          updateData.department = newManager.department;
+          console.log(`📋 부서 정보 설정: ${newManager.department} (${newManager.departmentCode})`);
+          
+          // 역할 기반 이동 로직 (명확한 구별)
+          const currentRole = getEmployeeRole(currentEmployee);
+          const targetRole = getEmployeeRole(newManager);
+          
+          console.log(`🏷️ 역할 분석:`, {
+            이동직원: { 
+              name: currentEmployee?.name, 
+              role: currentRole,
+              teamCode: currentEmployee?.teamCode,
+              team: currentEmployee?.team
+            },
+            대상직원: { 
+              name: newManager.name, 
+              role: targetRole,
+              teamCode: newManager.teamCode,
+              team: newManager.team
+            }
+          });
+          
+          // 대상이 팀장인 경우: 팀 정보를 대상 팀으로 변경
+          if (targetRole === 'TEAM_LEADER') {
+            updateData.teamCode = newManager.teamCode;
+            updateData.team = newManager.team;
+            console.log(`✅ 팀장으로 이동: 팀 정보 변경`, {
+              기존팀: currentEmployee?.team,
+              새팀: newManager.team
+            });
+          } 
+          // 대상이 부문장인 경우: 이동하는 직원의 역할에 따라 처리
+          else if (targetRole === 'DEPARTMENT_HEAD') {
+            if (currentRole === 'TEAM_LEADER') {
+              // 팀장 → 부문장: 기존 팀 정보 유지 (핵심!)
+              updateData.teamCode = currentEmployee?.teamCode;
+              updateData.team = currentEmployee?.team;
+              console.log(`🎯 팀장 → 부문장: 기존 팀 정보 유지`, {
+                유지팀코드: currentEmployee?.teamCode,
+                유지팀명: currentEmployee?.team,
+                부서변경: newManager.department
+              });
+            } else if (currentRole === 'TEAM_MEMBER') {
+              // 팀원 → 부문장: 팀 정보 제거
+              updateData.teamCode = null;
+              updateData.team = null;
+              console.log(`✅ 팀원 → 부문장: 팀 정보 제거`);
+            } else {
+              // 부문장 → 부문장: 팀 정보 없음
+              updateData.teamCode = null;
+              updateData.team = null;
+              console.log(`✅ 부문장 → 부문장: 팀 정보 없음`);
+            }
+          }
+        } else {
+          console.log(`❌ 새로운 매니저를 찾을 수 없음: ${newManagerId}`);
+        }
+        
+        console.log(`📝 최종 요청 데이터:`, updateData);
+        console.log(`🔍 변경사항 비교:`, {
+          managerId: { 기존: currentEmployee?.managerId, 신규: newManagerId },
+          departmentCode: { 기존: currentEmployee?.departmentCode, 신규: updateData.departmentCode },
+          department: { 기존: currentEmployee?.department, 신규: updateData.department },
+          teamCode: { 기존: currentEmployee?.teamCode, 신규: updateData.teamCode },
+          team: { 기존: currentEmployee?.team, 신규: updateData.team }
+        });
+        
+        // 변경사항이 있는지 확인
+        const hasChanges = 
+          currentEmployee?.managerId !== newManagerId ||
+          currentEmployee?.departmentCode !== updateData.departmentCode ||
+          currentEmployee?.department !== updateData.department ||
+          currentEmployee?.teamCode !== updateData.teamCode ||
+          currentEmployee?.team !== updateData.team;
+        
+        console.log(`🔍 변경사항 존재 여부:`, hasChanges);
+        console.log(`🔍 상세 변경사항:`, {
+          managerId: { 기존: currentEmployee?.managerId, 신규: newManagerId, 변경: currentEmployee?.managerId !== newManagerId },
+          departmentCode: { 기존: currentEmployee?.departmentCode, 신규: updateData.departmentCode, 변경: currentEmployee?.departmentCode !== updateData.departmentCode },
+          department: { 기존: currentEmployee?.department, 신규: updateData.department, 변경: currentEmployee?.department !== updateData.department },
+          teamCode: { 기존: currentEmployee?.teamCode, 신규: updateData.teamCode, 변경: currentEmployee?.teamCode !== updateData.teamCode },
+          team: { 기존: currentEmployee?.team, 신규: updateData.team, 변경: currentEmployee?.team !== updateData.team }
+        });
+        
+        if (!hasChanges) {
+          console.log(`⚠️ 변경사항이 없어 API 호출을 건너뜀`);
+          console.log(`⚠️ 현재 직원이 이미 해당 매니저 밑에 있습니다.`);
+          return { id: employeeId, message: '변경사항 없음 - 이미 해당 위치에 있음' };
+        }
+        
+        try {
+          const response = await fetch(`/api/employees/${employeeId}`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(updateData)
+          });
 
-    console.log('💾 데이터 저장:', cleanData);
-    // TODO: 실제 저장 로직 구현
-    alert('데이터가 저장되었습니다!');
+          console.log(`📡 [${index + 1}] 응답 상태:`, response.status, response.statusText);
+          
+          if (!response.ok) {
+            const errorText = await response.text();
+            console.error(`❌ [${index + 1}] API 호출 실패:`, errorText);
+            throw new Error(`직원 ${employeeId} 업데이트 실패: ${response.status} - ${errorText}`);
+          }
+          
+          const result = await response.json();
+          console.log(`✅ [${index + 1}] 직원 ${employeeId} 업데이트 성공:`, result);
+          
+          // 실제 저장된 데이터 확인
+          console.log(`🔍 [${index + 1}] 저장된 managerId:`, result.managerId);
+          console.log(`🔍 [${index + 1}] 요청한 managerId:`, newManagerId);
+          console.log(`🔍 [${index + 1}] 저장 성공 여부:`, result.managerId === newManagerId);
+          
+          return result;
+        } catch (error) {
+          console.error(`❌ [${index + 1}] 직원 ${employeeId} 저장 중 오류:`, error);
+          throw error;
+        }
+      });
+
+      console.log('⏳ 모든 업데이트 요청 시작...');
+      const results = await Promise.all(updatePromises);
+      console.log('✅ 모든 업데이트 완료');
+      console.log('📊 저장 결과 요약:', results);
+      
+      // 저장 결과 검증
+      const successCount = results.filter(r => r).length;
+      console.log(`📈 성공한 업데이트: ${successCount}/${undoActions.length}`);
+      
+      if (successCount === undoActions.length) {
+        toast({
+          title: "저장 완료",
+          description: `${successCount}명의 직원 정보가 성공적으로 저장되었습니다.`,
+        });
+        
+        // 저장 완료 후 페이지 새로고침으로 데이터 동기화 (선택적)
+        console.log('🔄 저장 완료 - 페이지 새로고침으로 데이터 동기화');
+        
+        // 자동 새로고침을 원하지 않는 경우 아래 주석 처리
+        // setTimeout(() => {
+        //   window.location.reload();
+        // }, 3000);
+        
+        // 대신 수동으로 새로고침하거나 조직도만 다시 렌더링
+        console.log('✅ 저장 완료! 페이지를 수동으로 새로고침하거나 조직도를 다시 확인해주세요.');
+      } else {
+        toast({
+          title: "부분 저장 완료",
+          description: `${successCount}/${undoActions.length}명의 직원 정보가 저장되었습니다.`,
+          variant: "destructive"
+        });
+      }
+      
+      return; // 성공적으로 저장되었으므로 함수 종료
+      
+    } catch (error) {
+      console.error('❌ undoActions 저장 중 오류 발생:', error);
+      toast({
+        title: "저장 실패",
+        description: `저장 중 오류가 발생했습니다: ${error.message}`,
+        variant: "destructive"
+      });
+      return; // 오류 발생 시 함수 종료
+    }
+    
+    if (!data || data.length === 0) {
+      console.log('❌ 저장할 데이터가 없음');
+      toast({
+        title: "저장 실패",
+        description: "저장할 데이터가 없습니다.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      // 차트 데이터 구조 상세 분석
+      console.log('📊 전체 차트 데이터:', data);
+      console.log('📊 데이터 길이:', data?.length);
+      
+      // 각 데이터 항목의 구조 확인
+      data?.forEach((item: any, index: number) => {
+        console.log(`📋 데이터 ${index}:`, {
+          hasData: !!item.data,
+          id: item.data?.id,
+          isAddNode: item.data?._isAddNode,
+          parentId: item.data?.parentId,
+          name: item.data?.name
+        });
+      });
+      
+      // 실제 직원만 필터링 (더 관대한 조건)
+      const employeesToUpdate = data.filter((d: any) => {
+        const hasValidId = d.data?.id && typeof d.data.id === 'string' && d.data.id.startsWith('emp');
+        const isNotAddNode = !d.data?._isAddNode;
+        const isValidEmployee = hasValidId && isNotAddNode;
+        
+        console.log(`🔍 직원 ${d.data?.id} 검사:`, {
+          hasValidId,
+          isNotAddNode,
+          isValidEmployee
+        });
+        
+        return isValidEmployee;
+      });
+      
+      console.log('👥 업데이트할 직원들:', employeesToUpdate);
+      console.log('👥 업데이트할 직원 수:', employeesToUpdate.length);
+      
+      if (employeesToUpdate.length === 0) {
+        console.log('❌ 차트 데이터에서 직원을 찾지 못함');
+        console.log('🔄 원본 employees 데이터로 대체 시도...');
+        
+        // 차트 데이터에서 직원을 찾지 못한 경우, 원본 employees 데이터 사용
+        const fallbackEmployees = employees.filter(emp => emp.id && emp.id.startsWith('emp'));
+        console.log('👥 원본 직원 데이터:', fallbackEmployees);
+        
+        if (fallbackEmployees.length === 0) {
+          console.log('❌ 원본 직원 데이터도 없음');
+          toast({
+            title: "저장 실패",
+            description: "저장할 직원 데이터가 없습니다.",
+            variant: "destructive"
+          });
+          return;
+        }
+        
+        // 원본 데이터로 저장 시도 (변경사항이 없을 수 있음)
+        console.log('⚠️ 원본 데이터로 저장하지만 변경사항이 반영되지 않을 수 있습니다.');
+        toast({
+          title: "저장 경고",
+          description: "차트 데이터를 찾을 수 없어 원본 데이터로 저장합니다.",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // 각 직원의 managerId 업데이트
+      const updatePromises = employeesToUpdate.map(async (d: any) => {
+        const employeeId = d.data.id;
+        const newManagerId = d.data.parentId || null;
+        
+        console.log(`🔄 직원 ${employeeId} 업데이트: managerId ${d.data.parentId} -> ${newManagerId}`);
+        
+        // 현재 직원의 managerId와 다를 때만 업데이트
+        const currentEmployee = employees.find(emp => emp.id === employeeId);
+        console.log(`👤 현재 직원 정보:`, currentEmployee);
+        
+        if (currentEmployee && currentEmployee.managerId !== newManagerId) {
+          console.log(`📤 API 호출: PUT /api/employees/${employeeId}`);
+          console.log(`📝 요청 데이터:`, { managerId: newManagerId });
+          
+          const response = await fetch(`/api/employees/${employeeId}`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              managerId: newManagerId
+            })
+          });
+
+          console.log(`📡 응답 상태:`, response.status, response.statusText);
+          
+          if (!response.ok) {
+            const errorText = await response.text();
+            console.error(`❌ API 호출 실패:`, errorText);
+            throw new Error(`직원 ${employeeId} 업데이트 실패: ${response.status}`);
+          }
+          
+          const result = await response.json();
+          console.log(`✅ 직원 ${employeeId} 업데이트 성공:`, result);
+        } else {
+          console.log(`⏭️ 직원 ${employeeId}는 변경사항이 없어 건너뜀`);
+        }
+      });
+
+      console.log('⏳ 모든 업데이트 요청 시작...');
+      await Promise.all(updatePromises);
+      console.log('✅ 모든 업데이트 완료');
+      
+      toast({
+        title: "저장 완료",
+        description: "조직 구조가 성공적으로 저장되었습니다.",
+      });
+      
+    } catch (error) {
+      console.error('❌ 저장 중 오류 발생:', error);
+      toast({
+        title: "저장 실패",
+        description: `조직 구조 저장 중 오류가 발생했습니다: ${error.message}`,
+        variant: "destructive"
+      });
+    }
   };
 
   // 차트 렌더링
@@ -807,26 +1637,21 @@ export default function D3OrgChart({ employees, searchTerm, zoomLevel, onEmploye
           nodeElement.on('.drag', null);
           
           if (dragEnabled) {
-            console.log('🎯 노드에 드래그 이벤트 연결:', d.data?.name, 'draggable:', nodeElement.classed('draggable'), 'isRoot:', isRoot);
-            
+            // 전체 노드에 드래그 이벤트 연결 (드래그 영역 제한 제거)
             nodeElement.call(
               d3.drag<any, any>()
                 .filter(function (x: any, node: any) {
-                  const isDraggable = this.classList.contains('draggable');
-                  console.log('🎯 드래그 필터:', d.data?.name, 'draggable:', isDraggable, 'this:', this);
+                  const isDraggable = this.closest('.node').classList.contains('draggable');
                   return isDraggable;
                 })
                 .on('start', function (d: any, node: any) {
-                  console.log('🎯 드래그 이벤트 start 호출:', d, node);
-                  onDragStart(this, d, node);
+                  onDragStart(this.closest('.node'), d, node);
                 })
                 .on('drag', function (dragEvent: any, node: any) {
-                  console.log('🎯 드래그 이벤트 drag 호출:', dragEvent, node);
-                  onDrag(this, dragEvent);
+                  onDrag(this.closest('.node'), dragEvent);
                 })
                 .on('end', function (d: any) {
-                  console.log('🎯 드래그 이벤트 end 호출:', d);
-                  onDragEnd(this, d);
+                  onDragEnd(this.closest('.node'), d);
                 })
             );
           }
@@ -838,120 +1663,65 @@ export default function D3OrgChart({ employees, searchTerm, zoomLevel, onEmploye
     chartInstance.current = chart;
     
     // 차트 렌더링 후 편집 함수 등록
-    console.log('🔧 차트 렌더링 완료, editNode 함수 등록 중...');
+    console.log('✏️ editNode 함수 등록 중...');
     (window as any).editNode = async (nodeId: string) => {
-      console.log('✏️ 편집 버튼 클릭:', nodeId);
-      console.log('📊 차트 인스턴스:', chartInstance.current);
+      console.log('✏️ editNode 함수 호출:', nodeId);
+      // (+) 노드 클릭 처리
+      if (nodeId === 'add-department') {
+        setAddModalType('department');
+        setAddModalData({ code: '', name: '', departmentCode: '' });
+        setShowAddModal(true);
+        return;
+      }
       
+      if (nodeId.startsWith('add-team-')) {
+        setAddModalType('team');
+        setAddModalData({ code: '', name: '', departmentCode: '' });
+        setShowAddModal(true);
+        return;
+      }
+      
+      if (nodeId.startsWith('add-employee-')) {
+        // 직원 추가 모달 (새로운 모달 타입)
+        setAddModalType('employee');
+        setAddModalData({ code: '', name: '', departmentCode: '' });
+        setShowAddModal(true);
+        return;
+      }
+      
+      if (nodeId.startsWith('add-new-employee-')) {
+        // 신규 직원 추가 모달 (기존 직원의 부서/팀 상속)
+        const inheritFromId = nodeId.replace('add-new-employee-', '');
+        const inheritFromEmployee = employees.find(emp => emp.id === inheritFromId);
+        
+        if (inheritFromEmployee) {
+          setAddModalType('new-employee');
+          setAddModalData({ 
+            code: '', 
+            name: '', 
+            departmentCode: inheritFromEmployee.departmentCode || '',
+            department: inheritFromEmployee.department || '',
+            teamCode: inheritFromEmployee.teamCode || '',
+            team: inheritFromEmployee.team || '',
+            inheritFrom: inheritFromId
+          });
+          setShowAddModal(true);
+        }
+        return;
+      }
+
       const data = chartInstance.current?.getChartState().data;
-      console.log('📊 차트 데이터:', data);
-      
       const node = data?.find((d: any) => d.id === nodeId);
-      console.log('👤 찾은 노드:', node);
 
       if (!node) {
         alert('노드를 찾을 수 없습니다.');
         return;
       }
 
-      // 이름 편집
-      const newName = prompt('새로운 이름을 입력하세요:', node.name);
-      if (newName === null) return; // 사용자가 취소한 경우
+      // 간단한 편집 모달 열기
+      setEditingEmployee(node);
+      setIsEditModalOpen(true);
 
-      // 직책 편집
-      const newPosition = prompt('새로운 직책을 입력하세요:', node.position);
-      if (newPosition === null) return; // 사용자가 취소한 경우
-
-      // 부서명 편집
-      const newDepartment = prompt('새로운 부서명을 입력하세요:', node.department || '');
-      if (newDepartment === null) return; // 사용자가 취소한 경우
-
-      // 팀명 편집 (부서장은 팀이 없을 수 있음)
-      const newTeam = prompt('새로운 팀명을 입력하세요 (부서장인 경우 빈칸으로 두세요):', node.team || '');
-      if (newTeam === null) return; // 사용자가 취소한 경우
-
-      // 부서코드 편집
-      const newDepartmentCode = prompt('새로운 부서코드를 입력하세요:', node.departmentCode || '');
-      if (newDepartmentCode === null) return; // 사용자가 취소한 경우
-
-      // 팀코드 편집 (부서장은 팀코드가 없을 수 있음)
-      const newTeamCode = prompt('새로운 팀코드를 입력하세요 (부서장인 경우 빈칸으로 두세요):', node.teamCode || '');
-      if (newTeamCode === null) return; // 사용자가 취소한 경우
-
-      // 노드 데이터 업데이트
-      node.name = newName;
-      node.position = newPosition;
-      node.department = newDepartment;
-      node.team = newTeam;
-      node.departmentCode = newDepartmentCode;
-      node.teamCode = newTeamCode;
-
-      // 디버깅: 변경된 데이터 로그
-      console.log('🔄 변경된 노드 데이터:', {
-        id: node.id,
-        name: node.name,
-        position: node.position,
-        department: node.department,
-        team: node.team,
-        departmentCode: node.departmentCode,
-        teamCode: node.teamCode
-      });
-
-      // 서버에 데이터 저장 시도
-      try {
-        console.log('💾 서버에 데이터 저장 시도 중...');
-        console.log('📤 전송할 데이터:', {
-          id: node.id,
-          name: node.name,
-          position: node.position,
-          department: node.department,
-          team: node.team,
-          departmentCode: node.departmentCode,
-          teamCode: node.teamCode
-        });
-        
-        const response = await fetch(`/api/employees/${node.id}`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            name: node.name,
-            position: node.position,
-            department: node.department,
-            team: node.team,
-            departmentCode: node.departmentCode,
-            teamCode: node.teamCode
-          })
-        });
-
-        if (response.ok) {
-          const result = await response.json();
-          console.log('✅ 서버 저장 성공:', result);
-          alert('데이터가 성공적으로 저장되었습니다!');
-        } else {
-          console.error('❌ 서버 저장 실패:', response.status, response.statusText);
-          alert('데이터 저장에 실패했습니다. 다시 시도해주세요.');
-        }
-      } catch (error) {
-        console.error('❌ 서버 저장 중 오류 발생:', error);
-        alert('데이터 저장 중 오류가 발생했습니다: ' + error.message);
-      }
-
-      // 차트를 다시 그려서 변경사항을 반영합니다.
-      console.log('🔄 조직도 재구성 중...');
-      
-      // 조직도 데이터를 다시 변환하여 새로운 구조 반영
-      const updatedData = transformEmployeesData;
-      console.log('📊 업데이트된 조직도 데이터:', updatedData);
-      
-      // 차트에 새로운 데이터 적용
-      if (chartInstance.current) {
-        chartInstance.current.data(updatedData).render();
-        console.log('✅ 조직도 재구성 완료');
-      }
-      
-      console.log('✏️ 노드 편집 완료:', node);
     };
     console.log('✅ editNode 함수 등록 완료');
 
@@ -970,12 +1740,8 @@ export default function D3OrgChart({ employees, searchTerm, zoomLevel, onEmploye
   // 팀 변경 시 조직도 자동 업데이트
   useEffect(() => {
     if (chartInstance.current && transformEmployeesData.length > 0) {
-      console.log('🔄 팀 변경 감지 - 조직도 자동 업데이트');
-      console.log('📊 새로운 조직도 데이터:', transformEmployeesData);
-      
       // 차트 데이터 업데이트
       chartInstance.current.data(transformEmployeesData).render();
-      console.log('✅ 조직도 자동 업데이트 완료');
     }
   }, [transformEmployeesData]);
 
@@ -1000,13 +1766,15 @@ export default function D3OrgChart({ employees, searchTerm, zoomLevel, onEmploye
         .node.dragging {
           stroke-dasharray: 0 !important;
           stroke-width: 0 !important;
-          opacity: 0.7 !important;
+          opacity: 0.8 !important;
           cursor: grabbing !important;
           z-index: 1000 !important;
         }
         .node.dragging .content-container {
           background-color: #ffffff;
-          box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+          box-shadow: 0 8px 16px rgba(0,0,0,0.3);
+          transform: scale(1.05);
+          transition: all 0.2s ease;
         }
         .node.draggable:hover {
           cursor: grab;
@@ -1066,6 +1834,30 @@ export default function D3OrgChart({ employees, searchTerm, zoomLevel, onEmploye
                   다시하기
                 </button>
               </div>
+              <div className="flex gap-2">
+                <button 
+                  onClick={() => {
+                    setAddModalType('department');
+                    setAddModalData({ code: '', name: '', departmentCode: '' });
+                    setShowAddModal(true);
+                  }}
+                  className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 flex items-center gap-2"
+                >
+                  <Plus className="w-4 h-4" />
+                  부서 추가
+                </button>
+                <button 
+                  onClick={() => {
+                    setAddModalType('team');
+                    setAddModalData({ code: '', name: '', departmentCode: '' });
+                    setShowAddModal(true);
+                  }}
+                  className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 flex items-center gap-2"
+                >
+                  <Plus className="w-4 h-4" />
+                  팀 추가
+                </button>
+              </div>
           </div>
         )}
         </div>
@@ -1080,6 +1872,107 @@ export default function D3OrgChart({ employees, searchTerm, zoomLevel, onEmploye
           width: '100%',
           position: 'relative'
         }}
+      />
+
+      {/* 부서/팀 추가 모달 */}
+      <Dialog open={showAddModal} onOpenChange={setShowAddModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {addModalType === 'department' ? '새 부서 추가' : 
+               addModalType === 'team' ? '새 팀 추가' : 
+               addModalType === 'employee' ? '새 직원 추가' : '신규 직원 추가'}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="code">
+                {addModalType === 'department' ? '부서코드' : 
+                 addModalType === 'team' ? '팀코드' : 
+                 addModalType === 'employee' ? '사원번호' : '사원번호'}
+              </Label>
+                <Input
+                id="code"
+                value={addModalData.code}
+                onChange={(e) => setAddModalData(prev => ({ ...prev, code: e.target.value }))}
+                placeholder={addModalType === 'department' ? '예: RND' : 
+                           addModalType === 'team' ? '예: RND01' : 
+                           addModalType === 'employee' ? '예: 009' : '예: 013'}
+                />
+              </div>
+            <div>
+              <Label htmlFor="name">
+                {addModalType === 'department' ? '부서명' : 
+                 addModalType === 'team' ? '팀명' : 
+                 addModalType === 'employee' ? '직원명' : '직원명'}
+              </Label>
+                <Input
+                id="name"
+                value={addModalData.name}
+                onChange={(e) => setAddModalData(prev => ({ ...prev, name: e.target.value }))}
+                placeholder={addModalType === 'department' ? '예: 기술연구소' : 
+                           addModalType === 'team' ? '예: 연구개발팀' : 
+                           addModalType === 'employee' ? '예: 홍길동' : '예: 김신규'}
+                />
+              </div>
+            {addModalType === 'team' && (
+              <div>
+                <Label htmlFor="departmentCode">소속 부서</Label>
+                <Select 
+                  value={addModalData.departmentCode} 
+                  onValueChange={(value) => setAddModalData(prev => ({ ...prev, departmentCode: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="부서 선택" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {departments.map(dept => (
+                      <SelectItem key={dept.code} value={dept.code}>
+                        {dept.name} ({dept.code})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+            
+            {addModalType === 'new-employee' && (
+              <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                <h4 className="font-semibold text-blue-800 mb-2">상속받을 부서/팀 정보</h4>
+                <div className="space-y-2 text-sm">
+                  <div><span className="font-medium">부서:</span> {addModalData.department} ({addModalData.departmentCode})</div>
+                  <div><span className="font-medium">팀:</span> {addModalData.team} ({addModalData.teamCode})</div>
+              </div>
+                <p className="text-xs text-blue-600 mt-2">
+                  * 신규 직원은 위 부서/팀에 자동으로 배정됩니다.
+                </p>
+            </div>
+          )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowAddModal(false)}>
+              취소
+            </Button>
+            <Button 
+              onClick={addModalType === 'department' ? handleAddDepartment : 
+                      addModalType === 'team' ? handleAddTeam : 
+                      addModalType === 'employee' ? handleAddEmployee : handleAddNewEmployee}
+              disabled={!addModalData.code || !addModalData.name || (addModalType === 'team' && !addModalData.departmentCode)}
+            >
+              {addModalType === 'department' ? '부서 추가' : 
+               addModalType === 'team' ? '팀 추가' : 
+               addModalType === 'employee' ? '직원 추가' : '신규 직원 추가'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* 간단한 편집 모달 */}
+      <SimpleEditModal
+        isOpen={isEditModalOpen}
+        employee={editingEmployee}
+        onClose={() => setIsEditModalOpen(false)}
+        onSave={handleEditSave}
       />
     </div>
   );

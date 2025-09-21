@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { calculateSkillLevel } from "@/lib/skill-calculator";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import type { Employee } from "@shared/schema";
@@ -18,6 +17,37 @@ export default function OrgChartComponent({
   zoomLevel, 
   onEmployeeSelect 
 }: OrgChartProps) {
+  
+  // 직원 역할 판별 함수 (명확한 구별)
+  const getEmployeeRole = (employee: Employee): 'CEO' | 'DEPARTMENT_HEAD' | 'TEAM_LEADER' | 'TEAM_MEMBER' => {
+    // 1. 지사장: managerId가 null
+    if (!employee.managerId) return 'CEO';
+    
+    // 2. 부문장: teamCode가 null이거나 빈 문자열
+    if (!employee.teamCode || employee.teamCode === '' || !employee.team || employee.team === '') {
+      return 'DEPARTMENT_HEAD';
+    }
+    
+    // 3. 팀장 vs 팀원: 하위 직원 존재 여부로 판별
+    const hasSubordinates = employees.some(emp => emp.managerId === employee.id);
+    return hasSubordinates ? 'TEAM_LEADER' : 'TEAM_MEMBER';
+  };
+  
+  // 역할별 색상 및 스타일
+  const getRoleStyle = (role: string) => {
+    switch (role) {
+      case 'CEO':
+        return { color: '#FF6B35', bg: '#FFF3E0', border: '#FFB74D', label: '지사장' };
+      case 'DEPARTMENT_HEAD':
+        return { color: '#1976D2', bg: '#E3F2FD', border: '#2196F3', label: '부문장' };
+      case 'TEAM_LEADER':
+        return { color: '#388E3C', bg: '#E8F5E8', border: '#4CAF50', label: '팀장' };
+      case 'TEAM_MEMBER':
+        return { color: '#7B1FA2', bg: '#F3E5F5', border: '#9C27B0', label: '팀원' };
+      default:
+        return { color: '#757575', bg: '#F5F5F5', border: '#BDBDBD', label: '미분류' };
+    }
+  };
   const containerRef = useRef<HTMLDivElement>(null);
   const [draggedEmployee, setDraggedEmployee] = useState<Employee | null>(null);
   const [dragOverTarget, setDragOverTarget] = useState<string | null>(null);
@@ -26,8 +56,97 @@ export default function OrgChartComponent({
 
   // Mutation for updating employee hierarchy
   const updateEmployeeMutation = useMutation({
-    mutationFn: async ({ employeeId, managerId }: { employeeId: string; managerId: string | null }) => {
-      return apiRequest('PUT', `/api/employees/${employeeId}`, { managerId });
+    mutationFn: async ({ employeeId, managerId, targetEmployee }: { 
+      employeeId: string; 
+      managerId: string | null;
+      targetEmployee?: Employee;
+    }) => {
+      const updateData: any = { managerId };
+      
+      // 현재 이동하는 직원 정보 확인
+      const currentEmployee = employees.find(emp => emp.id === employeeId);
+      
+      // 대상 직원의 부서/팀 정보로 업데이트
+      if (targetEmployee && currentEmployee) {
+        console.log(`🎯 이동 분석:`, {
+          이동직원: {
+            id: currentEmployee.id,
+            name: currentEmployee.name,
+            position: currentEmployee.position,
+            departmentCode: currentEmployee.departmentCode,
+            teamCode: currentEmployee.teamCode,
+            team: currentEmployee.team
+          },
+          대상직원: {
+            id: targetEmployee.id,
+            name: targetEmployee.name,
+            position: targetEmployee.position,
+            departmentCode: targetEmployee.departmentCode,
+            teamCode: targetEmployee.teamCode,
+            team: targetEmployee.team
+          }
+        });
+        
+        // 항상 부서 정보는 대상 직원을 따라감
+        updateData.departmentCode = targetEmployee.departmentCode;
+        updateData.department = targetEmployee.department;
+        
+        // 역할 기반 이동 로직 (명확한 구별)
+        const currentRole = getEmployeeRole(currentEmployee);
+        const targetRole = getEmployeeRole(targetEmployee);
+        
+        console.log(`🏷️ 역할 분석:`, {
+          이동직원: { 
+            name: currentEmployee.name, 
+            role: currentRole,
+            teamCode: currentEmployee.teamCode,
+            team: currentEmployee.team
+          },
+          대상직원: { 
+            name: targetEmployee.name, 
+            role: targetRole,
+            teamCode: targetEmployee.teamCode,
+            team: targetEmployee.team
+          }
+        });
+        
+        // 대상이 팀장인 경우: 팀 정보를 대상 팀으로 변경
+        if (targetRole === 'TEAM_LEADER') {
+          updateData.teamCode = targetEmployee.teamCode;
+          updateData.team = targetEmployee.team;
+          console.log(`✅ 팀장으로 이동: 팀 정보 변경`, {
+            기존팀: currentEmployee.team,
+            새팀: targetEmployee.team
+          });
+        } 
+        // 대상이 부문장인 경우: 이동하는 직원의 역할에 따라 처리
+        else if (targetRole === 'DEPARTMENT_HEAD') {
+          if (currentRole === 'TEAM_LEADER') {
+            // 팀장 → 부문장: 기존 팀 정보 유지 (핵심!)
+            updateData.teamCode = currentEmployee.teamCode;
+            updateData.team = currentEmployee.team;
+            console.log(`🎯 팀장 → 부문장: 기존 팀 정보 유지`, {
+              유지팀코드: currentEmployee.teamCode,
+              유지팀명: currentEmployee.team,
+              부서변경: targetEmployee.department
+            });
+          } else if (currentRole === 'TEAM_MEMBER') {
+            // 팀원 → 부문장: 팀 정보 제거
+            updateData.teamCode = null;
+            updateData.team = null;
+            console.log(`✅ 팀원 → 부문장: 팀 정보 제거`);
+          } else {
+            // 부문장 → 부문장: 팀 정보 없음
+            updateData.teamCode = null;
+            updateData.team = null;
+            console.log(`✅ 부문장 → 부문장: 팀 정보 없음`);
+          }
+        }
+        
+        console.log(`📋 최종 업데이트 데이터:`, updateData);
+      }
+      
+      return apiRequest('PUT', `/api/employees/${employeeId}`, updateData);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/employees'] });
@@ -52,12 +171,6 @@ export default function OrgChartComponent({
     emp.department.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const getSkillIndicatorClass = (level: number) => {
-    if (level >= 80) return "bg-green-500";
-    if (level >= 60) return "bg-yellow-500";
-    if (level >= 40) return "bg-red-500";
-    return "bg-gray-400";
-  };
 
   const handleEmployeeClick = (employeeId: string) => {
     onEmployeeSelect(employeeId);
@@ -107,10 +220,14 @@ export default function OrgChartComponent({
       return;
     }
 
-    // Update the employee's manager
+    // 대상 직원 정보 찾기
+    const targetEmployee = employees.find(emp => emp.id === targetEmployeeId);
+    
+    // Update the employee's manager and team info
     updateEmployeeMutation.mutate({
       employeeId: draggedEmployee.id,
-      managerId: targetEmployeeId
+      managerId: targetEmployeeId,
+      targetEmployee: targetEmployee
     });
 
     setDraggedEmployee(null);
@@ -180,13 +297,6 @@ export default function OrgChartComponent({
                   <h3 className="font-bold text-lg">{ceo.name}</h3>
                   <p className="text-sm text-muted-foreground">{ceo.position}</p>
                   <p className="text-xs text-muted-foreground">{ceo.department}</p>
-                  <div className="flex justify-center space-x-1 mt-3">
-                    {/* Mock skill indicators - in real app, these would come from skill calculations */}
-                    <div className={`w-3 h-3 rounded-full ${getSkillIndicatorClass(85)}`} title="경력"></div>
-                    <div className={`w-3 h-3 rounded-full ${getSkillIndicatorClass(90)}`} title="자격증"></div>
-                    <div className={`w-3 h-3 rounded-full ${getSkillIndicatorClass(75)}`} title="어학"></div>
-                    <div className={`w-3 h-3 rounded-full ${getSkillIndicatorClass(80)}`} title="교육"></div>
-                  </div>
                 </div>
               );
             })}
@@ -219,13 +329,6 @@ export default function OrgChartComponent({
                       const isDraggedOver = dragOverTarget === employee.id;
                       const isBeingDragged = draggedEmployee?.id === employee.id;
                       
-                      // Mock skill levels - in real app, fetch from skill calculations
-                      const mockSkillLevels = {
-                        experience: Math.floor(Math.random() * 40) + 60,
-                        certification: Math.floor(Math.random() * 40) + 50,
-                        language: Math.floor(Math.random() * 50) + 40,
-                        training: Math.floor(Math.random() * 30) + 70
-                      };
 
                       return (
                         <div
@@ -246,24 +349,6 @@ export default function OrgChartComponent({
                         >
                           <h5 className="font-semibold">{employee.name}</h5>
                           <p className="text-sm text-muted-foreground">{employee.position}</p>
-                          <div className="flex justify-center space-x-1 mt-3">
-                            <div 
-                              className={`w-3 h-3 rounded-full ${getSkillIndicatorClass(mockSkillLevels.experience)}`} 
-                              title={`경력: ${mockSkillLevels.experience}%`}
-                            ></div>
-                            <div 
-                              className={`w-3 h-3 rounded-full ${getSkillIndicatorClass(mockSkillLevels.certification)}`} 
-                              title={`자격증: ${mockSkillLevels.certification}%`}
-                            ></div>
-                            <div 
-                              className={`w-3 h-3 rounded-full ${getSkillIndicatorClass(mockSkillLevels.language)}`} 
-                              title={`어학: ${mockSkillLevels.language}%`}
-                            ></div>
-                            <div 
-                              className={`w-3 h-3 rounded-full ${getSkillIndicatorClass(mockSkillLevels.training)}`} 
-                              title={`교육: ${mockSkillLevels.training}%`}
-                            ></div>
-                          </div>
                         </div>
                       );
                     })}
