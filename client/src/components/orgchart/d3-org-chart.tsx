@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
+import { useQueryClient } from "@tanstack/react-query";
 import SimpleEditModal from './simple-edit-modal';
 import type { Employee } from "@shared/schema";
 import { DepartmentTeamManager } from "@/lib/departments-teams";
@@ -38,6 +39,7 @@ export default function D3OrgChart({ employees, searchTerm, zoomLevel, onEmploye
   const chartRef = useRef<HTMLDivElement>(null);
   const chartInstance = useRef<any>(null);
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   // 드래그 앤 드롭 상태 (index1.html과 동일)
   const [dragEnabled, setDragEnabled] = useState(false);
@@ -67,13 +69,18 @@ export default function D3OrgChart({ employees, searchTerm, zoomLevel, onEmploye
           position: formData.position,
           department: formData.department,
           team: formData.team,
+          employeeNumber: formData.employeeNumber,
           isDepartmentHead: formData.isDepartmentHead
         }),
       });
 
       if (response.ok) {
         console.log('✅ 직원 정보가 성공적으로 업데이트되었습니다.');
-      toast({
+        
+        // 부모 컴포넌트의 데이터 새로고침
+        queryClient.invalidateQueries({ queryKey: ['/api/employees'] });
+        
+        toast({
           title: "성공",
           description: "직원 정보가 업데이트되었습니다.",
         });
@@ -89,9 +96,9 @@ export default function D3OrgChart({ employees, searchTerm, zoomLevel, onEmploye
           });
         }
         
-        // 차트 다시 그리기
+        // 차트 다시 그리기 (기존 상태 유지)
         if (chartInstance.current) {
-          chartInstance.current.render().expandAll();
+          chartInstance.current.render();
         }
       } else {
         console.error('❌ 직원 정보 업데이트 실패:', response.statusText);
@@ -415,70 +422,53 @@ export default function D3OrgChart({ employees, searchTerm, zoomLevel, onEmploye
          stringData.push(addDepartmentNode, ...addTeamNodes, ...addEmployeeNodes, ...addNewEmployeeNodes);
        }
 
-    // 팀별로 그룹화
-    const teamGroups = new Map<string, any[]>();
-    stringData.forEach(emp => {
-      const teamKey = emp.team || '팀 없음';
-      if (!teamGroups.has(teamKey)) {
-        teamGroups.set(teamKey, []);
-      }
-      teamGroups.get(teamKey)!.push(emp);
-    });
-
-    // 각 팀에서 계층 구조 설정
+    // 계층 구조 설정 (팀 정보와 관계없이 managerId 기반)
     const processedData: any[] = [];
     
-    teamGroups.forEach((teamMembers, teamName) => {
+    // 모든 직원을 복사
+    stringData.forEach(emp => {
+      processedData.push({ ...emp });
+    });
+    
+    // 순환 참조 방지 함수
+    const hasCycle = (employeeId: string, targetManagerId: string, visited: Set<string> = new Set()): boolean => {
+      if (visited.has(employeeId)) return true;
+      if (employeeId === targetManagerId) return true;
       
-      // 팀장 찾기 (managerId가 null이거나 다른 팀의 managerId를 가진 경우)
-      const teamLeaders = teamMembers.filter(emp => {
-        if (!emp.managerId) return true; // 최상위
-        const manager = stringData.find(m => m.id === emp.managerId);
-        return !manager || manager.team !== teamName; // 다른 팀의 매니저
-      });
-      
-      // 팀원들 (팀장이 아닌 경우)
-      const teamMembers_only = teamMembers.filter(emp => !teamLeaders.includes(emp));
-      
-      // 팀장이 여러 명인 경우, 첫 번째를 메인 팀장으로 설정
-      if (teamLeaders.length > 1) {
-        const mainLeader = teamLeaders[0];
-        mainLeader.parentId = "";
-        
-        // 나머지 팀장들을 메인 팀장 하위로 설정
-        teamLeaders.slice(1).forEach(leader => {
-          leader.parentId = mainLeader.id;
-        });
-        
-        // 팀원들을 메인 팀장 하위로 설정
-        teamMembers_only.forEach(member => {
-          member.parentId = mainLeader.id;
-        });
-        
-        processedData.push(...teamLeaders, ...teamMembers_only);
-      } else if (teamLeaders.length === 1) {
-        // 팀장이 한 명인 경우
-        const leader = teamLeaders[0];
-        leader.parentId = "";
-        
-        // 팀원들을 팀장 하위로 설정
-        teamMembers_only.forEach(member => {
-          member.parentId = leader.id;
-        });
-        
-        processedData.push(leader, ...teamMembers_only);
+      visited.add(employeeId);
+      const employee = processedData.find(emp => emp.id === employeeId);
+      if (employee && employee.managerId) {
+        return hasCycle(employee.managerId, targetManagerId, visited);
+      }
+      return false;
+    };
+
+    // managerId 기반으로 계층 구조 설정 (순환 참조 방지)
+    processedData.forEach(emp => {
+      if (emp.managerId) {
+        // managerId가 있는 경우, 해당 매니저를 찾아서 parentId 설정
+        const manager = processedData.find(m => m.id === emp.managerId);
+        if (manager) {
+          // 순환 참조 체크
+          if (!hasCycle(emp.managerId, emp.id)) {
+            emp.parentId = manager.id;
+          } else {
+            console.warn(`⚠️ 순환 참조 방지: ${emp.name} (${emp.id}) -> ${manager.name} (${manager.id})`);
+            emp.parentId = "";
+          }
+        } else {
+          // 매니저가 현재 데이터에 없는 경우 (외부 매니저)
+          emp.parentId = "";
+        }
       } else {
-        // 팀장이 없는 경우 (모든 팀원이 동일 레벨)
-        teamMembers_only.forEach(member => {
-          member.parentId = "";
-        });
-        processedData.push(...teamMembers_only);
+        // managerId가 없는 경우 (최상위)
+        emp.parentId = "";
       }
     });
 
-    // 부서장들을 최상위로 설정
+    // 부서장들을 최상위로 설정 (단, 이미 다른 사람의 하위가 아닌 경우만)
     const departmentHeads = processedData.filter(emp => 
-      emp.position && emp.position.includes('부서장')
+      emp.position && emp.position.includes('부서장') && emp.parentId === ""
     );
     
     if (departmentHeads.length > 0) {
@@ -487,10 +477,11 @@ export default function D3OrgChart({ employees, searchTerm, zoomLevel, onEmploye
         head.parentId = "";
       });
       
-      // 팀장들을 해당 부서장 하위로 설정
+      // 같은 부서의 팀장들을 해당 부서장 하위로 설정
       const teamLeaders = processedData.filter(emp => 
         emp.position && emp.position.includes('팀장') && 
-        !emp.position.includes('부서장')
+        !emp.position.includes('부서장') &&
+        emp.parentId === "" // 아직 부모가 설정되지 않은 경우만
       );
       
       teamLeaders.forEach(leader => {
@@ -499,7 +490,12 @@ export default function D3OrgChart({ employees, searchTerm, zoomLevel, onEmploye
           head.department === leader.department
         );
         if (sameDeptHead) {
-          leader.parentId = sameDeptHead.id;
+          // 순환 참조 체크
+          if (!hasCycle(sameDeptHead.id, leader.id)) {
+            leader.parentId = sameDeptHead.id;
+          } else {
+            console.warn(`⚠️ 순환 참조 방지 (부서장): ${leader.name} (${leader.id}) -> ${sameDeptHead.name} (${sameDeptHead.id})`);
+          }
         }
       });
     }
@@ -625,9 +621,8 @@ export default function D3OrgChart({ employees, searchTerm, zoomLevel, onEmploye
             </div>
           </div>
           
-          <!-- 편집 버튼 (우하단, 드래그 영역 밖, 조직 정리 모드에서만) -->
-          ${dragEnabled ? `
-            <div style="
+          <!-- 편집 버튼 (우하단, 드래그 영역 밖, 항상 표시) -->
+          <div style="
           position: absolute; 
               bottom: 2px;
               right: 4px;
@@ -658,7 +653,6 @@ export default function D3OrgChart({ employees, searchTerm, zoomLevel, onEmploye
                 📝
               </button>
             </div>
-        ` : ''}
         
           <!-- 프로필 이미지 -->
           <div style="
@@ -791,19 +785,49 @@ export default function D3OrgChart({ employees, searchTerm, zoomLevel, onEmploye
   // 팀 변경 시 서버 업데이트 함수
   const updateEmployeeTeam = async (employeeId: string, teamData: any) => {
     try {
+      console.log('📤 updateEmployeeTeam 호출:', { employeeId, teamData });
+      
+      // 중복 호출 방지: 동일한 요청이 연속으로 들어오는 경우 방지
+      const requestKey = `${employeeId}-${JSON.stringify(teamData)}`;
+      if ((window as any).lastUpdateRequest === requestKey) {
+        console.log('⚠️ 중복 API 호출 방지:', requestKey);
+        return;
+      }
+      (window as any).lastUpdateRequest = requestKey;
+      
+      // null 값들을 명시적으로 처리
+      const cleanData = { ...teamData };
+      
+      // null 값들을 undefined로 변환하여 JSON에서 제외
+      Object.keys(cleanData).forEach(key => {
+        if (cleanData[key] === null) {
+          delete cleanData[key];
+        }
+      });
+      
+      console.log('🧹 정리된 데이터:', cleanData);
+      
       const response = await fetch(`/api/employees/${employeeId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(teamData)
+        body: JSON.stringify(cleanData)
       });
 
       if (!response.ok) {
-        console.error('팀 변경 저장 실패:', response.status, response.statusText);
+        const errorText = await response.text();
+        console.error('❌ 팀 변경 저장 실패:', response.status, response.statusText, errorText);
+        throw new Error(`저장 실패: ${response.status} - ${errorText}`);
       }
+      
+      const result = await response.json();
+      console.log('✅ 팀 변경 저장 성공:', result);
+      
+      return result;
     } catch (error) {
-      console.error('팀 변경 중 오류 발생:', error);
+      console.error('❌ 팀 변경 중 오류 발생:', error);
+      throw error;
     }
   };
 
@@ -1065,21 +1089,111 @@ export default function D3OrgChart({ employees, searchTerm, zoomLevel, onEmploye
     const draggedEmployee = node;
     const targetNode = currentDropNode;
     
-    if (targetNode?.data?.team && targetNode.data.team !== draggedEmployee.team) {
-      // 팀 정보 업데이트
-      draggedEmployee.team = targetNode.data.team;
-      draggedEmployee.teamCode = targetNode.data.teamCode;
+    // 항상 업데이트 실행 (팀 정보 유무와 관계없이)
+    console.log('🔄 드래그 앤 드롭 로직 시작');
+    console.log('👤 드래그된 직원:', {
+      id: draggedEmployee.id,
+      name: draggedEmployee.name,
+      position: draggedEmployee.position,
+      department: draggedEmployee.department,
+      team: draggedEmployee.team,
+      teamCode: draggedEmployee.teamCode,
+      managerId: draggedEmployee.managerId
+    });
+    console.log('🎯 대상 직원:', {
+      id: targetNode.data.id,
+      name: targetNode.data.name,
+      position: targetNode.data.position,
+      department: targetNode.data.department,
+      team: targetNode.data.team,
+      teamCode: targetNode.data.teamCode,
+      managerId: targetNode.data.managerId
+    });
+    
+    // 전사 조직도 관리 시스템 - 중복 호출 방지
+    if (true) {
+      console.log('🏢 전사 조직도 관리 시스템 - 직원 이동 처리');
+      console.log('🔍 이동 전 상태 확인:', {
+        드래그직원: { id: draggedEmployee.id, name: draggedEmployee.name, managerId: draggedEmployee.managerId },
+        대상직원: { id: targetNode.data.id, name: targetNode.data.name }
+      });
+      
+      // 중복 호출 방지: 이미 같은 매니저인 경우 스킵
+      if (draggedEmployee.managerId === targetNode.data.id) {
+        console.log('⚠️ 이미 같은 매니저 하위에 있습니다. 중복 호출 방지.');
+        return;
+      }
+      
+      // 1. 매니저 정보 업데이트 (대상 직원의 ID를 매니저로 설정)
+      draggedEmployee.managerId = targetNode.data.id;
+      
+      // 2. 부서 정보 업데이트 (대상 직원의 부서 정보를 이어받음)
       draggedEmployee.department = targetNode.data.department;
       draggedEmployee.departmentCode = targetNode.data.departmentCode;
       
-      // 서버에 팀 변경 정보 저장
-      updateEmployeeTeam(draggedEmployee.id, {
-        team: draggedEmployee.team,
-        teamCode: draggedEmployee.teamCode,
+      // 3. 팀 정보 처리 로직 (전사 조직도 관리 규칙)
+      if (targetNode.data.team && targetNode.data.team !== null && targetNode.data.team !== '') {
+        // 대상이 팀이 있는 경우: 팀 정보를 이어받음
+        draggedEmployee.team = targetNode.data.team;
+        draggedEmployee.teamCode = targetNode.data.teamCode;
+        console.log('✅ 팀 정보 이어받기:', {
+          team: targetNode.data.team,
+          teamCode: targetNode.data.teamCode
+        });
+      } else {
+        // 대상이 팀이 없는 경우: 팀 정보 제거 (부문장/부서장 하위로 이동)
+        draggedEmployee.team = null;
+        draggedEmployee.teamCode = null;
+        console.log('✅ 팀 정보 제거 (부문장/부서장 하위로 이동)');
+      }
+      
+      // 4. 서버 전송 데이터 구성 (전사 조직도 관리 시스템)
+      const updateData: any = {
+        managerId: draggedEmployee.managerId,
+        department: draggedEmployee.department,
+        departmentCode: draggedEmployee.departmentCode
+      };
+      
+      // team과 teamCode 처리
+      if (draggedEmployee.team !== null && draggedEmployee.team !== undefined && draggedEmployee.team !== '') {
+        updateData.team = draggedEmployee.team;
+      } else {
+        updateData.team = null;
+      }
+      
+      if (draggedEmployee.teamCode !== null && draggedEmployee.teamCode !== undefined && draggedEmployee.teamCode !== '') {
+        updateData.teamCode = draggedEmployee.teamCode;
+      } else {
+        updateData.teamCode = null;
+      }
+      
+      console.log('📤 전사 조직도 관리 시스템 - 서버 전송 데이터:', updateData);
+      console.log('🔍 이동된 직원 최종 정보:', {
+        id: draggedEmployee.id,
+        name: draggedEmployee.name,
+        position: draggedEmployee.position,
+        managerId: draggedEmployee.managerId,
         department: draggedEmployee.department,
         departmentCode: draggedEmployee.departmentCode,
-        managerId: targetNode.data.id
+        team: draggedEmployee.team,
+        teamCode: draggedEmployee.teamCode
       });
+      console.log('🎯 대상 직원 정보:', {
+        id: targetNode.data.id,
+        name: targetNode.data.name,
+        position: targetNode.data.position,
+        department: targetNode.data.department,
+        team: targetNode.data.team,
+        teamCode: targetNode.data.teamCode
+      });
+      
+      // API 호출 전 중복 방지 체크
+      console.log('🚀 API 호출 시작:', {
+        employeeId: draggedEmployee.id,
+        updateData: updateData
+      });
+      
+      updateEmployeeTeam(draggedEmployee.id, updateData);
       
       // 차트 데이터에서 해당 노드 찾아서 업데이트
       const chartData = chartInstance.current?.getChartState().data;
@@ -1118,8 +1232,8 @@ export default function D3OrgChart({ employees, searchTerm, zoomLevel, onEmploye
   };
 
   const disableDrag = async () => {
-    // 완료 버튼 클릭 시 저장 실행
-    await saveData();
+    // 드래그 중에 이미 API 호출이 완료되었으므로 추가 저장 불필요
+    console.log('✅ 완료 버튼 클릭 - 드래그 중 이미 저장 완료됨');
     
     setDragEnabled(false);
     const chartContainer = document.querySelector('.chart-container');

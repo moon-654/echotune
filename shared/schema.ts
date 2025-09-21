@@ -17,6 +17,7 @@ export const employees = pgTable("employees", {
   hireDate: timestamp("hire_date"),
   managerId: varchar("manager_id"),
   photoUrl: text("photo_url"),
+  isDepartmentHead: boolean("is_department_head").default(false), // 부문장 여부
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").default(sql`now()`),
   updatedAt: timestamp("updated_at").default(sql`now()`)

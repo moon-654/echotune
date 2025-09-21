@@ -13,6 +13,7 @@ export default function SimpleEditModal({ isOpen, employee, onClose, onSave }: S
     position: '',
     department: '',
     team: '',
+    employeeNumber: '',
     isDepartmentHead: false
   });
 
@@ -23,6 +24,7 @@ export default function SimpleEditModal({ isOpen, employee, onClose, onSave }: S
         position: employee.position || '',
         department: employee.department || '',
         team: employee.team || '',
+        employeeNumber: employee.employeeNumber || '',
         isDepartmentHead: employee.isDepartmentHead || false
       });
     }
@@ -42,6 +44,20 @@ export default function SimpleEditModal({ isOpen, employee, onClose, onSave }: S
         <h2 className="text-lg font-semibold mb-4">직원 정보 편집</h2>
         
         <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              사원번호
+            </label>
+            <input
+              type="text"
+              value={formData.employeeNumber}
+              onChange={(e) => setFormData({ ...formData, employeeNumber: e.target.value })}
+              placeholder="예: 001, 002, 003"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              required
+            />
+          </div>
+
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               이름

@@ -14,6 +14,7 @@
       "hireDate": "2015-01-01T00:00:00.000Z",
       "managerId": null,
       "photoUrl": null,
+      "isDepartmentHead": false,
       "isActive": true,
       "createdAt": "2025-09-21T00:04:14.912Z",
       "updatedAt": "2025-09-21T01:14:55.413Z"
@@ -34,7 +35,8 @@
       "photoUrl": null,
       "isActive": true,
       "createdAt": "2025-09-21T00:04:14.912Z",
-      "updatedAt": "2025-09-21T01:20:43.868Z"
+      "updatedAt": "2025-09-21T01:20:43.868Z",
+      "isDepartmentHead": false
     },
     "emp2": {
       "id": "emp2",
@@ -52,7 +54,8 @@
       "photoUrl": null,
       "isActive": true,
       "createdAt": "2025-09-21T00:04:14.912Z",
-      "updatedAt": "2025-09-21T01:25:27.154Z"
+      "updatedAt": "2025-09-21T09:19:10.999Z",
+      "isDepartmentHead": false
     },
     "emp3": {
       "id": "emp3",
@@ -70,14 +73,15 @@
       "photoUrl": null,
       "isActive": true,
       "createdAt": "2025-09-21T00:04:14.912Z",
-      "updatedAt": "2025-09-21T01:20:48.795Z"
+      "updatedAt": "2025-09-21T01:20:48.795Z",
+      "isDepartmentHead": false
     },
     "emp4": {
       "id": "emp4",
-      "employeeNumber": "004",
+      "employeeNumber": "18031",
       "departmentCode": "PM",
       "teamCode": null,
-      "name": "정생산",
+      "name": "정생부",
       "position": "생산관리부문장",
       "department": "생산관리부문",
       "team": "",
@@ -88,7 +92,8 @@
       "photoUrl": null,
       "isActive": true,
       "createdAt": "2025-09-21T00:04:14.912Z",
-      "updatedAt": "2025-09-21T01:20:51.100Z"
+      "updatedAt": "2025-09-21T09:22:52.330Z",
+      "isDepartmentHead": false
     },
     "emp5": {
       "id": "emp5",
@@ -106,43 +111,46 @@
       "photoUrl": null,
       "isActive": true,
       "createdAt": "2025-09-21T00:04:14.912Z",
-      "updatedAt": "2025-09-21T01:33:31.461Z"
+      "updatedAt": "2025-09-21T01:33:31.461Z",
+      "isDepartmentHead": false
     },
     "emp6": {
       "id": "emp6",
       "employeeNumber": "006",
       "departmentCode": "HQ",
-      "teamCode": "SL1",
+      "teamCode": "RD02",
       "name": "한해외",
       "position": "해외영업팀장",
       "department": "본사",
-      "team": "국내영업팀",
+      "team": "연구팀",
       "email": "han.overseas@ashimori.co.kr",
       "phone": "010-6789-0123",
       "hireDate": "2019-05-20T00:00:00.000Z",
-      "managerId": "emp5",
+      "managerId": "emp10",
       "photoUrl": null,
       "isActive": true,
       "createdAt": "2025-09-21T00:04:14.912Z",
-      "updatedAt": "2025-09-21T01:30:11.470Z"
+      "updatedAt": "2025-09-21T03:05:29.498Z",
+      "isDepartmentHead": false
     },
     "emp7": {
       "id": "emp7",
       "employeeNumber": "007",
-      "departmentCode": "HQ",
-      "teamCode": "SL1",
+      "departmentCode": "RD",
+      "teamCode": "RD02",
       "name": "김개발",
       "position": "개발팀장",
-      "department": "본사",
-      "team": "국내영업팀",
+      "department": "연구소",
+      "team": "연구팀",
       "email": "kim.dev@ashimori.co.kr",
       "phone": "010-7890-1234",
       "hireDate": "2020-08-10T00:00:00.000Z",
-      "managerId": "emp5",
+      "managerId": "emp2",
       "photoUrl": null,
       "isActive": true,
       "createdAt": "2025-09-21T00:04:14.912Z",
-      "updatedAt": "2025-09-21T01:28:18.573Z"
+      "updatedAt": "2025-09-21T09:19:21.500Z",
+      "isDepartmentHead": false
     },
     "emp8": {
       "id": "emp8",
@@ -160,79 +168,84 @@
       "photoUrl": null,
       "isActive": true,
       "createdAt": "2025-09-21T00:04:14.912Z",
-      "updatedAt": "2025-09-21T01:28:16.964Z"
+      "updatedAt": "2025-09-21T01:28:16.964Z",
+      "isDepartmentHead": false
     },
     "emp9": {
       "id": "emp9",
       "employeeNumber": "009",
-      "departmentCode": "HQ",
+      "departmentCode": "QC",
       "teamCode": null,
-      "name": "이품질",
+      "name": "김품질",
       "position": "품질관리팀장",
-      "department": "본사",
-      "team": null,
+      "department": "품질부문",
+      "team": "품질팀",
       "email": "lee.quality@ashimori.co.kr",
       "phone": "010-9012-3456",
       "hireDate": "2019-03-15T00:00:00.000Z",
-      "managerId": "emp0",
+      "managerId": "emp3",
       "photoUrl": null,
       "isActive": true,
       "createdAt": "2025-09-21T00:04:14.912Z",
-      "updatedAt": "2025-09-21T00:26:37.228Z"
+      "updatedAt": "2025-09-21T09:17:15.371Z",
+      "isDepartmentHead": false
     },
     "emp10": {
       "id": "emp10",
       "employeeNumber": "010",
-      "departmentCode": "HQ",
+      "departmentCode": "PM",
       "teamCode": "RD02",
       "name": "정생산",
       "position": "생산팀장",
-      "department": "본사",
-      "team": "연구팀",
+      "department": "생산관리부문",
+      "team": "생산관리",
       "email": "jung.production@ashimori.co.kr",
       "phone": "010-0123-4567",
       "hireDate": "2017-06-01T00:00:00.000Z",
-      "managerId": "emp8",
+      "managerId": "emp4",
       "photoUrl": null,
       "isActive": true,
       "createdAt": "2025-09-21T00:04:14.912Z",
-      "updatedAt": "2025-09-21T01:26:59.533Z"
+      "updatedAt": "2025-09-21T09:16:36.598Z",
+      "isDepartmentHead": false
     },
     "emp11": {
       "id": "emp11",
       "employeeNumber": "011",
       "departmentCode": "HQ",
-      "teamCode": "SL1",
       "name": "김국내",
       "position": "국내영업팀 사원",
-      "department": "본사",
-      "team": "국내영업팀",
+      "department": "연구소",
+      "team": "연구팀",
       "email": "kim.domestic@ashimori.co.kr",
       "phone": "010-1234-5678",
       "hireDate": "2021-01-15T00:00:00.000Z",
-      "managerId": "emp8",
+      "managerId": "emp10",
       "photoUrl": null,
       "isActive": true,
       "createdAt": "2025-09-21T00:04:14.912Z",
-      "updatedAt": "2025-09-21T01:37:57.922Z"
+      "updatedAt": "2025-09-21T09:11:58.314Z",
+      "teamCode": "RD02",
+      "isDepartmentHead": false
     },
     "emp12": {
       "id": "emp12",
       "employeeNumber": "012",
-      "departmentCode": "RD",
+      "departmentCode": "HQ",
       "teamCode": "RD02",
       "name": "박개발",
       "position": "개발팀 사원",
-      "department": "연구소",
+      "department": "본사",
       "team": "연구팀",
       "email": "park.dev@ashimori.co.kr",
       "phone": "010-2345-6789",
       "hireDate": "2021-07-01T00:00:00.000Z",
-      "managerId": "emp6",
+      "managerId": "emp7",
       "photoUrl": null,
       "isActive": true,
       "createdAt": "2025-09-21T00:04:14.912Z",
-      "updatedAt": "2025-09-21T01:28:36.969Z"
+      "updatedAt": "2025-09-21T08:57:01.595Z",
+      "isDepartmentHead": false
     }
   },
   "trainingHistory": {},

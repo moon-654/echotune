@@ -142,18 +142,57 @@ app.put("/api/employees/:id", async (req, res) => {
       departmentCode: existingEmployee?.departmentCode,
       team: existingEmployee?.team,
       teamCode: existingEmployee?.teamCode,
-      managerId: existingEmployee?.managerId
+      managerId: existingEmployee?.managerId,
+      employeeNumber: existingEmployee?.employeeNumber,
+      isDepartmentHead: existingEmployee?.isDepartmentHead
     });
     
-    const employeeData = insertEmployeeSchema.partial().parse(req.body);
+    // null 값들을 undefined로 변환하여 스키마 검증 통과
+    const cleanedBody = { ...req.body };
+    Object.keys(cleanedBody).forEach(key => {
+      if (cleanedBody[key] === null) {
+        cleanedBody[key] = undefined;
+      }
+    });
+    
+    console.log('🧹 정리된 요청 데이터:', cleanedBody);
+    
+    const employeeData = insertEmployeeSchema.partial().parse(cleanedBody);
     console.log('✅ 스키마 검증 완료:', employeeData);
     
     console.log('🔄 업데이트 전후 비교:');
-    console.log('📋 managerId:', { 기존: existingEmployee?.managerId, 요청: employeeData.managerId });
-    console.log('📋 departmentCode:', { 기존: existingEmployee?.departmentCode, 요청: employeeData.departmentCode });
-    console.log('📋 department:', { 기존: existingEmployee?.department, 요청: employeeData.department });
-    console.log('📋 teamCode:', { 기존: existingEmployee?.teamCode, 요청: employeeData.teamCode });
-    console.log('📋 team:', { 기존: existingEmployee?.team, 요청: employeeData.team });
+    console.log('📋 managerId:', { 기존: existingEmployee?.managerId, 요청: employeeData.managerId, 변경: existingEmployee?.managerId !== employeeData.managerId });
+    console.log('📋 departmentCode:', { 기존: existingEmployee?.departmentCode, 요청: employeeData.departmentCode, 변경: existingEmployee?.departmentCode !== employeeData.departmentCode });
+    console.log('📋 department:', { 기존: existingEmployee?.department, 요청: employeeData.department, 변경: existingEmployee?.department !== employeeData.department });
+    console.log('📋 teamCode:', { 기존: existingEmployee?.teamCode, 요청: employeeData.teamCode, 변경: existingEmployee?.teamCode !== employeeData.teamCode });
+    console.log('📋 team:', { 기존: existingEmployee?.team, 요청: employeeData.team, 변경: existingEmployee?.team !== employeeData.team });
+    console.log('📋 employeeNumber:', { 기존: existingEmployee?.employeeNumber, 요청: employeeData.employeeNumber, 변경: existingEmployee?.employeeNumber !== employeeData.employeeNumber });
+    console.log('📋 isDepartmentHead:', { 기존: existingEmployee?.isDepartmentHead, 요청: employeeData.isDepartmentHead, 변경: existingEmployee?.isDepartmentHead !== employeeData.isDepartmentHead });
+    
+    // 변경사항이 있는지 확인
+    const hasChanges = Object.keys(employeeData).some(key => {
+      const existingValue = existingEmployee?.[key as keyof typeof existingEmployee];
+      const newValue = employeeData[key as keyof typeof employeeData];
+      return existingValue !== newValue;
+    });
+    
+    console.log('🔍 변경사항 존재 여부:', hasChanges);
+    if (!hasChanges) {
+      console.log('⚠️ 변경사항이 없어 업데이트를 건너뜁니다.');
+      return res.json(existingEmployee);
+    }
+    
+    // 중복 업데이트 방지: 동일한 요청이 연속으로 들어오는 경우 방지
+    const isDuplicateRequest = Object.keys(employeeData).every(key => {
+      const existingValue = existingEmployee?.[key as keyof typeof existingEmployee];
+      const newValue = employeeData[key as keyof typeof employeeData];
+      return existingValue === newValue;
+    });
+    
+    if (isDuplicateRequest) {
+      console.log('⚠️ 중복 요청 감지 - 업데이트를 건너뜁니다.');
+      return res.json(existingEmployee);
+    }
     
     const employee = await storage.updateEmployee(req.params.id, employeeData);
     console.log('💾 데이터베이스 업데이트 완료:', {

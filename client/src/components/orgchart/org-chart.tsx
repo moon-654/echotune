@@ -54,113 +54,22 @@ export default function OrgChartComponent({
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
-  // Mutation for updating employee hierarchy
+  // Mutation for updating employee hierarchy - D3.js 시스템 사용으로 비활성화
   const updateEmployeeMutation = useMutation({
     mutationFn: async ({ employeeId, managerId, targetEmployee }: { 
       employeeId: string; 
       managerId: string | null;
       targetEmployee?: Employee;
     }) => {
-      const updateData: any = { managerId };
-      
-      // 현재 이동하는 직원 정보 확인
-      const currentEmployee = employees.find(emp => emp.id === employeeId);
-      
-      // 대상 직원의 부서/팀 정보로 업데이트
-      if (targetEmployee && currentEmployee) {
-        console.log(`🎯 이동 분석:`, {
-          이동직원: {
-            id: currentEmployee.id,
-            name: currentEmployee.name,
-            position: currentEmployee.position,
-            departmentCode: currentEmployee.departmentCode,
-            teamCode: currentEmployee.teamCode,
-            team: currentEmployee.team
-          },
-          대상직원: {
-            id: targetEmployee.id,
-            name: targetEmployee.name,
-            position: targetEmployee.position,
-            departmentCode: targetEmployee.departmentCode,
-            teamCode: targetEmployee.teamCode,
-            team: targetEmployee.team
-          }
-        });
-        
-        // 항상 부서 정보는 대상 직원을 따라감
-        updateData.departmentCode = targetEmployee.departmentCode;
-        updateData.department = targetEmployee.department;
-        
-        // 역할 기반 이동 로직 (명확한 구별)
-        const currentRole = getEmployeeRole(currentEmployee);
-        const targetRole = getEmployeeRole(targetEmployee);
-        
-        console.log(`🏷️ 역할 분석:`, {
-          이동직원: { 
-            name: currentEmployee.name, 
-            role: currentRole,
-            teamCode: currentEmployee.teamCode,
-            team: currentEmployee.team
-          },
-          대상직원: { 
-            name: targetEmployee.name, 
-            role: targetRole,
-            teamCode: targetEmployee.teamCode,
-            team: targetEmployee.team
-          }
-        });
-        
-        // 대상이 팀장인 경우: 팀 정보를 대상 팀으로 변경
-        if (targetRole === 'TEAM_LEADER') {
-          updateData.teamCode = targetEmployee.teamCode;
-          updateData.team = targetEmployee.team;
-          console.log(`✅ 팀장으로 이동: 팀 정보 변경`, {
-            기존팀: currentEmployee.team,
-            새팀: targetEmployee.team
-          });
-        } 
-        // 대상이 부문장인 경우: 이동하는 직원의 역할에 따라 처리
-        else if (targetRole === 'DEPARTMENT_HEAD') {
-          if (currentRole === 'TEAM_LEADER') {
-            // 팀장 → 부문장: 기존 팀 정보 유지 (핵심!)
-            updateData.teamCode = currentEmployee.teamCode;
-            updateData.team = currentEmployee.team;
-            console.log(`🎯 팀장 → 부문장: 기존 팀 정보 유지`, {
-              유지팀코드: currentEmployee.teamCode,
-              유지팀명: currentEmployee.team,
-              부서변경: targetEmployee.department
-            });
-          } else if (currentRole === 'TEAM_MEMBER') {
-            // 팀원 → 부문장: 팀 정보 제거
-            updateData.teamCode = null;
-            updateData.team = null;
-            console.log(`✅ 팀원 → 부문장: 팀 정보 제거`);
-          } else {
-            // 부문장 → 부문장: 팀 정보 없음
-            updateData.teamCode = null;
-            updateData.team = null;
-            console.log(`✅ 부문장 → 부문장: 팀 정보 없음`);
-          }
-        }
-        
-        console.log(`📋 최종 업데이트 데이터:`, updateData);
-      }
-      
-      return apiRequest('PUT', `/api/employees/${employeeId}`, updateData);
+      // D3.js 시스템이 처리하므로 여기서는 아무것도 하지 않음
+      console.log('⚠️ React updateEmployeeMutation 비활성화 - D3.js 시스템 사용 중');
+      return Promise.resolve({ id: employeeId, message: 'D3.js 시스템에서 처리됨' });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/employees'] });
-      toast({
-        title: "조직도 업데이트 완료",
-        description: "직원의 보고 관계가 성공적으로 변경되었습니다.",
-      });
+      console.log('⚠️ React mutation onSuccess 비활성화');
     },
     onError: () => {
-      toast({
-        variant: "destructive",
-        title: "업데이트 실패",
-        description: "직원 정보 업데이트 중 오류가 발생했습니다.",
-      });
+      console.log('⚠️ React mutation onError 비활성화');
     }
   });
 
@@ -196,40 +105,16 @@ export default function OrgChartComponent({
   const handleDrop = (e: React.DragEvent, targetEmployeeId: string) => {
     e.preventDefault();
     
+    // D3.js 드래그 앤 드롭 시스템이 활성화되어 있으므로 React 시스템 비활성화
+    console.log('⚠️ React 드래그 앤 드롭 시스템 비활성화 - D3.js 시스템 사용 중');
+    
     if (!draggedEmployee || draggedEmployee.id === targetEmployeeId) {
       setDraggedEmployee(null);
       setDragOverTarget(null);
       return;
     }
 
-    // Prevent dropping an employee on their own subordinate
-    const isDropOnSubordinate = (employeeId: string, targetId: string): boolean => {
-      const subordinates = employees.filter(emp => emp.managerId === employeeId);
-      if (subordinates.some(sub => sub.id === targetId)) return true;
-      return subordinates.some(sub => isDropOnSubordinate(sub.id, targetId));
-    };
-
-    if (isDropOnSubordinate(draggedEmployee.id, targetEmployeeId)) {
-      toast({
-        variant: "destructive",
-        title: "이동 불가",
-        description: "직원을 자신의 부하직원 아래로 이동할 수 없습니다.",
-      });
-      setDraggedEmployee(null);
-      setDragOverTarget(null);
-      return;
-    }
-
-    // 대상 직원 정보 찾기
-    const targetEmployee = employees.find(emp => emp.id === targetEmployeeId);
-    
-    // Update the employee's manager and team info
-    updateEmployeeMutation.mutate({
-      employeeId: draggedEmployee.id,
-      managerId: targetEmployeeId,
-      targetEmployee: targetEmployee
-    });
-
+    // D3.js 시스템이 처리하므로 여기서는 아무것도 하지 않음
     setDraggedEmployee(null);
     setDragOverTarget(null);
   };
