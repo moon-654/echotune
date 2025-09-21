@@ -41,6 +41,229 @@ export default function D3OrgChart({ employees, searchTerm, zoomLevel, onEmploye
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  // 보기 상태 저장/복원 함수들
+  const saveCurrentViewState = () => {
+    if (!chartRef.current) return null;
+    
+    const svg = d3.select(chartRef.current).select('svg');
+    const g = svg.select('g');
+    
+    // 노드 확장/축소 상태 수집 (D3.js 조직도 DOM 요소 직접 확인)
+    const nodeStates: { [key: string]: boolean } = {};
+    
+    // D3.js 조직도 인스턴스에서 노드 상태 수집
+    if (chartInstance.current) {
+      console.log('🔍 차트 인스턴스 확인:', chartInstance.current);
+      
+      // 방법 1: nodes() 메서드 시도
+      if (chartInstance.current.nodes) {
+        try {
+          const nodes = chartInstance.current.nodes();
+          console.log('🔍 차트 노드들에서 상태 확인 (nodes()):', nodes);
+          
+          nodes.forEach((node: any) => {
+            if (node && node.id) {
+              const isExpanded = !node._children || node._children.length === 0;
+              nodeStates[node.id] = isExpanded;
+              console.log(`📊 노드 ${node.name || node.data?.name} (${node.id}): ${isExpanded ? '확장됨' : '축소됨'} (children: ${node.children?.length || 0}, _children: ${node._children?.length || 0})`);
+            }
+          });
+        } catch (error) {
+          console.log('⚠️ nodes() 메서드 실패:', error);
+        }
+      }
+      
+      // 방법 2: DOM 요소에서 직접 확인 (개선된 방법)
+      if (Object.keys(nodeStates).length === 0 && chartRef.current) {
+        console.log('🔍 DOM 요소에서 노드 상태 확인');
+        const svg = d3.select(chartRef.current).select('svg');
+        const nodeElements = svg.selectAll('.node');
+        
+        nodeElements.each(function(d: any) {
+          if (d && d.id) {
+            const nodeElement = d3.select(this);
+            
+            // 여러 방법으로 노드 상태 확인
+            const isCollapsed = nodeElement.classed('collapsed');
+            const hasChildren = nodeElement.select('.children').size() > 0;
+            const isVisible = nodeElement.style('display') !== 'none';
+            
+            // 하위 노드가 있는지 확인
+            const childNodes = nodeElement.selectAll('.node').size();
+            const hasVisibleChildren = childNodes > 0;
+            
+            // 실제 확장/축소 상태 판단
+            let isExpanded = true;
+            if (isCollapsed) {
+              isExpanded = false;
+            } else if (hasChildren && !hasVisibleChildren) {
+              isExpanded = false;
+            } else if (d._children && d._children.length > 0) {
+              isExpanded = false;
+            }
+            
+            nodeStates[d.id] = isExpanded;
+            console.log(`📊 DOM 노드 ${d.name || d.data?.name} (${d.id}): ${isExpanded ? '확장됨' : '축소됨'} (collapsed: ${isCollapsed}, hasChildren: ${hasChildren}, hasVisibleChildren: ${hasVisibleChildren}, _children: ${d._children?.length || 0})`);
+          }
+        });
+      }
+      
+      // 방법 3: getChartState() 시도
+      if (Object.keys(nodeStates).length === 0 && chartInstance.current.getChartState) {
+        try {
+          const chartState = chartInstance.current.getChartState();
+          console.log('🔍 차트 상태에서 노드 확인:', chartState);
+          
+          if (chartState && chartState.data) {
+            const collectNodeStates = (nodes: any[]) => {
+              nodes.forEach(node => {
+                if (node && node.id) {
+                  const isExpanded = !node._children || node._children.length === 0;
+                  nodeStates[node.id] = isExpanded;
+                  console.log(`📊 상태 노드 ${node.name} (${node.id}): ${isExpanded ? '확장됨' : '축소됨'}`);
+                  
+                  if (node.children && node.children.length > 0) {
+                    collectNodeStates(node.children);
+                  }
+                }
+              });
+            };
+            
+            collectNodeStates(chartState.data);
+          }
+        } catch (error) {
+          console.log('⚠️ getChartState() 실패:', error);
+        }
+      }
+    }
+    
+    console.log('📊 수집된 노드 상태:', nodeStates);
+    
+    const viewState = {
+      svgTransform: svg.style('transform') || '',
+      gTransform: g.attr('transform') || '',
+      nodeStates: nodeStates,
+      timestamp: Date.now()
+    };
+    
+    console.log('💾 현재 보기 상태 저장:', viewState);
+    localStorage.setItem('orgchart-view-state', JSON.stringify(viewState));
+    return viewState;
+  };
+
+  const restoreViewState = () => {
+    const savedState = localStorage.getItem('orgchart-view-state');
+    if (!savedState) return false;
+    
+    try {
+      const viewState = JSON.parse(savedState);
+      console.log('📂 저장된 보기 상태 복원:', viewState);
+      
+      if (!chartRef.current) return false;
+      
+      const svg = d3.select(chartRef.current).select('svg');
+      const g = svg.select('g');
+      
+      if (viewState.svgTransform) {
+        svg.style('transform', viewState.svgTransform);
+      }
+      if (viewState.gTransform) {
+        g.attr('transform', viewState.gTransform);
+      }
+      
+      // 노드 확장/축소 상태 복원 (다양한 방법 시도)
+      if (viewState.nodeStates && Object.keys(viewState.nodeStates).length > 0) {
+        setTimeout(() => {
+          console.log('🔄 노드 상태 복원 시작:', viewState.nodeStates);
+          
+          let restored = false;
+          
+          // 방법 1: nodes() 메서드로 복원
+          if (chartInstance.current && chartInstance.current.nodes) {
+            try {
+              const nodes = chartInstance.current.nodes();
+              console.log('🔄 nodes() 메서드로 복원 시도:', nodes);
+              
+              if (nodes && nodes.length > 0) {
+                nodes.forEach((node: any) => {
+                  if (node && node.id && viewState.nodeStates[node.id] !== undefined) {
+                    const shouldBeExpanded = viewState.nodeStates[node.id];
+                    console.log(`🔄 노드 ${node.name || node.data?.name} (${node.id}) 상태 복원: ${shouldBeExpanded ? '확장' : '축소'}`);
+                    
+                    if (shouldBeExpanded) {
+                      if (node._children && node._children.length > 0) {
+                        node.children = node._children;
+                        node._children = null;
+                        console.log(`  ✅ 노드 ${node.id} 확장됨`);
+                      }
+                    } else {
+                      if (node.children && node.children.length > 0) {
+                        node._children = node.children;
+                        node.children = null;
+                        console.log(`  ✅ 노드 ${node.id} 축소됨`);
+                      }
+                    }
+                  }
+                });
+                restored = true;
+              }
+            } catch (error) {
+              console.log('⚠️ nodes() 복원 실패:', error);
+            }
+          }
+          
+          // 방법 2: DOM 요소로 복원 (개선된 방법)
+          if (!restored && chartRef.current) {
+            console.log('🔄 DOM 요소로 복원 시도');
+            const svg = d3.select(chartRef.current).select('svg');
+            const nodeElements = svg.selectAll('.node');
+            
+            nodeElements.each(function(d: any) {
+              if (d && d.id && viewState.nodeStates[d.id] !== undefined) {
+                const shouldBeExpanded = viewState.nodeStates[d.id];
+                const nodeElement = d3.select(this);
+                
+                if (shouldBeExpanded) {
+                  // 노드 확장
+                  nodeElement.classed('collapsed', false);
+                  // 하위 노드들도 표시
+                  nodeElement.selectAll('.children').style('display', 'block');
+                  console.log(`  ✅ DOM 노드 ${d.id} 확장됨`);
+                } else {
+                  // 노드 축소
+                  nodeElement.classed('collapsed', true);
+                  // 하위 노드들 숨기기
+                  nodeElement.selectAll('.children').style('display', 'none');
+                  console.log(`  ✅ DOM 노드 ${d.id} 축소됨`);
+                }
+              }
+            });
+            restored = true;
+          }
+          
+          // 차트 업데이트
+          if (restored && chartInstance.current) {
+            console.log('🔄 차트 업데이트 시작...');
+            if (chartInstance.current.update) {
+              chartInstance.current.update();
+              console.log('✅ update() 메서드로 차트 업데이트 완료');
+            } else if (chartInstance.current.render) {
+              chartInstance.current.render();
+              console.log('✅ render() 메서드로 차트 업데이트 완료');
+            }
+            console.log('✅ 노드 상태 복원 완료');
+          }
+        }, 800); // 시간을 더 늘려서 차트 렌더링 완료 후 실행
+      }
+      
+      console.log('✅ 보기 상태 복원 완료');
+      return true;
+    } catch (error) {
+      console.error('❌ 보기 상태 복원 실패:', error);
+      return false;
+    }
+  };
+
   // 드래그 앤 드롭 상태 (index1.html과 동일)
   const [dragEnabled, setDragEnabled] = useState(false);
   const [dragNode, setDragNode] = useState<any>(null);
@@ -77,8 +300,36 @@ export default function D3OrgChart({ employees, searchTerm, zoomLevel, onEmploye
       if (response.ok) {
         console.log('✅ 직원 정보가 성공적으로 업데이트되었습니다.');
         
-        // 부모 컴포넌트의 데이터 새로고침
-      queryClient.invalidateQueries({ queryKey: ['/api/employees'] });
+        // 현재 보기 상태 저장
+        console.log('💾 직원 편집 전 보기 상태 저장');
+        saveCurrentViewState();
+        
+        // 서버에서 최신 데이터를 직접 가져와서 조직도 업데이트
+        console.log('🔄 서버에서 최신 데이터 직접 가져오기');
+        
+        try {
+          const response = await fetch('/api/employees');
+          const latestEmployees = await response.json();
+          console.log('📊 서버에서 가져온 최신 직원 수:', latestEmployees.length);
+          
+          // 새로운 데이터로 조직도 업데이트
+          if (chartInstance.current && latestEmployees.length > 0) {
+            console.log('🎯 차트 인스턴스 존재, 최신 데이터로 업데이트');
+            const newTransformData = transformEmployeesDataForChart(latestEmployees);
+            chartInstance.current.data(newTransformData).render();
+            console.log('✅ 차트 렌더링 완료');
+            
+            // 저장된 보기 상태 복원
+            setTimeout(() => {
+              console.log('📂 저장된 보기 상태 복원 시도');
+              restoreViewState();
+            }, 100);
+          } else {
+            console.error('❌ 차트 인스턴스가 없거나 데이터가 비어있습니다!');
+          }
+        } catch (error) {
+          console.error('❌ 최신 데이터 가져오기 실패:', error);
+        }
         
       toast({
           title: "성공",
@@ -94,11 +345,6 @@ export default function D3OrgChart({ employees, searchTerm, zoomLevel, onEmploye
             newSet.delete(editingEmployee.id);
             return newSet;
           });
-        }
-        
-        // 차트 다시 그리기 (기존 상태 유지)
-        if (chartInstance.current) {
-          chartInstance.current.render();
         }
       } else {
         console.error('❌ 직원 정보 업데이트 실패:', response.statusText);
@@ -248,6 +494,21 @@ export default function D3OrgChart({ employees, searchTerm, zoomLevel, onEmploye
     }
     
     try {
+      const requestData = {
+        employeeNumber: addModalData.code,
+        name: addModalData.name,
+        position: '사원',
+        departmentCode: addModalData.departmentCode,
+        department: addModalData.department,
+        teamCode: addModalData.teamCode,
+        team: addModalData.team,
+        managerId: addModalData.managerId,
+        email: '',
+        phone: '',
+        isActive: true
+      };
+      console.log('📤 직원 추가 요청 데이터:', JSON.stringify(requestData, null, 2));
+      
       const response = await fetch('/api/employees', {
         method: 'POST',
         headers: {
@@ -261,6 +522,7 @@ export default function D3OrgChart({ employees, searchTerm, zoomLevel, onEmploye
           department: addModalData.department,
           teamCode: addModalData.teamCode,
           team: addModalData.team,
+          managerId: addModalData.managerId, // 부모 직원 ID 추가
           email: '',
           phone: '',
           isActive: true
@@ -268,14 +530,44 @@ export default function D3OrgChart({ employees, searchTerm, zoomLevel, onEmploye
       });
 
       if (response.ok) {
-      toast({
+        console.log('✅ 직원 추가 성공 - 조직도 데이터 새로고침');
+        toast({
           title: "직원 추가 완료",
           description: "새 직원이 성공적으로 추가되었습니다.",
         });
         setShowAddModal(false);
         setAddModalData({ code: '', name: '', departmentCode: '', department: '', teamCode: '', team: '', inheritFrom: '' });
-        // 페이지 새로고침으로 데이터 업데이트
-        window.location.reload();
+        
+        // 현재 보기 상태 저장
+        console.log('💾 직원 추가 전 보기 상태 저장');
+        saveCurrentViewState();
+        
+        // 서버에서 최신 데이터를 직접 가져와서 조직도 업데이트
+        console.log('🔄 서버에서 최신 데이터 직접 가져오기');
+        
+        try {
+          const response = await fetch('/api/employees');
+          const latestEmployees = await response.json();
+          console.log('📊 서버에서 가져온 최신 직원 수:', latestEmployees.length);
+          
+          // 새로운 데이터로 조직도 업데이트
+          if (chartInstance.current && latestEmployees.length > 0) {
+            console.log('🎯 차트 인스턴스 존재, 최신 데이터로 업데이트');
+            const newTransformData = transformEmployeesDataForChart(latestEmployees);
+            chartInstance.current.data(newTransformData).render();
+            console.log('✅ 차트 렌더링 완료');
+            
+            // 저장된 보기 상태 복원
+            setTimeout(() => {
+              console.log('📂 저장된 보기 상태 복원 시도');
+              restoreViewState();
+            }, 100);
+          } else {
+            console.error('❌ 차트 인스턴스가 없거나 데이터가 비어있습니다!');
+          }
+        } catch (error) {
+          console.error('❌ 최신 데이터 가져오기 실패:', error);
+        }
       } else {
         throw new Error('직원 추가 실패');
       }
@@ -301,6 +593,13 @@ export default function D3OrgChart({ employees, searchTerm, zoomLevel, onEmploye
     }
     
     try {
+      console.log('➕ 신규 직원 추가 요청:', {
+        name: addModalData.name,
+        managerId: addModalData.managerId,
+        department: addModalData.department,
+        team: addModalData.team
+      });
+      
       const response = await fetch('/api/employees', {
         method: 'POST',
         headers: {
@@ -314,6 +613,7 @@ export default function D3OrgChart({ employees, searchTerm, zoomLevel, onEmploye
           department: addModalData.department,
           teamCode: addModalData.teamCode,
           team: addModalData.team,
+          managerId: addModalData.managerId, // 부모 직원 ID 추가
           email: '',
           phone: '',
           isActive: true
@@ -321,14 +621,45 @@ export default function D3OrgChart({ employees, searchTerm, zoomLevel, onEmploye
       });
 
       if (response.ok) {
-      toast({
+        console.log('✅ 신규 직원 추가 성공 - 조직도 데이터 새로고침');
+        console.log('🚀 NEW CODE VERSION 2.0 EXECUTED - THIS IS THE UPDATED VERSION');
+        toast({
           title: "신규 직원 추가 완료",
           description: `${addModalData.department} ${addModalData.team}에 새 직원이 추가되었습니다.`,
         });
         setShowAddModal(false);
         setAddModalData({ code: '', name: '', departmentCode: '', department: '', teamCode: '', team: '', inheritFrom: '' });
-        // 페이지 새로고침으로 데이터 업데이트
-        window.location.reload();
+        
+        // 현재 보기 상태 저장
+        console.log('💾 직원 추가 전 보기 상태 저장');
+        saveCurrentViewState();
+        
+        // 서버에서 최신 데이터를 직접 가져와서 조직도 업데이트
+        console.log('🔄 서버에서 최신 데이터 직접 가져오기');
+        
+        try {
+          const response = await fetch('/api/employees');
+          const latestEmployees = await response.json();
+          console.log('📊 서버에서 가져온 최신 직원 수:', latestEmployees.length);
+          
+          // 새로운 데이터로 조직도 업데이트
+          if (chartInstance.current && latestEmployees.length > 0) {
+            console.log('🎯 차트 인스턴스 존재, 최신 데이터로 업데이트');
+            const newTransformData = transformEmployeesDataForChart(latestEmployees);
+            chartInstance.current.data(newTransformData).render();
+            console.log('✅ 차트 렌더링 완료');
+            
+            // 저장된 보기 상태 복원
+            setTimeout(() => {
+              console.log('📂 저장된 보기 상태 복원 시도');
+              restoreViewState();
+            }, 100);
+          } else {
+            console.error('❌ 차트 인스턴스가 없거나 데이터가 비어있습니다!');
+          }
+        } catch (error) {
+          console.error('❌ 최신 데이터 가져오기 실패:', error);
+        }
       } else {
         throw new Error('신규 직원 추가 실패');
       }
@@ -342,12 +673,15 @@ export default function D3OrgChart({ employees, searchTerm, zoomLevel, onEmploye
     }
   };
 
-  // 데이터 변환 (팀 기반 조직도 구조)
-  const transformEmployeesData = useMemo(() => {
-    if (!employees || employees.length === 0) return [];
+  // 데이터 변환 함수 (재사용 가능)
+  const transformEmployeesDataForChart = (employeeData: any[]) => {
+    if (!employeeData || employeeData.length === 0) return [];
+    
+    console.log('🏢 조직도 데이터 변환 시작 (함수)');
+    console.log('👥 전체 직원 수:', employeeData.length);
     
     // 직원 데이터를 문자열로 변환 (팀 정보 보존)
-    const stringData = employees.map(emp => {
+    const stringData = employeeData.map(emp => {
       const newEmp: any = {};
       for (const key in emp) {
         if (Object.prototype.hasOwnProperty.call(emp, key)) {
@@ -361,6 +695,89 @@ export default function D3OrgChart({ employees, searchTerm, zoomLevel, onEmploye
       }
       return newEmp;
     });
+
+    // 조직 정리 모드에서 (+) 노드 추가
+    if (dragEnabled) {
+      // 부서별로 그룹화하여 (+) 노드 추가
+      const departmentGroups = new Map<string, any[]>();
+      stringData.forEach(emp => {
+        const deptKey = emp.department || '부서 없음';
+        if (!departmentGroups.has(deptKey)) {
+          departmentGroups.set(deptKey, []);
+        }
+        departmentGroups.get(deptKey)!.push(emp);
+      });
+
+      const result: any[] = [];
+      departmentGroups.forEach((deptEmployees, deptName) => {
+        // 부서 헤더 노드
+        result.push({
+          id: `dept-${deptName}`,
+          name: deptName,
+          position: '부서',
+          department: deptName,
+          team: '',
+          children: []
+        });
+
+        // 팀별로 그룹화
+        const teamGroups = new Map<string, any[]>();
+        deptEmployees.forEach(emp => {
+          const teamKey = emp.team || '팀 없음';
+          if (!teamGroups.has(teamKey)) {
+            teamGroups.set(teamKey, []);
+          }
+          teamGroups.get(teamKey)!.push(emp);
+        });
+
+        teamGroups.forEach((teamEmployees, teamName) => {
+          // 팀 헤더 노드
+          result.push({
+            id: `team-${teamName}`,
+            name: teamName,
+            position: '팀',
+            department: deptName,
+            team: teamName,
+            children: teamEmployees
+          });
+        });
+      });
+
+      return result;
+    }
+
+    // 일반 모드: managerId 기반 계층 구조
+    const processedData = stringData.map(emp => ({
+      ...emp,
+      parentId: emp.managerId || ""
+    }));
+
+    // 순환 참조 방지
+    const hasCycle = (nodeId: string, visited: Set<string> = new Set()): boolean => {
+      if (visited.has(nodeId)) return true;
+      visited.add(nodeId);
+      
+      const node = processedData.find(d => d.id === nodeId);
+      if (node && node.parentId) {
+        return hasCycle(node.parentId, visited);
+      }
+      return false;
+    };
+
+    // 순환 참조가 있는 경우 parentId를 빈 문자열로 설정
+    processedData.forEach(node => {
+      if (node.parentId && hasCycle(node.id)) {
+        console.warn(`⚠️ 순환 참조 감지: ${node.name} (${node.id})`);
+        node.parentId = "";
+      }
+    });
+
+    return processedData;
+  };
+
+  // 데이터 변환 (팀 기반 조직도 구조)
+  const transformEmployeesData = useMemo(() => {
+    return transformEmployeesDataForChart(employees);
 
        // 조직 정리 모드에서 (+) 노드 추가
        if (dragEnabled) {
@@ -549,7 +966,7 @@ export default function D3OrgChart({ employees, searchTerm, zoomLevel, onEmploye
         position: relative;
             overflow: hidden;
             transition: all 0.3s ease;
-          cursor: pointer;
+        cursor: pointer;
           display: flex;
             flex-direction: column;
           justify-content: center;
@@ -625,7 +1042,7 @@ export default function D3OrgChart({ employees, searchTerm, zoomLevel, onEmploye
           <div style="
           position: absolute; 
               bottom: 2px;
-              right: 4px;
+          right: 4px; 
               z-index: 10;
               pointer-events: auto;
             ">
@@ -653,6 +1070,39 @@ export default function D3OrgChart({ employees, searchTerm, zoomLevel, onEmploye
                 📝
               </button>
             </div>
+            
+            <!-- 하위 직원 추가 버튼 (좌하단) -->
+            <div style="
+          position: absolute; 
+              bottom: 2px;
+              left: 4px;
+              z-index: 10;
+              pointer-events: auto;
+            ">
+              <button 
+                onclick="console.log('➕ 하위 직원 추가 버튼 클릭:', '${d.data.id}'); if(window.addSubordinate) { window.addSubordinate('${d.data.id}'); } else { console.error('❌ addSubordinate 함수가 없습니다!'); }"
+                style="
+                  width: 24px;
+                  height: 24px;
+          border-radius: 50%; 
+                  background: #28a745;
+                  color: white;
+                  border: none;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 12px;
+                  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+                  transition: all 0.2s ease;
+                  pointer-events: auto;
+                "
+                onmouseover="this.style.background='#218838'; this.style.transform='scale(1.1)'"
+                onmouseout="this.style.background='#28a745'; this.style.transform='scale(1)'"
+              >
+                +
+              </button>
+            </div>
         
           <!-- 프로필 이미지 -->
           <div style="
@@ -661,7 +1111,7 @@ export default function D3OrgChart({ employees, searchTerm, zoomLevel, onEmploye
             left: 16px;
             width: 50px;
             height: 50px;
-            border-radius: 50%; 
+          border-radius: 50%; 
             overflow: hidden;
             border: 3px solid #ffffff;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
@@ -1834,13 +2284,48 @@ export default function D3OrgChart({ employees, searchTerm, zoomLevel, onEmploye
         alert('노드를 찾을 수 없습니다.');
         return;
       }
-
+      
       // 간단한 편집 모달 열기
       setEditingEmployee(node);
       setIsEditModalOpen(true);
 
     };
     console.log('✅ editNode 함수 등록 완료');
+    
+    // 하위 직원 추가 함수 등록
+    console.log('➕ addSubordinate 함수 등록 중...');
+    (window as any).addSubordinate = async (parentId: string) => {
+      console.log('➕ 하위 직원 추가:', parentId);
+      
+      // 부모 직원 정보 찾기
+      const parentEmployee = employees.find(emp => emp.id === parentId);
+      if (!parentEmployee) {
+        console.error('❌ 부모 직원을 찾을 수 없습니다:', parentId);
+        toast({
+          title: "오류",
+          description: "부모 직원을 찾을 수 없습니다.",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      console.log('👤 부모 직원 정보:', parentEmployee);
+      
+      // 하위 직원 추가 모달 열기 (부서/팀 정보 상속)
+      setAddModalType('new-employee');
+      setAddModalData({ 
+        code: '', 
+        name: '', 
+        departmentCode: parentEmployee.departmentCode || '',
+        department: parentEmployee.department || '',
+        teamCode: parentEmployee.teamCode || '',
+        team: parentEmployee.team || '',
+        managerId: parentId,
+        inheritFrom: parentId
+      });
+      setShowAddModal(true);
+    };
+    console.log('✅ addSubordinate 함수 등록 완료');
 
       // 줌 레벨 적용
     const svg = d3.select(chartRef.current).select('svg');
@@ -1852,13 +2337,96 @@ export default function D3OrgChart({ employees, searchTerm, zoomLevel, onEmploye
       console.error('❌ 차트 생성 중 오류 발생:', error);
     }
 
+    // 저장된 보기 상태 복원 시도
+    setTimeout(() => {
+      console.log('📂 페이지 로드 시 저장된 보기 상태 복원 시도');
+      restoreViewState();
+    }, 500);
+
   }, [transformEmployeesData, zoomLevel, dragEnabled]);
 
-  // 팀 변경 시 조직도 자동 업데이트
+  // 팀 변경 시 조직도 자동 업데이트 (노드 상태 포함)
   useEffect(() => {
     if (chartInstance.current && transformEmployeesData.length > 0) {
+      console.log('🔄 조직도 데이터 업데이트 시작 (useEffect)');
+      
+      // 현재 노드 상태 저장
+      const nodeStates: { [key: string]: boolean } = {};
+      if (chartRef.current) {
+        const svg = d3.select(chartRef.current).select('svg');
+        const nodeElements = svg.selectAll('.node');
+        
+        nodeElements.each(function(d: any) {
+          if (d && d.id) {
+            const nodeElement = d3.select(this);
+            const isCollapsed = nodeElement.classed('collapsed');
+            const hasChildren = nodeElement.select('.children').size() > 0;
+            const childNodes = nodeElement.selectAll('.node').size();
+            const hasVisibleChildren = childNodes > 0;
+            
+            let isExpanded = true;
+            if (isCollapsed) {
+              isExpanded = false;
+            } else if (hasChildren && !hasVisibleChildren) {
+              isExpanded = false;
+            } else if (d._children && d._children.length > 0) {
+              isExpanded = false;
+            }
+            
+            nodeStates[d.id] = isExpanded;
+            console.log(`💾 useEffect 노드 ${d.name || d.data?.name} (${d.id}): ${isExpanded ? '확장됨' : '축소됨'}`);
+          }
+        });
+      }
+      
+      // 현재 보기 상태 저장
+      const currentTransform = d3.select(chartRef.current).select('svg').style('transform') || '';
+      const currentGTransform = d3.select(chartRef.current).select('svg').select('g').attr('transform') || '';
+      
+      console.log('💾 useEffect 현재 보기 상태 저장:', {
+        svgTransform: currentTransform,
+        gTransform: currentGTransform,
+        nodeStates: nodeStates
+      });
+      
       // 차트 데이터 업데이트
       chartInstance.current.data(transformEmployeesData).render();
+      
+      // 보기 상태 복원 (노드 상태 포함)
+      setTimeout(() => {
+        if (chartRef.current) {
+          const svg = d3.select(chartRef.current).select('svg');
+          if (currentTransform) {
+            svg.style('transform', currentTransform);
+            console.log('✅ SVG transform 복원:', currentTransform);
+          }
+          if (currentGTransform) {
+            svg.select('g').attr('transform', currentGTransform);
+            console.log('✅ G transform 복원:', currentGTransform);
+          }
+          
+          // 노드 상태 복원
+          const nodeElements = svg.selectAll('.node');
+          nodeElements.each(function(d: any) {
+            if (d && d.id && nodeStates[d.id] !== undefined) {
+              const shouldBeExpanded = nodeStates[d.id];
+              const nodeElement = d3.select(this);
+              
+              if (shouldBeExpanded) {
+                nodeElement.classed('collapsed', false);
+                nodeElement.selectAll('.children').style('display', 'block');
+                console.log(`  ✅ useEffect 노드 ${d.id} 확장됨`);
+              } else {
+                nodeElement.classed('collapsed', true);
+                nodeElement.selectAll('.children').style('display', 'none');
+                console.log(`  ✅ useEffect 노드 ${d.id} 축소됨`);
+              }
+            }
+          });
+          
+          console.log('✅ useEffect 데이터 업데이트 후 보기 상태 복원 완료');
+        }
+      }, 200);
     }
   }, [transformEmployeesData]);
 
@@ -1961,7 +2529,7 @@ export default function D3OrgChart({ employees, searchTerm, zoomLevel, onEmploye
           // 저장된 보기 상태 적용
           setTimeout(() => {
             if (chartRef.current && viewState) {
-              const svg = d3.select(chartRef.current).select('svg');
+    const svg = d3.select(chartRef.current).select('svg');
               
               // Transform 적용
               if (viewState.transform) {

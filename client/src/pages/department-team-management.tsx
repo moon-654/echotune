@@ -3,3 +3,4 @@ import DepartmentTeamManager from "@/components/departments-teams/department-tea
 export default function DepartmentTeamManagement() {
   return <DepartmentTeamManager />;
 }
+

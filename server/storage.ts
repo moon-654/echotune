@@ -510,6 +510,11 @@ export class MemStorage implements IStorage {
       updatedAt: new Date()
     };
     this.employees.set(id, newEmployee);
+    
+    // 파일에 영구 저장
+    this.saveData();
+    console.log('💾 새 직원 데이터 파일에 저장 완료');
+    
     return newEmployee;
   }
 

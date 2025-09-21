@@ -15,3 +15,4 @@ Object.keys(data.employees).forEach(empId => {
 // 파일에 저장
 fs.writeFileSync(dataPath, JSON.stringify(data, null, 2));
 console.log('✅ 모든 직원 데이터에 isDepartmentHead 필드 추가 완료');
+
