@@ -49,11 +49,9 @@ export default function AwardsEditModal({ employeeId, isOpen, onClose }: AwardsE
     const loadAwards = async () => {
       setIsLoading(true);
       try {
-        console.log('🔍 수상 수정 모달 - 수상 데이터 로드 시작:', employeeId);
         const response = await fetch(`/api/awards?employeeId=${employeeId}`);
         if (response.ok) {
           const data = await response.json();
-          console.log('🔍 수상 수정 모달 - 수상 데이터 로드 성공:', data);
           const formattedAwards = data.map((award: Award) => ({
             name: award.name,
             issuer: award.issuer,
@@ -66,7 +64,6 @@ export default function AwardsEditModal({ employeeId, isOpen, onClose }: AwardsE
           }));
           setAwards(formattedAwards);
         } else {
-          console.log('🔍 수상 수정 모달 - 수상 데이터 없음');
           setAwards([]);
         }
       } catch (error) {
@@ -105,13 +102,11 @@ export default function AwardsEditModal({ employeeId, isOpen, onClose }: AwardsE
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      console.log('🔍 수상 저장 시작:', awards);
       
       // 기존 수상 삭제
       const deleteResponse = await fetch(`/api/awards?employeeId=${employeeId}`, {
         method: 'DELETE'
       });
-      console.log('🔍 기존 수상 삭제 결과:', deleteResponse.status);
 
       // 새 수상들 저장
       for (const award of awards) {
@@ -127,7 +122,6 @@ export default function AwardsEditModal({ employeeId, isOpen, onClose }: AwardsE
           notes: award.notes
         };
 
-        console.log('🔍 수상 저장 데이터:', awardData);
         
         const response = await fetch('/api/awards', {
           method: 'POST',
@@ -140,7 +134,6 @@ export default function AwardsEditModal({ employeeId, isOpen, onClose }: AwardsE
         }
       }
 
-      console.log('🔍 수상 저장 완료');
       toast({
         title: "성공",
         description: "수상 정보가 저장되었습니다.",

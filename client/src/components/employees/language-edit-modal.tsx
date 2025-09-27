@@ -49,11 +49,9 @@ export default function LanguageEditModal({ employeeId, isOpen, onClose }: Langu
     const loadLanguages = async () => {
       setIsLoading(true);
       try {
-        console.log('🔍 어학능력 수정 모달 - 어학능력 데이터 로드 시작:', employeeId);
         const response = await fetch(`/api/language-skills?employeeId=${employeeId}`);
         if (response.ok) {
           const data = await response.json();
-          console.log('🔍 어학능력 수정 모달 - 어학능력 데이터 로드 성공:', data);
           const formattedLanguages = data.map((lang: Language) => ({
             language: lang.language,
             proficiencyLevel: lang.proficiencyLevel as 'beginner' | 'intermediate' | 'advanced' | 'native',
@@ -67,11 +65,10 @@ export default function LanguageEditModal({ employeeId, isOpen, onClose }: Langu
           }));
           setLanguages(formattedLanguages);
         } else {
-          console.log('🔍 어학능력 수정 모달 - 어학능력 데이터 없음');
           setLanguages([]);
         }
       } catch (error) {
-        console.error('🔍 어학능력 수정 모달 - 어학능력 데이터 로드 오류:', error);
+        console.error('어학능력 데이터 로드 오류:', error);
         setLanguages([]);
       } finally {
         setIsLoading(false);
@@ -105,13 +102,10 @@ export default function LanguageEditModal({ employeeId, isOpen, onClose }: Langu
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      console.log('🔍 어학능력 저장 시작:', languages);
-      
       // 기존 어학능력 삭제
       const deleteResponse = await fetch(`/api/language-skills?employeeId=${employeeId}`, {
         method: 'DELETE'
       });
-      console.log('🔍 기존 어학능력 삭제 결과:', deleteResponse.status);
 
       // 새 어학능력들 저장
       for (const language of languages) {
@@ -127,8 +121,6 @@ export default function LanguageEditModal({ employeeId, isOpen, onClose }: Langu
           isActive: language.isActive
         };
 
-        console.log('🔍 어학능력 저장 데이터:', languageData);
-        
         const response = await fetch('/api/language-skills', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -139,8 +131,6 @@ export default function LanguageEditModal({ employeeId, isOpen, onClose }: Langu
           throw new Error(`Failed to save language: ${language.language}`);
         }
       }
-
-      console.log('🔍 어학능력 저장 완료');
       toast({
         title: "성공",
         description: "어학능력 정보가 저장되었습니다.",
@@ -148,7 +138,7 @@ export default function LanguageEditModal({ employeeId, isOpen, onClose }: Langu
       
       onClose();
     } catch (error) {
-      console.error('🔍 어학능력 저장 오류:', error);
+      console.error('어학능력 저장 오류:', error);
       toast({
         title: "오류",
         description: "어학능력 정보 저장에 실패했습니다.",

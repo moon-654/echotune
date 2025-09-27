@@ -53,11 +53,9 @@ export default function TrainingEditModal({ employeeId, isOpen, onClose }: Train
     const loadTrainings = async () => {
       setIsLoading(true);
       try {
-        console.log('🔍 교육 수정 모달 - 교육 데이터 로드 시작:', employeeId);
         const response = await fetch(`/api/training-history?employeeId=${employeeId}`);
         if (response.ok) {
           const data = await response.json();
-          console.log('🔍 교육 수정 모달 - 교육 데이터 로드 성공:', data);
           const formattedTrainings = data.map((training: TrainingHistory) => ({
             courseName: training.courseName,
             provider: training.provider,
@@ -73,7 +71,6 @@ export default function TrainingEditModal({ employeeId, isOpen, onClose }: Train
           }));
           setTrainings(formattedTrainings);
         } else {
-          console.log('🔍 교육 수정 모달 - 교육 데이터 없음');
           setTrainings([]);
         }
       } catch (error) {
@@ -113,13 +110,11 @@ export default function TrainingEditModal({ employeeId, isOpen, onClose }: Train
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      console.log('🔍 교육 저장 시작:', trainings);
       
       // 기존 교육 삭제
       const deleteResponse = await fetch(`/api/training-history?employeeId=${employeeId}`, {
         method: 'DELETE'
       });
-      console.log('🔍 기존 교육 삭제 결과:', deleteResponse.status);
 
       // 새 교육들 저장
       for (const training of trainings) {
@@ -138,7 +133,6 @@ export default function TrainingEditModal({ employeeId, isOpen, onClose }: Train
           notes: training.notes
         };
 
-        console.log('🔍 교육 저장 데이터:', trainingData);
         
         const response = await fetch('/api/training-history', {
           method: 'POST',
@@ -151,7 +145,6 @@ export default function TrainingEditModal({ employeeId, isOpen, onClose }: Train
         }
       }
 
-      console.log('🔍 교육 저장 완료');
       toast({
         title: "성공",
         description: "교육 정보가 저장되었습니다.",

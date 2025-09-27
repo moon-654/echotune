@@ -19,6 +19,9 @@ export default function OrgChart() {
     queryKey: ['/api/employees']
   });
 
+  // 비활성 직원 필터링
+  const activeEmployees = employees?.filter(employee => employee.isActive !== false) || [];
+
   const handleEmployeeSelect = (employeeId: string) => {
     setSelectedEmployeeId(employeeId);
   };
@@ -126,7 +129,7 @@ export default function OrgChart() {
 
         {/* Org Chart */}
         <D3OrgChart
-          employees={employees || []}
+          employees={activeEmployees}
           searchTerm={searchTerm}
           zoomLevel={zoomLevel}
           onEmployeeSelect={handleEmployeeSelect}

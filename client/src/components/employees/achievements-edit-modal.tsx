@@ -69,7 +69,6 @@ export default function AchievementsEditModal({ employeeId, isOpen, onClose }: A
     const loadAchievements = async () => {
       setIsLoading(true);
       try {
-        console.log('🔍 성과 수정 모달 - 성과 데이터 로드 시작:', employeeId);
         
         const [patentsResponse, publicationsResponse] = await Promise.all([
           fetch(`/api/patents?employeeId=${employeeId}`),
@@ -78,7 +77,6 @@ export default function AchievementsEditModal({ employeeId, isOpen, onClose }: A
 
         if (patentsResponse.ok) {
           const patentsData = await patentsResponse.json();
-          console.log('🔍 성과 수정 모달 - 특허 데이터 로드 성공:', patentsData);
           const formattedPatents = patentsData.map((patent: Patent) => ({
             title: patent.title,
             status: patent.status as 'pending' | 'granted' | 'rejected',
@@ -96,7 +94,6 @@ export default function AchievementsEditModal({ employeeId, isOpen, onClose }: A
 
         if (publicationsResponse.ok) {
           const publicationsData = await publicationsResponse.json();
-          console.log('🔍 성과 수정 모달 - 논문 데이터 로드 성공:', publicationsData);
           const formattedPublications = publicationsData.map((publication: Publication) => ({
             title: publication.title,
             authors: publication.authors,
@@ -171,19 +168,16 @@ export default function AchievementsEditModal({ employeeId, isOpen, onClose }: A
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      console.log('🔍 성과 저장 시작:', { patents, publications });
       
       // 기존 특허 삭제
       const deletePatentsResponse = await fetch(`/api/patents?employeeId=${employeeId}`, {
         method: 'DELETE'
       });
-      console.log('🔍 기존 특허 삭제 결과:', deletePatentsResponse.status);
 
       // 기존 논문 삭제
       const deletePublicationsResponse = await fetch(`/api/publications?employeeId=${employeeId}`, {
         method: 'DELETE'
       });
-      console.log('🔍 기존 논문 삭제 결과:', deletePublicationsResponse.status);
 
       // 새 특허들 저장
       for (const patent of patents) {
@@ -199,7 +193,6 @@ export default function AchievementsEditModal({ employeeId, isOpen, onClose }: A
           description: patent.description
         };
 
-        console.log('🔍 특허 저장 데이터:', patentData);
         
         const response = await fetch('/api/patents', {
           method: 'POST',
@@ -230,7 +223,6 @@ export default function AchievementsEditModal({ employeeId, isOpen, onClose }: A
           description: publication.description
         };
 
-        console.log('🔍 논문 저장 데이터:', publicationData);
         
         const response = await fetch('/api/publications', {
           method: 'POST',
@@ -243,7 +235,6 @@ export default function AchievementsEditModal({ employeeId, isOpen, onClose }: A
         }
       }
 
-      console.log('🔍 성과 저장 완료');
       toast({
         title: "성공",
         description: "성과 정보가 저장되었습니다.",

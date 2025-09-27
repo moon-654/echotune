@@ -69,9 +69,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/employees", async (req, res) => {
     try {
       const department = req.query.department as string;
-      const employees = department 
-        ? await storage.getEmployeesByDepartment(department)
-        : await storage.getAllEmployees();
+      const includeInactive = req.query.includeInactive === 'true';
+      
+      let employees;
+      if (includeInactive) {
+        // 직원 관리 페이지에서 모든 직원(비활성 포함) 조회
+        employees = department 
+          ? await storage.getEmployeesByDepartment(department)
+          : await storage.getAllEmployeesIncludingInactive();
+      } else {
+        // 다른 페이지에서는 활성 직원만 조회
+        employees = department 
+          ? await storage.getEmployeesByDepartment(department)
+          : await storage.getAllEmployees();
+      }
       
       // 김국내 데이터 디버깅
       const kimDomestic = employees.find(emp => emp.id === 'emp11');
@@ -1077,7 +1088,9 @@ app.put("/api/employees/:id", async (req, res) => {
       const certifications = await storage.getAllCertifications();
       const skillCalculations = await storage.getAllSkillCalculations();
 
-      const totalEmployees = employees.length;
+      // 비활성 직원 제외
+      const activeEmployees = employees.filter(emp => emp.isActive !== false);
+      const totalEmployees = activeEmployees.length;
       const completedTrainings = trainings.filter(t => t.status === 'completed').length;
       const totalTrainings = trainings.length;
       const completionRate = totalTrainings > 0 ? (completedTrainings / totalTrainings) * 100 : 0;
@@ -1104,11 +1117,14 @@ app.put("/api/employees/:id", async (req, res) => {
       const skillCalculations = await storage.getAllSkillCalculations();
       const employees = await storage.getAllEmployees();
       
+      // 비활성 직원 제외
+      const activeEmployees = employees.filter(emp => emp.isActive !== false);
+      
       const topPerformers = skillCalculations
         .sort((a, b) => b.overallScore - a.overallScore)
         .slice(0, 10)
         .map(calc => {
-          const employee = employees.find(emp => emp.id === calc.employeeId);
+          const employee = activeEmployees.find(emp => emp.id === calc.employeeId);
           return {
             id: calc.employeeId,
             name: employee?.name || 'Unknown',
@@ -1128,7 +1144,10 @@ app.put("/api/employees/:id", async (req, res) => {
       const employees = await storage.getAllEmployees();
       const skillCalculations = await storage.getAllSkillCalculations();
       
-      const departmentStats = employees.reduce((acc, emp) => {
+      // 비활성 직원 제외
+      const activeEmployees = employees.filter(emp => emp.isActive !== false);
+      
+      const departmentStats = activeEmployees.reduce((acc, emp) => {
         if (!acc[emp.department]) {
           acc[emp.department] = { employees: [], calculations: [] };
         }
@@ -1195,9 +1214,12 @@ app.put("/api/employees/:id", async (req, res) => {
   app.get("/api/dashboard/department-ratios", async (req, res) => {
     try {
       const employees = await storage.getAllEmployees();
-      const totalEmployees = employees.length;
       
-      const departmentCounts = employees.reduce((acc, emp) => {
+      // 비활성 직원 제외
+      const activeEmployees = employees.filter(emp => emp.isActive !== false);
+      const totalEmployees = activeEmployees.length;
+      
+      const departmentCounts = activeEmployees.reduce((acc, emp) => {
         acc[emp.department] = (acc[emp.department] || 0) + 1;
         return acc;
       }, {} as Record<string, number>);
@@ -1411,7 +1433,9 @@ app.put("/api/employees/:id", async (req, res) => {
       
       // 자격증별 보유 현황 계산
       const certificationStats = new Map<string, { name: string; count: number; percentage: number }>();
-      const totalEmployees = (await storage.getAllEmployees()).length;
+      const allEmployees = await storage.getAllEmployees();
+      const activeEmployees = allEmployees.filter(emp => emp.isActive !== false);
+      const totalEmployees = activeEmployees.length;
       
       allCertifications.forEach(cert => {
         const key = cert.name;
@@ -1612,8 +1636,9 @@ app.put("/api/employees/:id", async (req, res) => {
       const allEmployees = await storage.getAllEmployees();
       console.log(`📊 전체 직원 데이터 로드: ${allEmployees.length}명`);
       
-      // R&D 인원 필터링
-      const rdEmployees = allEmployees.filter(employee => {
+      // 비활성 직원 제외 후 R&D 인원 필터링
+      const activeEmployees = allEmployees.filter(emp => emp.isActive !== false);
+      const rdEmployees = activeEmployees.filter(employee => {
         // 부서명이 "기술연구소" 또는 "연구개발" 또는 "R&D"를 포함하는 경우
         const isRdDepartment = employee.department && (
           employee.department.includes('기술연구소') ||
@@ -1853,7 +1878,8 @@ app.put("/api/employees/:id", async (req, res) => {
       
       // R&D 인원 자동 계산을 위한 전체 직원 데이터 조회
       const allEmployees = await storage.getAllEmployees();
-      const rdEmployees = allEmployees.filter(employee => {
+      const activeEmployees = allEmployees.filter(emp => emp.isActive !== false);
+      const rdEmployees = activeEmployees.filter(employee => {
         const isRdDepartment = employee.department && (
           employee.department.includes('기술연구소') ||
           employee.department.includes('연구개발') ||
@@ -1954,8 +1980,9 @@ app.put("/api/employees/:id", async (req, res) => {
       // R&D 인원 자동 계산을 위한 전체 직원 데이터 조회
       let allEmployees = undefined;
       if (useAutoRdEmployees === 'true') {
-        allEmployees = await storage.getAllEmployees();
-        console.log(`📊 전체 직원 데이터 로드: ${allEmployees.length}명`);
+        const allEmployeesData = await storage.getAllEmployees();
+        allEmployees = allEmployeesData.filter(emp => emp.isActive !== false);
+        console.log(`📊 활성 직원 데이터 로드: ${allEmployees.length}명`);
       }
       
       // 분석 모듈 import 및 실행

@@ -50,11 +50,9 @@ export default function SkillEditModal({ employeeId, isOpen, onClose }: SkillEdi
     const loadSkills = async () => {
       setIsLoading(true);
       try {
-        console.log('🔍 스킬 수정 모달 - 스킬 데이터 로드 시작:', employeeId);
         const response = await fetch(`/api/skills?employeeId=${employeeId}`);
         if (response.ok) {
           const data = await response.json();
-          console.log('🔍 스킬 수정 모달 - 스킬 데이터 로드 성공:', data);
           const formattedSkills = data.map((skill: Skill) => ({
             skillType: skill.skillType as 'technical' | 'soft' | 'leadership' | 'domain',
             skillName: skill.skillName,
@@ -66,7 +64,6 @@ export default function SkillEditModal({ employeeId, isOpen, onClose }: SkillEdi
           }));
           setSkills(formattedSkills);
         } else {
-          console.log('🔍 스킬 수정 모달 - 스킬 데이터 없음');
           setSkills([]);
         }
       } catch (error) {
@@ -106,13 +103,11 @@ export default function SkillEditModal({ employeeId, isOpen, onClose }: SkillEdi
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      console.log('🔍 스킬 저장 시작:', skills);
       
       // 기존 스킬 삭제
       const deleteResponse = await fetch(`/api/skills?employeeId=${employeeId}`, {
         method: 'DELETE'
       });
-      console.log('🔍 기존 스킬 삭제 결과:', deleteResponse.status);
 
       // 새 스킬들 저장
       for (const skill of skills) {
@@ -127,7 +122,6 @@ export default function SkillEditModal({ employeeId, isOpen, onClose }: SkillEdi
           notes: skill.notes
         };
 
-        console.log('🔍 스킬 저장 데이터:', skillData);
         
         const response = await fetch('/api/skills', {
           method: 'POST',
@@ -140,7 +134,6 @@ export default function SkillEditModal({ employeeId, isOpen, onClose }: SkillEdi
         }
       }
 
-      console.log('🔍 스킬 저장 완료');
       toast({
         title: "성공",
         description: "스킬 정보가 저장되었습니다.",

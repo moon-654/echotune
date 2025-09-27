@@ -53,11 +53,9 @@ export default function CertificationEditModal({ employeeId, isOpen, onClose }: 
     const loadCertifications = async () => {
       setIsLoading(true);
       try {
-        console.log('🔍 자격증 수정 모달 - 자격증 데이터 로드 시작:', employeeId);
         const response = await fetch(`/api/certifications?employeeId=${employeeId}`);
         if (response.ok) {
           const data = await response.json();
-          console.log('🔍 자격증 수정 모달 - 자격증 데이터 로드 성공:', data);
           const formattedCertifications = data.map((cert: Certification) => ({
             name: cert.name,
             issuer: cert.issuer,
@@ -74,7 +72,6 @@ export default function CertificationEditModal({ employeeId, isOpen, onClose }: 
           }));
           setCertifications(formattedCertifications);
         } else {
-          console.log('🔍 자격증 수정 모달 - 자격증 데이터 없음');
           setCertifications([]);
         }
       } catch (error) {
@@ -113,13 +110,11 @@ export default function CertificationEditModal({ employeeId, isOpen, onClose }: 
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      console.log('🔍 자격증 저장 시작:', certifications);
       
       // 기존 자격증 삭제
       const deleteResponse = await fetch(`/api/certifications?employeeId=${employeeId}`, {
         method: 'DELETE'
       });
-      console.log('🔍 기존 자격증 삭제 결과:', deleteResponse.status);
 
       // 새 자격증들 저장
       for (const certification of certifications) {
@@ -136,7 +131,6 @@ export default function CertificationEditModal({ employeeId, isOpen, onClose }: 
           isActive: certification.isActive
         };
 
-        console.log('🔍 자격증 저장 데이터:', certificationData);
         
         const response = await fetch('/api/certifications', {
           method: 'POST',
@@ -149,7 +143,6 @@ export default function CertificationEditModal({ employeeId, isOpen, onClose }: 
         }
       }
 
-      console.log('🔍 자격증 저장 완료');
       toast({
         title: "성공",
         description: "자격증 정보가 저장되었습니다.",

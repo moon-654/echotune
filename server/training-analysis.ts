@@ -41,27 +41,19 @@ export class TrainingAnalysisModule {
   ): Promise<TrainingAnalysisResult> {
     const { startYear, endYear, includeTrainingTypeBreakdown = false, includeYearlyBreakdown = false, useAutoRdEmployees = false } = options;
 
-    console.log(`📊 교육 시간 분석 시작: ${startYear}-${endYear}`);
-    console.log(`📊 교육 시간 데이터: ${trainingHoursData.length}개`);
-    console.log(`📊 팀 인원 데이터: ${teamEmployeesData.length}개`);
-
     // 1. 총 교육 시간 계산
     const totalHours = this.calculateTotalTrainingHours(trainingHoursData, startYear, endYear);
-    console.log(`📊 총 교육 시간: ${totalHours}시간`);
 
     // 2. 누적 R&D 인원 계산
     let cumulativeEmployees: number;
     if (useAutoRdEmployees && allEmployees) {
       cumulativeEmployees = this.calculateAutoRdEmployees(allEmployees, startYear, endYear);
-      console.log(`📊 자동 계산된 R&D 인원: ${cumulativeEmployees}명`);
     } else {
       cumulativeEmployees = this.calculateCumulativeEmployees(teamEmployeesData, startYear, endYear);
-      console.log(`📊 누적 R&D 인원: ${cumulativeEmployees}명`);
     }
 
     // 3. 1인당 평균 교육 시간 계산
     const averageHoursPerPerson = cumulativeEmployees > 0 ? totalHours / cumulativeEmployees : 0;
-    console.log(`📊 1인당 평균 교육 시간: ${averageHoursPerPerson.toFixed(2)}시간`);
 
     const result: TrainingAnalysisResult = {
       averageHoursPerPerson: Math.round(averageHoursPerPerson * 100) / 100, // 소수점 둘째 자리까지
@@ -83,7 +75,6 @@ export class TrainingAnalysisModule {
       result.yearlyBreakdown = this.calculateYearlyBreakdown(trainingHoursData, teamEmployeesData, startYear, endYear);
     }
 
-    console.log(`📊 교육 시간 분석 완료:`, result);
     return result;
   }
 
@@ -207,14 +198,6 @@ export class TrainingAnalysisModule {
     startYear: number,
     endYear: number
   ): number {
-    console.log(`📊 전체 직원 수: ${allEmployees.length}명`);
-    console.log(`📊 전체 직원 목록:`, allEmployees.map(emp => ({ 
-      name: emp.name, 
-      department: emp.department, 
-      team: emp.team,
-      departmentCode: emp.departmentCode,
-      isActive: emp.isActive
-    })));
     
     // 기술연구소 부문에 소속된 모든 직원을 R&D 인원으로 계산
     const rdEmployees = allEmployees.filter(employee => {
@@ -236,15 +219,10 @@ export class TrainingAnalysisModule {
       
       const isRd = isRdDepartment || isRdTeam;
       
-      if (isRd) {
-        console.log(`📊 R&D 직원 발견: ${employee.name} (부서: ${employee.department}, 팀: ${employee.team}, 부서코드: ${employee.departmentCode})`);
-      }
       
       return isRd;
     });
 
-    console.log(`📊 기술연구소 부문 소속 직원: ${rdEmployees.length}명`);
-    console.log(`📊 R&D 직원 목록:`, rdEmployees.map(emp => ({ name: emp.name, department: emp.department, team: emp.team })));
     
     return rdEmployees.length;
   }

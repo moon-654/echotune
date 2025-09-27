@@ -937,7 +937,30 @@
       "isDepartmentHead": true,
       "isActive": true,
       "createdAt": "2025-09-27T07:45:40.303Z",
-      "updatedAt": "2025-09-27T07:48:53.768Z"
+      "updatedAt": "2025-09-27T22:57:18.804Z",
+      "education": "",
+      "major": "",
+      "school": ""
+    },
+    "53fd46eb-3810-4f3a-a78a-74ee7474de0c": {
+      "id": "53fd46eb-3810-4f3a-a78a-74ee7474de0c",
+      "employeeNumber": "2124412",
+      "departmentCode": "RD",
+      "teamCode": "",
+      "name": "사치코",
+      "position": "사원",
+      "department": "기술연구소",
+      "team": "",
+      "email": "",
+      "phone": "",
+      "managerId": "emp2",
+      "isActive": false,
+      "createdAt": "2025-09-27T22:56:47.520Z",
+      "updatedAt": "2025-09-27T22:57:05.465Z",
+      "photoUrl": "",
+      "education": "",
+      "major": "",
+      "school": ""
     }
   },
   "trainingHistory": {

@@ -51,11 +51,9 @@ export default function ProjectEditModal({ employeeId, isOpen, onClose }: Projec
     const loadProjects = async () => {
       setIsLoading(true);
       try {
-        console.log('🔍 프로젝트 수정 모달 - 프로젝트 데이터 로드 시작:', employeeId);
         const response = await fetch(`/api/projects?employeeId=${employeeId}`);
         if (response.ok) {
           const data = await response.json();
-          console.log('🔍 프로젝트 수정 모달 - 프로젝트 데이터 로드 성공:', data);
           const formattedProjects = data.map((project: Project) => ({
             projectName: project.projectName,
             role: project.role,
@@ -71,7 +69,6 @@ export default function ProjectEditModal({ employeeId, isOpen, onClose }: Projec
           }));
           setProjects(formattedProjects);
         } else {
-          console.log('🔍 프로젝트 수정 모달 - 프로젝트 데이터 없음');
           setProjects([]);
         }
       } catch (error) {
@@ -109,13 +106,11 @@ export default function ProjectEditModal({ employeeId, isOpen, onClose }: Projec
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      console.log('🔍 프로젝트 저장 시작:', projects);
       
       // 기존 프로젝트 삭제
       const deleteResponse = await fetch(`/api/projects?employeeId=${employeeId}`, {
         method: 'DELETE'
       });
-      console.log('🔍 기존 프로젝트 삭제 결과:', deleteResponse.status);
 
       // 새 프로젝트들 저장
       for (const project of projects) {
@@ -134,7 +129,6 @@ export default function ProjectEditModal({ employeeId, isOpen, onClose }: Projec
           notes: project.notes
         };
 
-        console.log('🔍 프로젝트 저장 데이터:', projectData);
         
         const response = await fetch('/api/projects', {
           method: 'POST',
@@ -147,7 +141,6 @@ export default function ProjectEditModal({ employeeId, isOpen, onClose }: Projec
         }
       }
 
-      console.log('🔍 프로젝트 저장 완료');
       toast({
         title: "성공",
         description: "프로젝트 정보가 저장되었습니다.",

@@ -56,7 +56,19 @@ export default function EmployeeCard({ employee }: EmployeeCardProps) {
             )}
           </div>
           <div className="flex-1">
-            <h4 className="font-semibold" data-testid="employee-name">{employee.name}</h4>
+            <div className="flex items-center gap-2">
+              <h4 className="font-semibold" data-testid="employee-name">{employee.name}</h4>
+              <span 
+                className={`px-2 py-1 text-xs rounded-full ${
+                  employee.isActive === false 
+                    ? 'bg-red-100 text-red-800' 
+                    : 'bg-green-100 text-green-800'
+                }`}
+                data-testid="employee-status"
+              >
+                {employee.isActive === false ? '비활성' : '활성'}
+              </span>
+            </div>
             <p className="text-sm text-muted-foreground" data-testid="employee-position">{employee.position}</p>
             <p className="text-xs text-muted-foreground" data-testid="employee-department">{employee.department}</p>
             <p className="text-xs text-muted-foreground" data-testid="employee-number">#{employee.employeeNumber || employee.id}</p>

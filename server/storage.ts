@@ -620,6 +620,11 @@ export class MemStorage implements IStorage {
   }
 
   async getAllEmployees(): Promise<Employee[]> {
+    return Array.from(this.employees.values()).filter(employee => employee.isActive !== false);
+  }
+
+  // 모든 직원 조회 (비활성 포함) - 직원 관리 페이지용
+  async getAllEmployeesIncludingInactive(): Promise<Employee[]> {
     return Array.from(this.employees.values());
   }
 

@@ -43,11 +43,8 @@ export default function EmployeeCreateModal({ isOpen, onClose }: EmployeeCreateM
   const { departments: memoizedDepartments, teams: memoizedTeams } = useMemo(() => {
     if (!isOpen) return { departments: [], teams: [] };
     
-    console.log('🏢 부서/팀 데이터 로드 중...');
     const deptData = DepartmentTeamManager.getAllDepartments();
     const teamData = DepartmentTeamManager.getAllTeams();
-    console.log('📊 로드된 부서 데이터:', deptData);
-    console.log('📊 로드된 팀 데이터:', teamData);
     return { departments: deptData, teams: teamData };
   }, [isOpen]);
 
@@ -60,7 +57,6 @@ export default function EmployeeCreateModal({ isOpen, onClose }: EmployeeCreateM
   // 모달이 열릴 때 폼 초기화
   useEffect(() => {
     if (isOpen) {
-      console.log('📝 직원 생성 모달 열림');
       setFormData({
         isActive: true,
         isDepartmentHead: false
@@ -140,7 +136,6 @@ export default function EmployeeCreateModal({ isOpen, onClose }: EmployeeCreateM
       isActive: formData.isActive ?? true
     };
 
-    console.log('🚀 직원 생성 요청:', submitData);
     createEmployeeMutation.mutate(submitData);
   };
 

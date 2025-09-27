@@ -41,11 +41,8 @@ export default function EmployeeEditModal({ employee, isOpen, onClose }: Employe
   const { departments: memoizedDepartments, teams: memoizedTeams } = useMemo(() => {
     if (!isOpen) return { departments: [], teams: [] };
     
-    console.log('🏢 직원 수정 - 부서/팀 데이터 로드 중...');
     const deptData = DepartmentTeamManager.getAllDepartments();
     const teamData = DepartmentTeamManager.getAllTeams();
-    console.log('📊 직원 수정 - 로드된 부서 데이터:', deptData);
-    console.log('📊 직원 수정 - 로드된 팀 데이터:', teamData);
     return { departments: deptData, teams: teamData };
   }, [isOpen]);
 
@@ -147,7 +144,6 @@ export default function EmployeeEditModal({ employee, isOpen, onClose }: Employe
       graduationYear: education.graduationYear ? parseInt(education.graduationYear) : undefined
     };
 
-    console.log('🚀 직원 수정 요청:', { employeeId: employee.id, submitData });
     updateEmployeeMutation.mutate(submitData);
   };
 
