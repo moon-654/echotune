@@ -977,6 +977,19 @@
       "status": "planned",
       "createdAt": "2025-09-27T15:04:31.204Z",
       "updatedAt": "2025-09-27T15:04:31.204Z"
+    },
+    "9611f538-b26a-4932-a27e-d82446e1de33": {
+      "id": "9611f538-b26a-4932-a27e-d82446e1de33",
+      "employeeId": "emp2",
+      "courseName": "1",
+      "provider": "",
+      "type": "optional",
+      "category": "",
+      "startDate": null,
+      "completionDate": null,
+      "status": "planned",
+      "createdAt": "2025-09-27T23:31:41.254Z",
+      "updatedAt": "2025-09-27T23:31:41.254Z"
     }
   },
   "certifications": {
@@ -1042,15 +1055,25 @@
   "awards": {},
   "projects": {},
   "trainingHours": {
-    "75ec0d95-223e-4da7-8870-b70cd3f9636e": {
-      "id": "75ec0d95-223e-4da7-8870-b70cd3f9636e",
+    "6ee052d1-2f0a-4a2b-955b-8314bced80a9": {
+      "id": "6ee052d1-2f0a-4a2b-955b-8314bced80a9",
       "year": 2024,
       "team": "개발팀",
       "trainingType": "optional",
       "hours": 5,
       "description": "개발팀 optional 교육시간 (2024년)",
-      "createdAt": "2025-09-27T15:13:28.367Z",
-      "updatedAt": "2025-09-27T15:13:28.367Z"
+      "createdAt": "2025-09-27T23:22:15.819Z",
+      "updatedAt": "2025-09-27T23:22:15.819Z"
+    },
+    "9b40baad-4a5c-42de-ae41-86f6ba776a6a": {
+      "id": "9b40baad-4a5c-42de-ae41-86f6ba776a6a",
+      "year": 1970,
+      "team": "기술연구소",
+      "trainingType": "optional",
+      "hours": 0,
+      "description": "기술연구소 optional 교육시간 (자동생성)",
+      "createdAt": "2025-09-27T23:31:41.256Z",
+      "updatedAt": "2025-09-27T23:31:41.256Z"
     }
   },
   "teamEmployees": {},

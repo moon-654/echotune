@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import EmployeeEditModal from '../employees/employee-edit-modal';
+import EmployeeInfoPanel from './employee-info-panel';
 import type { Employee } from "@shared/schema";
 import { DepartmentTeamManager } from "@/lib/departments-teams";
 
@@ -259,6 +260,9 @@ export default function D3OrgChart({ employees, searchTerm, zoomLevel, onEmploye
   // 간단한 편집 모달 상태
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingEmployee, setEditingEmployee] = useState<any>(null);
+  const [isInfoPanelOpen, setIsInfoPanelOpen] = useState(false);
+  const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | null>(null);
+  const [panelWidth, setPanelWidth] = useState(50); // 기본 50% 너비
 
   // 편집 모달 저장 함수
   const handleEditSave = async (formData: any) => {
@@ -906,7 +910,7 @@ export default function D3OrgChart({ employees, searchTerm, zoomLevel, onEmploye
     return `
         <div class="node-container" style="
           width: 280px;
-          height: 140px;
+          height: 160px;
           display: flex;
           justify-content: center;
           align-items: center;
@@ -914,7 +918,7 @@ export default function D3OrgChart({ employees, searchTerm, zoomLevel, onEmploye
         ">
           <div class="content-container" style="
             width: 260px;
-            height: 120px;
+            height: 140px;
             background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(147, 197, 253, 0.1) 100%);
             border-radius: 16px;
             border: 2px dashed #3b82f6;
@@ -951,7 +955,7 @@ export default function D3OrgChart({ employees, searchTerm, zoomLevel, onEmploye
     return `
       <div class="node-container" style="
         width: 280px;
-        height: 140px;
+        height: 160px;
         display: flex;
           justify-content: center;
         align-items: center;
@@ -959,7 +963,7 @@ export default function D3OrgChart({ employees, searchTerm, zoomLevel, onEmploye
       ">
         <div class="content-container" style="
           width: 260px;
-          height: 120px;
+          height: 140px;
           background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
           border-radius: 16px;
           border: ${
@@ -973,11 +977,11 @@ export default function D3OrgChart({ employees, searchTerm, zoomLevel, onEmploye
           transition: all 0.3s ease;
       ">
           
-          <!-- 상단 직원 번호 -->
+          <!-- 상단 직원 번호 (좌상단) -->
           <div style="
           position: absolute; 
             top: 8px;
-            right: 8px;
+            left: 8px;
           display: flex;
           align-items: center;
             gap: 4px;
@@ -995,7 +999,41 @@ export default function D3OrgChart({ employees, searchTerm, zoomLevel, onEmploye
           </div>
           
           <!-- 편집 버튼 (우하단, 드래그 영역 밖, 항상 표시) -->
+          <!-- 정보 버튼 (우상단) -->
           <div style="
+          position: absolute; 
+              top: 2px;
+          right: 4px; 
+              z-index: 10;
+              pointer-events: auto;
+            ">
+              <button 
+                onclick="if(window.showEmployeeInfo) { window.showEmployeeInfo('${d.data.id}'); } else { console.error('showEmployeeInfo 함수가 없습니다!'); }"
+                style="
+                  width: 24px;
+                  height: 24px;
+          border-radius: 50%; 
+                  background: #17a2b8;
+                  color: white;
+                  border: none;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 12px;
+                  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+                  transition: all 0.2s ease;
+                  pointer-events: auto;
+                "
+                onmouseover="this.style.background='#138496'; this.style.transform='scale(1.1)'"
+                onmouseout="this.style.background='#17a2b8'; this.style.transform='scale(1)'"
+              >
+                i
+              </button>
+            </div>
+
+            <!-- 편집 버튼 (우하단) -->
+            <div style="
           position: absolute; 
               bottom: 2px;
           right: 4px; 
@@ -1063,7 +1101,7 @@ export default function D3OrgChart({ employees, searchTerm, zoomLevel, onEmploye
           <!-- 프로필 이미지 -->
           <div style="
           position: absolute; 
-            top: 20px;
+            top: 35px;
             left: 16px;
             width: 50px;
             height: 50px;
@@ -2183,6 +2221,15 @@ export default function D3OrgChart({ employees, searchTerm, zoomLevel, onEmploye
     };
     console.log('✅ editNode 함수 등록 완료');
     
+    // 직원 정보 표시 함수 등록
+    console.log('ℹ️ showEmployeeInfo 함수 등록 중...');
+    (window as any).showEmployeeInfo = (employeeId: string) => {
+      console.log('ℹ️ 직원 정보 표시:', employeeId);
+      setSelectedEmployeeId(employeeId);
+      setIsInfoPanelOpen(true);
+    };
+    console.log('✅ showEmployeeInfo 함수 등록 완료');
+    
     // 하위 직원 추가 함수 등록
     console.log('➕ addSubordinate 함수 등록 중...');
     (window as any).addSubordinate = async (parentId: string) => {
@@ -2644,6 +2691,18 @@ export default function D3OrgChart({ employees, searchTerm, zoomLevel, onEmploye
         employee={editingEmployee}
         onClose={() => setIsEditModalOpen(false)}
         onSave={handleEditSave}
+      />
+      
+      {/* 직원 정보 슬라이드 패널 */}
+      <EmployeeInfoPanel
+        employeeId={selectedEmployeeId}
+        isOpen={isInfoPanelOpen}
+        onClose={() => {
+          setIsInfoPanelOpen(false);
+          setSelectedEmployeeId(null);
+        }}
+        panelWidth={panelWidth}
+        onWidthChange={setPanelWidth}
       />
     </div>
   );

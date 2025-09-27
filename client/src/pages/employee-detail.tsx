@@ -17,7 +17,11 @@ import CertificationEditModal from "@/components/employees/certification-edit-mo
 import LanguageEditModal from "@/components/employees/language-edit-modal";
 import type { Employee, Patent, Publication, Award as AwardType, Project } from "@shared/schema";
 
-export default function EmployeeDetail() {
+interface EmployeeDetailProps {
+  employeeId?: string;
+}
+
+export default function EmployeeDetail({ employeeId: propEmployeeId }: EmployeeDetailProps = {}) {
   const [location, setLocation] = useLocation();
   const [activeTab, setActiveTab] = useState("overview");
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -29,8 +33,8 @@ export default function EmployeeDetail() {
   const [isCertificationModalOpen, setIsCertificationModalOpen] = useState(false);
   const [isLanguageModalOpen, setIsLanguageModalOpen] = useState(false);
 
-  // URL에서 직원 ID 가져오기 (/employees/emp1 -> emp1)
-  const employeeId = location.split('/').pop() || "emp1";
+  // props로 받은 employeeId가 있으면 사용, 없으면 URL에서 가져오기
+  const employeeId = propEmployeeId || location.split('/').pop() || "emp1";
 
   // 실제 직원 데이터 상태 관리
   const [employee, setEmployee] = useState<Employee | null>(null);
@@ -298,11 +302,13 @@ export default function EmployeeDetail() {
   const overallSkill = skills.length > 0 
     ? Math.floor(skills.reduce((sum, skill) => sum + skill.proficiencyLevel, 0) / skills.length)
     : 0;
-  const experience = employee?.hireDate 
+  
+  // employee 데이터가 로드된 후에만 experience 계산
+  const experience = employee && employee.hireDate 
     ? Math.floor((new Date().getTime() - new Date(employee.hireDate).getTime()) / (1000 * 60 * 60 * 24 * 365))
     : 0;
 
-  // 로딩 상태
+  // 로딩 상태 또는 직원 데이터가 없는 경우
   if (employeeLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -313,9 +319,8 @@ export default function EmployeeDetail() {
       </div>
     );
   }
-
-  // 직원 데이터가 없는 경우
-  if (!employee) {
+  
+  if (!employee || employee === null || employee === undefined) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
@@ -342,8 +347,8 @@ export default function EmployeeDetail() {
             <ArrowLeft className="w-4 h-4" />
           </Button>
           <div>
-            <h1 className="text-2xl font-bold">{employee.name}</h1>
-            <p className="text-muted-foreground">{employee.position} • {employee.department}</p>
+            <h1 className="text-2xl font-bold">{employee?.name || '이름 없음'}</h1>
+            <p className="text-muted-foreground">{employee?.position || '직급 없음'} • {employee?.department || '부서 없음'}</p>
           </div>
         </div>
         <Button onClick={() => setIsEditModalOpen(true)}>
@@ -357,9 +362,9 @@ export default function EmployeeDetail() {
         <CardContent className="p-6">
           <div className="flex items-start space-x-6">
             <Avatar className="w-20 h-20">
-              <AvatarImage src={employee.photoUrl} />
+              <AvatarImage src={employee?.photoUrl} />
               <AvatarFallback className="text-lg">
-                {employee.name.charAt(0)}
+                {employee?.name?.charAt(0) || '?'}
               </AvatarFallback>
             </Avatar>
             
@@ -368,17 +373,17 @@ export default function EmployeeDetail() {
                 <div className="space-y-2">
                   <div className="flex items-center space-x-2">
                     <Mail className="w-4 h-4 text-muted-foreground" />
-                    <span className="text-sm">{employee.email || '이메일 없음'}</span>
+                    <span className="text-sm">{employee?.email || '이메일 없음'}</span>
                   </div>
                   <div className="flex items-center space-x-2">
                     <Phone className="w-4 h-4 text-muted-foreground" />
-                    <span className="text-sm">{employee.phone || '전화번호 없음'}</span>
+                    <span className="text-sm">{employee?.phone || '전화번호 없음'}</span>
                   </div>
                 </div>
                 <div className="space-y-2">
                   <div className="flex items-center space-x-2">
                     <Calendar className="w-4 h-4 text-muted-foreground" />
-                    <span className="text-sm">입사일: {employee.hireDate || '미정'}</span>
+                    <span className="text-sm">입사일: {employee?.hireDate || '미정'}</span>
                   </div>
                   <div className="flex items-center space-x-2">
                     <MapPin className="w-4 h-4 text-muted-foreground" />
@@ -397,27 +402,27 @@ export default function EmployeeDetail() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
                   <div className="flex items-center space-x-2">
                     <GraduationCap className="w-4 h-4 text-muted-foreground" />
-                    <span>최종학력: {employee.education || '미입력'}</span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <BookOpen className="w-4 h-4 text-muted-foreground" />
-                    <span>전공: {employee.major || '미입력'}</span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Building className="w-4 h-4 text-muted-foreground" />
-                    <span>학교: {employee.school || '미입력'}</span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Calendar className="w-4 h-4 text-muted-foreground" />
-                    <span>졸업년도: {employee.graduationYear || '미입력'}</span>
+                          <span>최종학력: {employee?.education || '미입력'}</span>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <BookOpen className="w-4 h-4 text-muted-foreground" />
+                          <span>전공: {employee?.major || '미입력'}</span>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <Building className="w-4 h-4 text-muted-foreground" />
+                          <span>학교: {employee?.school || '미입력'}</span>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <Calendar className="w-4 h-4 text-muted-foreground" />
+                          <span>졸업년도: {employee?.graduationYear || '미입력'}</span>
                   </div>
                 </div>
               </div>
               
               <div className="flex space-x-2">
-                <Badge variant="secondary">{employee.department}</Badge>
-                {employee.team && <Badge variant="outline">{employee.team}</Badge>}
-                <Badge variant="default">{employee.position}</Badge>
+                <Badge variant="secondary">{employee?.department || '부서 없음'}</Badge>
+                {employee?.team && <Badge variant="outline">{employee.team}</Badge>}
+                <Badge variant="default">{employee?.position || '직급 없음'}</Badge>
               </div>
             </div>
           </div>
@@ -491,15 +496,15 @@ export default function EmployeeDetail() {
               <CardContent className="space-y-4">
                 <div className="flex justify-between">
                   <span>부서</span>
-                  <span className="font-semibold">{employee.department}</span>
+                  <span className="font-semibold">{employee?.department || '부서 없음'}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>팀</span>
-                  <span className="font-semibold">{employee.team || '팀 없음'}</span>
+                  <span className="font-semibold">{employee?.team || '팀 없음'}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>직책</span>
-                  <span className="font-semibold">{employee.position}</span>
+                  <span className="font-semibold">{employee?.position || '직급 없음'}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>상태</span>
