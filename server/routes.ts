@@ -486,7 +486,7 @@ app.put("/api/employees/:id", async (req, res) => {
     try {
       const employeeId = req.query.employeeId as string;
       const certifications = employeeId 
-        ? await storage.getCertifications(employeeId)
+        ? await storage.getCertificationsByEmployee(employeeId)
         : await storage.getAllCertifications();
       res.json(certifications);
     } catch (error) {
@@ -575,11 +575,14 @@ app.put("/api/employees/:id", async (req, res) => {
   app.get("/api/skills", async (req, res) => {
     try {
       const employeeId = req.query.employeeId as string;
+      console.log('🔍 스킬 조회 API 호출:', { employeeId });
       const skills = employeeId 
-        ? await storage.getSkills(employeeId)
+        ? await storage.getSkillsByEmployee(employeeId)
         : await storage.getAllSkills();
+      console.log('🔍 스킬 조회 결과:', skills);
       res.json(skills);
     } catch (error) {
+      console.error('🔍 스킬 조회 오류:', error);
       res.status(500).json({ error: "Failed to fetch skills" });
     }
   });
@@ -613,6 +616,430 @@ app.put("/api/employees/:id", async (req, res) => {
       res.json({ success: true });
     } catch (error) {
       res.status(500).json({ error: "Failed to delete skill record" });
+    }
+  });
+
+  // 특정 직원의 모든 스킬 삭제
+  app.delete("/api/skills", async (req, res) => {
+    try {
+      const employeeId = req.query.employeeId as string;
+      console.log('🔍 직원 스킬 전체 삭제:', { employeeId });
+      if (!employeeId) {
+        return res.status(400).json({ error: "Employee ID is required" });
+      }
+      
+      const skills = await storage.getSkillsByEmployee(employeeId);
+      console.log('🔍 삭제할 스킬 목록:', skills);
+      
+      for (const skill of skills) {
+        await storage.deleteSkill(skill.id);
+      }
+      
+      console.log('🔍 직원 스킬 전체 삭제 완료');
+      res.json({ success: true, deletedCount: skills.length });
+    } catch (error) {
+      console.error('🔍 직원 스킬 전체 삭제 오류:', error);
+      res.status(500).json({ error: "Failed to delete skills" });
+    }
+  });
+
+  // Training History routes
+  app.get("/api/training-history", async (req, res) => {
+    try {
+      const employeeId = req.query.employeeId as string;
+      console.log('🔍 교육 이력 조회 API 호출:', { employeeId });
+      const trainings = employeeId 
+        ? await storage.getTrainingHistoryByEmployee(employeeId)
+        : await storage.getAllTrainingHistory();
+      console.log('🔍 교육 이력 조회 결과:', trainings);
+      res.json(trainings);
+    } catch (error) {
+      console.error('🔍 교육 이력 조회 오류:', error);
+      res.status(500).json({ error: "Failed to fetch training history" });
+    }
+  });
+
+  app.post("/api/training-history", async (req, res) => {
+    try {
+      const trainingData = insertTrainingHistorySchema.parse(req.body);
+      const training = await storage.createTrainingHistory(trainingData);
+      
+      // 교육 이력 저장 후 자동으로 교육시간 데이터로 변환
+      try {
+        const trainingYear = new Date(training.completionDate).getFullYear();
+        const employee = await storage.getEmployee(training.employeeId);
+        
+        if (employee) {
+          // 팀이 없는 직원은 부서명을 팀으로 사용
+          const teamName = employee.team || employee.department || '기타';
+          
+          // 해당 팀의 해당 연도, 해당 교육유형의 기존 데이터 조회
+          const existingHours = await storage.getTrainingHoursByYearRange(trainingYear, trainingYear);
+          const existingData = existingHours.find(th => 
+            th.team === teamName && 
+            th.trainingType === (training.type || '기타')
+          );
+          
+          if (existingData) {
+            // 기존 데이터 업데이트
+            await storage.updateTrainingHours(existingData.id, {
+              hours: existingData.hours + (training.duration || 0)
+            });
+            console.log(`🔄 교육시간 자동 업데이트: ${teamName} - ${training.type || '기타'} (+${training.duration || 0}시간)`);
+          } else {
+            // 새 데이터 생성
+            await storage.createTrainingHours({
+              year: trainingYear,
+              team: teamName,
+              trainingType: training.type || '기타',
+              hours: training.duration || 0,
+              description: `${teamName} ${training.type || '기타'} 교육시간 (자동생성)`
+            });
+            console.log(`🔄 교육시간 자동 생성: ${teamName} - ${training.type || '기타'} (${training.duration || 0}시간)`);
+          }
+        }
+      } catch (autoConvertError) {
+        console.error('교육시간 자동 변환 오류:', autoConvertError);
+        // 자동 변환 실패해도 교육 이력 저장은 성공으로 처리
+      }
+      
+      res.status(201).json(training);
+    } catch (error) {
+      res.status(400).json({ error: "Failed to create training history" });
+    }
+  });
+
+  app.put("/api/training-history/:id", async (req, res) => {
+    try {
+      const trainingData = insertTrainingHistorySchema.partial().parse(req.body);
+      const training = await storage.updateTrainingHistory(req.params.id, trainingData);
+      res.json(training);
+    } catch (error) {
+      res.status(400).json({ error: "Failed to update training history" });
+    }
+  });
+
+  app.delete("/api/training-history/:id", async (req, res) => {
+    try {
+      const success = await storage.deleteTrainingHistory(req.params.id);
+      if (!success) {
+        return res.status(404).json({ error: "Training history record not found" });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to delete training history record" });
+    }
+  });
+
+  // 특정 직원의 모든 교육 이력 삭제
+  app.delete("/api/training-history", async (req, res) => {
+    try {
+      const employeeId = req.query.employeeId as string;
+      console.log('🔍 직원 교육 이력 전체 삭제:', { employeeId });
+      if (!employeeId) {
+        return res.status(400).json({ error: "Employee ID is required" });
+      }
+      
+      const trainings = await storage.getTrainingHistoryByEmployee(employeeId);
+      console.log('🔍 삭제할 교육 이력 목록:', trainings);
+      
+      for (const training of trainings) {
+        await storage.deleteTrainingHistory(training.id);
+      }
+      
+      console.log('🔍 직원 교육 이력 전체 삭제 완료');
+      res.json({ success: true, deletedCount: trainings.length });
+    } catch (error) {
+      console.error('🔍 직원 교육 이력 전체 삭제 오류:', error);
+      res.status(500).json({ error: "Failed to delete training history" });
+    }
+  });
+
+  // Projects routes
+  app.get("/api/projects", async (req, res) => {
+    try {
+      const employeeId = req.query.employeeId as string;
+      console.log('🔍 프로젝트 조회 API 호출:', { employeeId });
+      const projects = employeeId 
+        ? await storage.getProjectsByEmployee(employeeId)
+        : await storage.getAllProjects();
+      console.log('🔍 프로젝트 조회 결과:', projects);
+      res.json(projects);
+    } catch (error) {
+      console.error('🔍 프로젝트 조회 오류:', error);
+      res.status(500).json({ error: "Failed to fetch projects" });
+    }
+  });
+
+  app.post("/api/projects", async (req, res) => {
+    try {
+      const projectData = req.body;
+      const project = await storage.createProject(projectData);
+      res.status(201).json(project);
+    } catch (error) {
+      res.status(400).json({ error: "Failed to create project" });
+    }
+  });
+
+  app.put("/api/projects/:id", async (req, res) => {
+    try {
+      const projectData = req.body;
+      const project = await storage.updateProject(req.params.id, projectData);
+      res.json(project);
+    } catch (error) {
+      res.status(400).json({ error: "Failed to update project" });
+    }
+  });
+
+  app.delete("/api/projects/:id", async (req, res) => {
+    try {
+      const success = await storage.deleteProject(req.params.id);
+      if (!success) {
+        return res.status(404).json({ error: "Project not found" });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to delete project" });
+    }
+  });
+
+  // 특정 직원의 모든 프로젝트 삭제
+  app.delete("/api/projects", async (req, res) => {
+    try {
+      const employeeId = req.query.employeeId as string;
+      console.log('🔍 직원 프로젝트 전체 삭제:', { employeeId });
+      if (!employeeId) {
+        return res.status(400).json({ error: "Employee ID is required" });
+      }
+      
+      const projects = await storage.getProjectsByEmployee(employeeId);
+      console.log('🔍 삭제할 프로젝트 목록:', projects);
+      
+      for (const project of projects) {
+        await storage.deleteProject(project.id);
+      }
+      
+      console.log('🔍 직원 프로젝트 전체 삭제 완료');
+      res.json({ success: true, deletedCount: projects.length });
+    } catch (error) {
+      console.error('🔍 직원 프로젝트 전체 삭제 오류:', error);
+      res.status(500).json({ error: "Failed to delete projects" });
+    }
+  });
+
+  // Patents routes
+  app.get("/api/patents", async (req, res) => {
+    try {
+      const employeeId = req.query.employeeId as string;
+      console.log('🔍 특허 조회 API 호출:', { employeeId });
+      const patents = employeeId 
+        ? await storage.getPatentsByEmployee(employeeId)
+        : await storage.getAllPatents();
+      console.log('🔍 특허 조회 결과:', patents);
+      res.json(patents);
+    } catch (error) {
+      console.error('🔍 특허 조회 오류:', error);
+      res.status(500).json({ error: "Failed to fetch patents" });
+    }
+  });
+
+  app.post("/api/patents", async (req, res) => {
+    try {
+      const patentData = req.body;
+      const patent = await storage.createPatent(patentData);
+      res.status(201).json(patent);
+    } catch (error) {
+      res.status(400).json({ error: "Failed to create patent" });
+    }
+  });
+
+  app.put("/api/patents/:id", async (req, res) => {
+    try {
+      const patentData = req.body;
+      const patent = await storage.updatePatent(req.params.id, patentData);
+      res.json(patent);
+    } catch (error) {
+      res.status(400).json({ error: "Failed to update patent" });
+    }
+  });
+
+  app.delete("/api/patents/:id", async (req, res) => {
+    try {
+      const success = await storage.deletePatent(req.params.id);
+      if (!success) {
+        return res.status(404).json({ error: "Patent not found" });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to delete patent" });
+    }
+  });
+
+  // 특정 직원의 모든 특허 삭제
+  app.delete("/api/patents", async (req, res) => {
+    try {
+      const employeeId = req.query.employeeId as string;
+      console.log('🔍 직원 특허 전체 삭제:', { employeeId });
+      if (!employeeId) {
+        return res.status(400).json({ error: "Employee ID is required" });
+      }
+      
+      const patents = await storage.getPatentsByEmployee(employeeId);
+      console.log('🔍 삭제할 특허 목록:', patents);
+      
+      for (const patent of patents) {
+        await storage.deletePatent(patent.id);
+      }
+      
+      console.log('🔍 직원 특허 전체 삭제 완료');
+      res.json({ success: true, deletedCount: patents.length });
+    } catch (error) {
+      console.error('🔍 직원 특허 전체 삭제 오류:', error);
+      res.status(500).json({ error: "Failed to delete patents" });
+    }
+  });
+
+  // Publications routes
+  app.get("/api/publications", async (req, res) => {
+    try {
+      const employeeId = req.query.employeeId as string;
+      console.log('🔍 논문 조회 API 호출:', { employeeId });
+      const publications = employeeId 
+        ? await storage.getPublicationsByEmployee(employeeId)
+        : await storage.getAllPublications();
+      console.log('🔍 논문 조회 결과:', publications);
+      res.json(publications);
+    } catch (error) {
+      console.error('🔍 논문 조회 오류:', error);
+      res.status(500).json({ error: "Failed to fetch publications" });
+    }
+  });
+
+  app.post("/api/publications", async (req, res) => {
+    try {
+      const publicationData = req.body;
+      const publication = await storage.createPublication(publicationData);
+      res.status(201).json(publication);
+    } catch (error) {
+      res.status(400).json({ error: "Failed to create publication" });
+    }
+  });
+
+  app.put("/api/publications/:id", async (req, res) => {
+    try {
+      const publicationData = req.body;
+      const publication = await storage.updatePublication(req.params.id, publicationData);
+      res.json(publication);
+    } catch (error) {
+      res.status(400).json({ error: "Failed to update publication" });
+    }
+  });
+
+  app.delete("/api/publications/:id", async (req, res) => {
+    try {
+      const success = await storage.deletePublication(req.params.id);
+      if (!success) {
+        return res.status(404).json({ error: "Publication not found" });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to delete publication" });
+    }
+  });
+
+  // 특정 직원의 모든 논문 삭제
+  app.delete("/api/publications", async (req, res) => {
+    try {
+      const employeeId = req.query.employeeId as string;
+      console.log('🔍 직원 논문 전체 삭제:', { employeeId });
+      if (!employeeId) {
+        return res.status(400).json({ error: "Employee ID is required" });
+      }
+      
+      const publications = await storage.getPublicationsByEmployee(employeeId);
+      console.log('🔍 삭제할 논문 목록:', publications);
+      
+      for (const publication of publications) {
+        await storage.deletePublication(publication.id);
+      }
+      
+      console.log('🔍 직원 논문 전체 삭제 완료');
+      res.json({ success: true, deletedCount: publications.length });
+    } catch (error) {
+      console.error('🔍 직원 논문 전체 삭제 오류:', error);
+      res.status(500).json({ error: "Failed to delete publications" });
+    }
+  });
+
+  // Awards routes
+  app.get("/api/awards", async (req, res) => {
+    try {
+      const employeeId = req.query.employeeId as string;
+      console.log('🔍 수상 조회 API 호출:', { employeeId });
+      const awards = employeeId 
+        ? await storage.getAwardsByEmployee(employeeId)
+        : await storage.getAllAwards();
+      console.log('🔍 수상 조회 결과:', awards);
+      res.json(awards);
+    } catch (error) {
+      console.error('🔍 수상 조회 오류:', error);
+      res.status(500).json({ error: "Failed to fetch awards" });
+    }
+  });
+
+  app.post("/api/awards", async (req, res) => {
+    try {
+      const awardData = req.body;
+      const award = await storage.createAward(awardData);
+      res.status(201).json(award);
+    } catch (error) {
+      res.status(400).json({ error: "Failed to create award" });
+    }
+  });
+
+  app.put("/api/awards/:id", async (req, res) => {
+    try {
+      const awardData = req.body;
+      const award = await storage.updateAward(req.params.id, awardData);
+      res.json(award);
+    } catch (error) {
+      res.status(400).json({ error: "Failed to update award" });
+    }
+  });
+
+  app.delete("/api/awards/:id", async (req, res) => {
+    try {
+      const success = await storage.deleteAward(req.params.id);
+      if (!success) {
+        return res.status(404).json({ error: "Award not found" });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to delete award" });
+    }
+  });
+
+  // 특정 직원의 모든 수상 삭제
+  app.delete("/api/awards", async (req, res) => {
+    try {
+      const employeeId = req.query.employeeId as string;
+      console.log('🔍 직원 수상 전체 삭제:', { employeeId });
+      if (!employeeId) {
+        return res.status(400).json({ error: "Employee ID is required" });
+      }
+      
+      const awards = await storage.getAwardsByEmployee(employeeId);
+      console.log('🔍 삭제할 수상 목록:', awards);
+      
+      for (const award of awards) {
+        await storage.deleteAward(award.id);
+      }
+      
+      console.log('🔍 직원 수상 전체 삭제 완료');
+      res.json({ success: true, deletedCount: awards.length });
+    } catch (error) {
+      console.error('🔍 직원 수상 전체 삭제 오류:', error);
+      res.status(500).json({ error: "Failed to delete awards" });
     }
   });
 
@@ -791,6 +1218,768 @@ app.put("/api/employees/:id", async (req, res) => {
   });
 
   // 부서/팀 관리는 클라이언트 사이드에서 로컬 스토리지로 처리
+
+  // Mock 데이터 초기화 API
+  app.post("/api/init-mock-data", async (req, res) => {
+    try {
+      const { employeeId } = req.body;
+      
+      if (!employeeId) {
+        return res.status(400).json({ error: "Employee ID is required" });
+      }
+
+      // Mock 스킬 데이터
+      const mockSkills = [
+        { skillType: "technical", skillName: "JavaScript", proficiencyLevel: 85, yearsOfExperience: 3, category: "프론트엔드" },
+        { skillType: "technical", skillName: "React", proficiencyLevel: 90, yearsOfExperience: 2, category: "프론트엔드" },
+        { skillType: "technical", skillName: "Node.js", proficiencyLevel: 75, yearsOfExperience: 2, category: "백엔드" },
+        { skillType: "technical", skillName: "TypeScript", proficiencyLevel: 80, yearsOfExperience: 1, category: "프론트엔드" },
+        { skillType: "technical", skillName: "Python", proficiencyLevel: 65, yearsOfExperience: 1, category: "백엔드" },
+        { skillType: "technical", skillName: "SQL", proficiencyLevel: 70, yearsOfExperience: 2, category: "데이터베이스" }
+      ];
+
+      // Mock 교육 데이터
+      const mockTrainings = [
+        { courseName: "React 고급 패턴", provider: "온라인", type: "optional", status: "completed", score: 95, completionDate: "2024-01-15" },
+        { courseName: "TypeScript 마스터", provider: "온라인", type: "optional", status: "completed", score: 88, completionDate: "2024-02-20" },
+        { courseName: "Node.js 심화", provider: "온라인", type: "optional", status: "ongoing", startDate: "2024-03-10" },
+        { courseName: "AWS 클라우드", provider: "온라인", type: "optional", status: "planned", startDate: "2024-04-05" }
+      ];
+
+      // Mock 프로젝트 데이터
+      const mockProjects = [
+        { projectName: "EchoTune 시스템 개발", role: "프론트엔드 리드", status: "completed", startDate: "2024-01-01", endDate: "2024-03-31" },
+        { projectName: "사용자 대시보드 개선", role: "개발자", status: "active", startDate: "2024-03-01" }
+      ];
+
+      // Mock 특허 데이터
+      const mockPatents = [
+        { title: "AI 기반 음성 인식 시스템", status: "pending", applicationDate: "2024-01-15", applicationNumber: "10-2024-0001234" },
+        { title: "실시간 데이터 처리 방법", status: "granted", applicationDate: "2023-06-20", grantDate: "2024-02-10", patentNumber: "10-2024-0012345" }
+      ];
+
+      // Mock 논문 데이터
+      const mockPublications = [
+        { title: "Deep Learning을 활용한 음성 인식 정확도 향상", authors: "김철수, 박영희", journal: "한국정보과학회논문지", type: "journal", publicationDate: "2024-03-15" },
+        { title: "Real-time Data Processing in IoT Environments", authors: "Kim, C.S., Park, Y.H.", conference: "IEEE International Conference", type: "conference", publicationDate: "2024-01-20" }
+      ];
+
+      // Mock 수상 데이터
+      const mockAwards = [
+        { name: "우수 개발자상", issuer: "회사", awardDate: "2024-01-15", category: "performance", level: "company" },
+        { name: "혁신 아이디어상", issuer: "부서", awardDate: "2024-02-20", category: "innovation", level: "department" }
+      ];
+
+      // 데이터베이스에 저장
+      const results = {
+        skills: [],
+        trainings: [],
+        projects: [],
+        patents: [],
+        publications: [],
+        awards: []
+      };
+
+      // 스킬 데이터 저장
+      for (const skill of mockSkills) {
+        const skillData = { ...skill, employeeId };
+        const savedSkill = await storage.createSkill(skillData);
+        results.skills.push(savedSkill);
+      }
+
+      // 교육 데이터 저장
+      for (const training of mockTrainings) {
+        const trainingData = { ...training, employeeId };
+        const savedTraining = await storage.createTrainingHistory(trainingData);
+        results.trainings.push(savedTraining);
+      }
+
+      // 프로젝트 데이터 저장
+      for (const project of mockProjects) {
+        const projectData = { ...project, employeeId };
+        const savedProject = await storage.createProject(projectData);
+        results.projects.push(savedProject);
+      }
+
+      // 특허 데이터 저장
+      for (const patent of mockPatents) {
+        const patentData = { ...patent, employeeId };
+        const savedPatent = await storage.createPatent(patentData);
+        results.patents.push(savedPatent);
+      }
+
+      // 논문 데이터 저장
+      for (const publication of mockPublications) {
+        const publicationData = { ...publication, employeeId };
+        const savedPublication = await storage.createPublication(publicationData);
+        results.publications.push(savedPublication);
+      }
+
+      // 수상 데이터 저장
+      for (const award of mockAwards) {
+        const awardData = { ...award, employeeId };
+        const savedAward = await storage.createAward(awardData);
+        results.awards.push(savedAward);
+      }
+
+      res.json({ 
+        success: true, 
+        message: "Mock data initialized successfully",
+        data: results 
+      });
+
+    } catch (error) {
+      console.error("Error initializing mock data:", error);
+      res.status(500).json({ error: "Failed to initialize mock data" });
+    }
+  });
+
+
+  // 어학능력 API
+  app.get("/api/language-skills", async (req, res) => {
+    try {
+      const employeeId = req.query.employeeId as string;
+      console.log('🔍 어학능력 조회 API 호출:', { employeeId });
+      const languages = employeeId 
+        ? await storage.getLanguagesByEmployee(employeeId)
+        : await storage.getAllLanguages();
+      console.log('🔍 어학능력 조회 결과:', languages);
+      res.json(languages);
+    } catch (error) {
+      console.error('🔍 어학능력 조회 오류:', error);
+      res.status(500).json({ error: "Failed to fetch language skills" });
+    }
+  });
+
+  app.post("/api/language-skills", async (req, res) => {
+    try {
+      console.log('🔍 어학능력 생성 API 호출:', req.body);
+      const language = await storage.createLanguage(req.body);
+      console.log('🔍 어학능력 생성 성공:', language);
+      res.status(201).json(language);
+    } catch (error) {
+      console.error('🔍 어학능력 생성 오류:', error);
+      res.status(500).json({ error: "Failed to create language skill" });
+    }
+  });
+
+  app.put("/api/language-skills/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      console.log('🔍 어학능력 수정 API 호출:', { id, body: req.body });
+      const language = await storage.updateLanguage(id, req.body);
+      console.log('🔍 어학능력 수정 성공:', language);
+      res.json(language);
+    } catch (error) {
+      console.error('🔍 어학능력 수정 오류:', error);
+      res.status(500).json({ error: "Failed to update language skill" });
+    }
+  });
+
+  app.delete("/api/language-skills/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      console.log('🔍 어학능력 삭제 API 호출:', { id });
+      await storage.deleteLanguage(id);
+      console.log('🔍 어학능력 삭제 성공');
+      res.status(204).send();
+    } catch (error) {
+      console.error('🔍 어학능력 삭제 오류:', error);
+      res.status(500).json({ error: "Failed to delete language skill" });
+    }
+  });
+
+  app.delete("/api/language-skills", async (req, res) => {
+    try {
+      const employeeId = req.query.employeeId as string;
+      console.log('🔍 어학능력 전체 삭제 API 호출:', { employeeId });
+      await storage.deleteLanguagesByEmployee(employeeId);
+      console.log('🔍 어학능력 전체 삭제 성공');
+      res.status(204).send();
+    } catch (error) {
+      console.error('🔍 어학능력 전체 삭제 오류:', error);
+      res.status(500).json({ error: "Failed to delete language skills" });
+    }
+  });
+
+  // 자격증 현황 분석 API
+  app.get("/api/reports/certifications", async (req, res) => {
+    try {
+      console.log('🔍 자격증 현황 분석 API 호출');
+      const allCertifications = await storage.getAllCertifications();
+      console.log('🔍 전체 자격증 데이터:', allCertifications.length);
+      
+      // 자격증별 보유 현황 계산
+      const certificationStats = new Map<string, { name: string; count: number; percentage: number }>();
+      const totalEmployees = (await storage.getAllEmployees()).length;
+      
+      allCertifications.forEach(cert => {
+        const key = cert.name;
+        if (certificationStats.has(key)) {
+          certificationStats.get(key)!.count++;
+        } else {
+          certificationStats.set(key, { name: key, count: 1, percentage: 0 });
+        }
+      });
+      
+      // 백분율 계산
+      certificationStats.forEach((stat, key) => {
+        stat.percentage = totalEmployees > 0 ? (stat.count / totalEmployees) * 100 : 0;
+      });
+      
+      const result = Array.from(certificationStats.values()).sort((a, b) => b.count - a.count);
+      console.log('🔍 자격증 현황 분석 결과:', result);
+      res.json(result);
+    } catch (error) {
+      console.error('🔍 자격증 현황 분석 오류:', error);
+      res.status(500).json({ error: "Failed to analyze certifications" });
+    }
+  });
+
+  // 어학능력 현황 분석 API
+  app.get("/api/reports/language-skills", async (req, res) => {
+    try {
+      console.log('🔍 어학능력 현황 분석 API 호출');
+      const allLanguages = await storage.getAllLanguages();
+      console.log('🔍 전체 어학능력 데이터:', allLanguages.length);
+      
+      // 언어별 수준 분포 계산
+      const languageStats = new Map<string, { language: string; levels: { [key: string]: number } }>();
+      
+      allLanguages.forEach(lang => {
+        const key = lang.language;
+        if (!languageStats.has(key)) {
+          languageStats.set(key, { language: key, levels: {} });
+        }
+        const level = lang.proficiencyLevel || 'unknown';
+        languageStats.get(key)!.levels[level] = (languageStats.get(key)!.levels[level] || 0) + 1;
+      });
+      
+      const result = Array.from(languageStats.values()).map(stat => ({
+        language: stat.language,
+        total: Object.values(stat.levels).reduce((sum, count) => sum + count, 0),
+        levels: stat.levels
+      }));
+      
+      console.log('🔍 어학능력 현황 분석 결과:', result);
+      res.json(result);
+    } catch (error) {
+      console.error('🔍 어학능력 현황 분석 오류:', error);
+      res.status(500).json({ error: "Failed to analyze language skills" });
+    }
+  });
+
+  // ===== 교육 시간 분석 API =====
+  
+  // 교육 시간 데이터 CRUD
+  app.get("/api/training-hours", async (req, res) => {
+    try {
+      const { startYear, endYear } = req.query;
+      let trainingHours;
+      
+      console.log(`🔍 교육시간 데이터 조회: ${startYear}-${endYear}`);
+      
+      if (startYear && endYear) {
+        trainingHours = await storage.getTrainingHoursByYearRange(
+          parseInt(startYear as string), 
+          parseInt(endYear as string)
+        );
+        console.log(`🔍 ${startYear}-${endYear}년 교육시간 데이터:`, trainingHours);
+      } else {
+        trainingHours = await storage.getAllTrainingHours();
+        console.log(`🔍 전체 교육시간 데이터:`, trainingHours);
+      }
+      
+      res.json(trainingHours);
+    } catch (error) {
+      console.error('교육 시간 조회 오류:', error);
+      res.status(500).json({ error: "Failed to fetch training hours" });
+    }
+  });
+
+  app.post("/api/training-hours", async (req, res) => {
+    try {
+      const trainingHours = await storage.createTrainingHours(req.body);
+      res.status(201).json(trainingHours);
+    } catch (error) {
+      console.error('교육 시간 생성 오류:', error);
+      res.status(500).json({ error: "Failed to create training hours" });
+    }
+  });
+
+  app.put("/api/training-hours/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const trainingHours = await storage.updateTrainingHours(id, req.body);
+      res.json(trainingHours);
+    } catch (error) {
+      console.error('교육 시간 수정 오류:', error);
+      res.status(500).json({ error: "Failed to update training hours" });
+    }
+  });
+
+  app.delete("/api/training-hours/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      await storage.deleteTrainingHours(id);
+      res.status(204).send();
+    } catch (error) {
+      console.error('교육 시간 삭제 오류:', error);
+      res.status(500).json({ error: "Failed to delete training hours" });
+    }
+  });
+
+  // 팀 인원 데이터 CRUD
+  app.get("/api/team-employees", async (req, res) => {
+    try {
+      const { startYear, endYear } = req.query;
+      let teamEmployees;
+      
+      if (startYear && endYear) {
+        teamEmployees = await storage.getTeamEmployeesByYearRange(
+          parseInt(startYear as string), 
+          parseInt(endYear as string)
+        );
+      } else {
+        teamEmployees = await storage.getAllTeamEmployees();
+      }
+      
+      res.json(teamEmployees);
+    } catch (error) {
+      console.error('팀 인원 조회 오류:', error);
+      res.status(500).json({ error: "Failed to fetch team employees" });
+    }
+  });
+
+  app.post("/api/team-employees", async (req, res) => {
+    try {
+      const teamEmployees = await storage.createTeamEmployees(req.body);
+      res.status(201).json(teamEmployees);
+    } catch (error) {
+      console.error('팀 인원 생성 오류:', error);
+      res.status(500).json({ error: "Failed to create team employees" });
+    }
+  });
+
+  app.put("/api/team-employees/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const teamEmployees = await storage.updateTeamEmployees(id, req.body);
+      res.json(teamEmployees);
+    } catch (error) {
+      console.error('팀 인원 수정 오류:', error);
+      res.status(500).json({ error: "Failed to update team employees" });
+    }
+  });
+
+  app.delete("/api/team-employees/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      await storage.deleteTeamEmployees(id);
+      res.status(204).send();
+    } catch (error) {
+      console.error('팀 인원 삭제 오류:', error);
+      res.status(500).json({ error: "Failed to delete team employees" });
+    }
+  });
+
+  // 팀 인원 전체 삭제
+  app.delete("/api/team-employees", async (req, res) => {
+    try {
+      const { deleteAll } = req.query;
+      console.log(`🗑️ 팀 인원 전체 삭제 요청: ${deleteAll}`);
+      
+      if (deleteAll === 'true') {
+        const allTeamEmployees = await storage.getAllTeamEmployees();
+        for (const teamEmployee of allTeamEmployees) {
+          await storage.deleteTeamEmployees(teamEmployee.id);
+        }
+        console.log(`✅ 팀 인원 전체 삭제 성공: ${allTeamEmployees.length}개`);
+        res.json({ success: true, deletedCount: allTeamEmployees.length });
+      } else {
+        res.status(400).json({ error: "deleteAll parameter is required" });
+      }
+    } catch (error) {
+      console.error('팀 인원 전체 삭제 오류:', error);
+      res.status(500).json({ error: "Failed to delete all team employees" });
+    }
+  });
+
+  // R&D 인원 목록 조회 API
+  app.get("/api/rd-employees", async (req, res) => {
+    try {
+      console.log('📊 R&D 인원 목록 조회 API 호출');
+      const allEmployees = await storage.getAllEmployees();
+      console.log(`📊 전체 직원 데이터 로드: ${allEmployees.length}명`);
+      
+      // R&D 인원 필터링
+      const rdEmployees = allEmployees.filter(employee => {
+        // 부서명이 "기술연구소" 또는 "연구개발" 또는 "R&D"를 포함하는 경우
+        const isRdDepartment = employee.department && (
+          employee.department.includes('기술연구소') ||
+          employee.department.includes('연구개발') ||
+          employee.department.includes('R&D') ||
+          employee.department.includes('연구') ||
+          employee.departmentCode === 'RD' // 부서 코드가 RD인 경우
+        );
+        
+        // 팀명이 연구 관련인 경우도 포함
+        const isRdTeam = employee.team && (
+          employee.team.includes('연구') ||
+          employee.team.includes('개발') ||
+          employee.team.includes('R&D')
+        );
+        
+        return isRdDepartment || isRdTeam;
+      });
+
+      console.log(`📊 R&D 인원 목록: ${rdEmployees.length}명`);
+      console.log(`📊 R&D 직원 상세:`, rdEmployees.map(emp => ({ 
+        id: emp.id,
+        name: emp.name, 
+        department: emp.department, 
+        team: emp.team,
+        departmentCode: emp.departmentCode,
+        position: emp.position,
+        isActive: emp.isActive
+      })));
+      
+      res.json({
+        total: rdEmployees.length,
+        employees: rdEmployees.map(emp => ({
+          id: emp.id,
+          name: emp.name,
+          employeeNumber: emp.employeeNumber,
+          department: emp.department,
+          team: emp.team,
+          departmentCode: emp.departmentCode,
+          position: emp.position,
+          email: emp.email,
+          phone: emp.phone,
+          hireDate: emp.hireDate,
+          isActive: emp.isActive
+        }))
+      });
+    } catch (error) {
+      console.error('R&D 인원 목록 조회 오류:', error);
+      res.status(500).json({ error: "Failed to fetch RD employees" });
+    }
+  });
+
+  // 교육 이력을 교육시간 데이터로 변환하는 API (전사 직원)
+  app.post("/api/convert-training-to-hours", async (req, res) => {
+    try {
+      const { year } = req.body;
+      
+      if (!year) {
+        return res.status(400).json({ error: "year is required" });
+      }
+      
+      console.log(`🔄 전사 직원 교육 이력을 교육시간으로 변환: ${year}년`);
+      
+      // 기존 교육시간 데이터 삭제 (중복 방지)
+      const existingTrainingHours = await storage.getTrainingHoursByYearRange(year, year);
+      console.log(`🗑️ 기존 ${year}년 교육시간 데이터 ${existingTrainingHours.length}개 삭제 중...`);
+      
+      for (const existingData of existingTrainingHours) {
+        await storage.deleteTrainingHours(existingData.id);
+      }
+      console.log(`✅ 기존 ${year}년 교육시간 데이터 삭제 완료`);
+      
+      // 모든 직원 조회
+      const allEmployees = await storage.getAllEmployees();
+      console.log(`🔄 전체 직원 수: ${allEmployees.length}명`);
+      
+      // 박연구 직원 찾기
+      const parkEmployee = allEmployees.find(emp => emp.name === '박연구');
+      if (parkEmployee) {
+        console.log(`🔍 박연구 직원 정보:`, {
+          id: parkEmployee.id,
+          name: parkEmployee.name,
+          team: parkEmployee.team,
+          department: parkEmployee.department
+        });
+        
+        // 박연구의 교육 이력 조회
+        const parkTrainings = await storage.getTrainingHistoryByEmployee(parkEmployee.id);
+        console.log(`🔍 박연구의 교육 이력:`, parkTrainings);
+        
+        parkTrainings.forEach(training => {
+          const trainingYear = new Date(training.completionDate).getFullYear();
+          console.log(`🔍 교육 이력 상세:`, {
+            id: training.id,
+            name: training.courseName, // trainingName → courseName
+            completionDate: training.completionDate,
+            year: trainingYear,
+            hours: training.duration, // hours → duration
+            trainingType: training.type // trainingType → type
+          });
+        });
+      }
+      
+      let convertedCount = 0;
+      const teamTrainingHours = new Map<string, Map<string, number>>(); // team -> trainingType -> hours
+      
+      // 각 직원의 교육 이력을 조회하여 팀별, 교육유형별로 집계
+      for (const employee of allEmployees) {
+        // 팀이 없는 직원은 부서명을 팀으로 사용
+        const teamName = employee.team || employee.department || '기타';
+        
+        if (!employee.team) {
+          console.log(`⚠️ ${employee.name}은 팀이 없어서 부서명(${teamName})을 팀으로 사용`);
+        }
+        
+        const trainings = await storage.getTrainingHistoryByEmployee(employee.id);
+        console.log(`🔄 ${employee.name}(${teamName})의 교육 이력: ${trainings.length}개`);
+        
+        trainings.forEach(training => {
+          const trainingYear = new Date(training.completionDate).getFullYear();
+          console.log(`🔍 ${employee.name} 교육 상세: ${training.courseName}, ${trainingYear}년, ${training.duration}시간`);
+          
+          if (trainingYear === year) {
+            const type = training.type || '기타';
+            const hours = training.duration || 0;
+            
+            console.log(`✅ ${employee.name} - ${year}년 교육 매칭: ${type}, ${hours}시간`);
+            
+            if (!teamTrainingHours.has(teamName)) {
+              teamTrainingHours.set(teamName, new Map());
+            }
+            
+            const teamHours = teamTrainingHours.get(teamName)!;
+            if (!teamHours.has(type)) {
+              teamHours.set(type, 0);
+            }
+            teamHours.set(type, teamHours.get(type)! + hours);
+          }
+        });
+      }
+      
+      console.log(`🔍 팀별 집계 결과:`, teamTrainingHours);
+      
+      // 집계된 데이터를 교육시간 데이터로 생성
+      for (const [team, trainingTypes] of teamTrainingHours) {
+        for (const [trainingType, totalHours] of trainingTypes) {
+          if (totalHours > 0) {
+            const trainingHoursData = {
+              year: year,
+              team: team,
+              trainingType: trainingType,
+              hours: totalHours,
+              description: `${team} ${trainingType} 교육시간 (${year}년)`
+            };
+            
+            await storage.createTrainingHours(trainingHoursData);
+            convertedCount++;
+            console.log(`✅ ${team} - ${trainingType}: ${totalHours}시간 변환 완료`);
+          }
+        }
+      }
+      
+      console.log(`🔄 총 ${convertedCount}개의 교육시간 데이터 변환 완료`);
+      res.json({ 
+        success: true, 
+        convertedCount,
+        message: `전사 직원 ${year}년 교육시간 데이터 ${convertedCount}개 변환 완료`
+      });
+    } catch (error) {
+      console.error('교육시간 변환 오류:', error);
+      res.status(500).json({ error: "Failed to convert training to hours" });
+    }
+  });
+
+  // 팀별 교육시간 분석 API
+  app.get("/api/team-training-analysis", async (req, res) => {
+    try {
+      const { startYear, endYear } = req.query;
+      
+      if (!startYear || !endYear) {
+        return res.status(400).json({ error: "startYear and endYear are required" });
+      }
+
+      const start = parseInt(startYear as string);
+      const end = parseInt(endYear as string);
+      
+      console.log(`📊 팀별 교육시간 분석: ${start}-${end}`);
+      
+      // 교육 시간 데이터 조회
+      const trainingHoursData = await storage.getTrainingHoursByYearRange(start, end);
+      console.log(`📊 교육 시간 데이터: ${trainingHoursData.length}개`);
+      console.log(`📊 교육 시간 데이터 상세:`, trainingHoursData);
+      
+      // 팀별 분석
+      const teamAnalysis = new Map<string, { 
+        totalHours: number; 
+        trainingTypes: Map<string, number>;
+        years: Map<number, number>;
+        employeeCount: number;
+        averageHoursPerEmployee: number;
+      }>();
+      
+      trainingHoursData.forEach(th => {
+        console.log(`🔍 교육시간 데이터 처리: 팀=${th.team}, 유형=${th.trainingType}, 시간=${th.hours}, 연도=${th.year}`);
+        
+        if (!teamAnalysis.has(th.team)) {
+          teamAnalysis.set(th.team, { 
+            totalHours: 0, 
+            trainingTypes: new Map(),
+            years: new Map(),
+            employeeCount: 0,
+            averageHoursPerEmployee: 0
+          });
+        }
+        
+        const teamData = teamAnalysis.get(th.team)!;
+        const beforeHours = teamData.totalHours;
+        teamData.totalHours += th.hours;
+        console.log(`🔍 ${th.team} 팀 시간 누적: ${beforeHours} + ${th.hours} = ${teamData.totalHours}`);
+        
+        // 교육 유형별 집계
+        if (!teamData.trainingTypes.has(th.trainingType)) {
+          teamData.trainingTypes.set(th.trainingType, 0);
+        }
+        const beforeTypeHours = teamData.trainingTypes.get(th.trainingType)!;
+        teamData.trainingTypes.set(th.trainingType, beforeTypeHours + th.hours);
+        console.log(`🔍 ${th.team} 팀 ${th.trainingType} 유형 시간 누적: ${beforeTypeHours} + ${th.hours} = ${teamData.trainingTypes.get(th.trainingType)}`);
+        
+        // 연도별 집계
+        if (!teamData.years.has(th.year)) {
+          teamData.years.set(th.year, 0);
+        }
+        const beforeYearHours = teamData.years.get(th.year)!;
+        teamData.years.set(th.year, beforeYearHours + th.hours);
+        console.log(`🔍 ${th.team} 팀 ${th.year}년 시간 누적: ${beforeYearHours} + ${th.hours} = ${teamData.years.get(th.year)}`);
+      });
+      
+      // R&D 인원 자동 계산을 위한 전체 직원 데이터 조회
+      const allEmployees = await storage.getAllEmployees();
+      const rdEmployees = allEmployees.filter(employee => {
+        const isRdDepartment = employee.department && (
+          employee.department.includes('기술연구소') ||
+          employee.department.includes('연구개발') ||
+          employee.department.includes('R&D') ||
+          employee.department.includes('연구') ||
+          employee.departmentCode === 'RD'
+        );
+        
+        const isRdTeam = employee.team && (
+          employee.team.includes('연구') ||
+          employee.team.includes('개발') ||
+          employee.team.includes('R&D')
+        );
+        
+        const isRd = isRdDepartment || isRdTeam;
+        
+        if (isRd) {
+          console.log(`🔍 R&D 직원 발견: ${employee.name} (부서: ${employee.department}, 팀: ${employee.team}, 부서코드: ${employee.departmentCode})`);
+        }
+        
+        return isRd;
+      });
+      
+      // 팀별 인원 수 계산 (R&D 팀만)
+      console.log(`🔍 R&D 직원 목록 (${rdEmployees.length}명):`, rdEmployees.map(emp => ({
+        name: emp.name,
+        department: emp.department,
+        team: emp.team
+      })));
+      
+      rdEmployees.forEach(emp => {
+        // 팀이 없는 직원은 팀별 분석에서 제외 (실제 팀에 속한 직원만 계산)
+        if (!emp.team || emp.team === '') {
+          console.log(`⚠️ ${emp.name}은 팀이 없어서 팀별 분석에서 제외됨`);
+          return;
+        }
+        
+        const teamName = emp.team;
+        
+        console.log(`🔍 ${emp.name} 매칭 시도: 팀=${emp.team}, 부서=${emp.department}`);
+        
+        if (teamAnalysis.has(teamName)) {
+          teamAnalysis.get(teamName)!.employeeCount += 1;
+          console.log(`✅ ${emp.name} → ${teamName} 팀 인원 추가 (총 ${teamAnalysis.get(teamName)!.employeeCount}명)`);
+        } else {
+          console.log(`⚠️ ${emp.name}의 팀(${teamName})이 분석 결과에 없음`);
+          console.log(`🔍 현재 분석 결과에 있는 팀들:`, Array.from(teamAnalysis.keys()));
+        }
+      });
+      
+      // 1인당 평균 교육시간 계산
+      teamAnalysis.forEach((teamData, team) => {
+        if (teamData.employeeCount > 0) {
+          teamData.averageHoursPerEmployee = Math.round((teamData.totalHours / teamData.employeeCount) * 100) / 100;
+        }
+      });
+      
+      // 결과 포맷팅
+      const result = Array.from(teamAnalysis.entries()).map(([team, data]) => ({
+        team,
+        totalHours: Math.round(data.totalHours * 100) / 100,
+        employeeCount: data.employeeCount,
+        averageHoursPerEmployee: data.averageHoursPerEmployee,
+        trainingTypes: Object.fromEntries(data.trainingTypes),
+        yearlyBreakdown: Object.fromEntries(data.years)
+      })).sort((a, b) => b.totalHours - a.totalHours);
+      
+      console.log(`📊 팀별 분석 결과: ${result.length}개 팀`);
+      console.log(`📊 팀별 분석 상세:`, result.map(r => ({
+        team: r.team,
+        totalHours: r.totalHours,
+        employeeCount: r.employeeCount,
+        averageHoursPerEmployee: r.averageHoursPerEmployee
+      })));
+      res.json(result);
+    } catch (error) {
+      console.error('팀별 교육시간 분석 오류:', error);
+      res.status(500).json({ error: "Failed to analyze team training hours" });
+    }
+  });
+
+  // 교육 시간 분석 API
+  app.get("/api/training-analysis", async (req, res) => {
+    try {
+      const { startYear, endYear, includeTrainingTypeBreakdown, includeYearlyBreakdown, useAutoRdEmployees } = req.query;
+      
+      if (!startYear || !endYear) {
+        return res.status(400).json({ error: "startYear and endYear are required" });
+      }
+
+      const start = parseInt(startYear as string);
+      const end = parseInt(endYear as string);
+      
+      // 데이터 조회
+      const trainingHoursData = await storage.getTrainingHoursByYearRange(start, end);
+      const teamEmployeesData = await storage.getTeamEmployeesByYearRange(start, end);
+      
+      // R&D 인원 자동 계산을 위한 전체 직원 데이터 조회
+      let allEmployees = undefined;
+      if (useAutoRdEmployees === 'true') {
+        allEmployees = await storage.getAllEmployees();
+        console.log(`📊 전체 직원 데이터 로드: ${allEmployees.length}명`);
+      }
+      
+      // 분석 모듈 import 및 실행
+      const { TrainingAnalysisModule } = await import('./training-analysis');
+      
+      const result = await TrainingAnalysisModule.analyzeTrainingHours(
+        trainingHoursData,
+        teamEmployeesData,
+        {
+          startYear: start,
+          endYear: end,
+          includeTrainingTypeBreakdown: includeTrainingTypeBreakdown === 'true',
+          includeYearlyBreakdown: includeYearlyBreakdown === 'true',
+          useAutoRdEmployees: useAutoRdEmployees === 'true'
+        },
+        allEmployees
+      );
+      
+      res.json(result);
+    } catch (error) {
+      console.error('교육 시간 분석 오류:', error);
+      res.status(500).json({ error: "Failed to analyze training hours" });
+    }
+  });
 
   const httpServer = createServer(app);
   return httpServer;

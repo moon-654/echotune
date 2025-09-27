@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plus, Upload, BookOpen, Clock, Users, Calendar } from "lucide-react";
+import { Plus, Upload, BookOpen, Clock, Users, Calendar, BarChart3 } from "lucide-react";
 import TrainingTable from "@/components/training/training-table";
 import TrainingFormDialog from "@/components/training/training-form-dialog";
 import TrainingUploadDialog from "@/components/training/training-upload-dialog";
@@ -53,6 +53,14 @@ export default function Training() {
           <p className="text-muted-foreground">교육 과정 및 이수 현황 관리</p>
         </div>
         <div className="flex space-x-2">
+          <Button 
+            variant="outline" 
+            onClick={() => window.location.href = '/training-analysis'}
+            data-testid="button-training-analysis"
+          >
+            <BarChart3 className="w-4 h-4 mr-2" />
+            교육 시간 분석
+          </Button>
           <TrainingUploadDialog>
             <Button variant="outline" data-testid="button-import-training">
               <Upload className="w-4 h-4 mr-2" />

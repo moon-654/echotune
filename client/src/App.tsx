@@ -9,6 +9,7 @@ import Employees from "@/pages/employees";
 import EmployeeDetail from "@/pages/employee-detail";
 import DepartmentTeamManagement from "@/pages/department-team-management";
 import Training from "@/pages/training";
+import TrainingAnalysis from "@/pages/training-analysis";
 import Reports from "@/pages/reports";
 import NotFound from "@/pages/not-found";
 import Sidebar from "@/components/layout/sidebar";
@@ -30,6 +31,7 @@ function Router() {
             <Route path="/departments" component={DepartmentTeamManagement} />
             <Route path="/teams" component={DepartmentTeamManagement} />
             <Route path="/training" component={Training} />
+            <Route path="/training-analysis" component={TrainingAnalysis} />
             <Route path="/reports" component={Reports} />
             <Route component={NotFound} />
           </Switch>

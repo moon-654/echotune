@@ -21,7 +21,11 @@ import type {
   Award,
   InsertAward,
   Project,
-  InsertProject
+  InsertProject,
+  TrainingHours,
+  InsertTrainingHours,
+  TeamEmployees,
+  InsertTeamEmployees
 } from "@shared/schema";
 
 export interface IStorage {
@@ -51,6 +55,7 @@ export interface IStorage {
   createCertification(certification: InsertCertification): Promise<Certification>;
   updateCertification(id: string, certification: Partial<InsertCertification>): Promise<Certification>;
   deleteCertification(id: string): Promise<boolean>;
+  deleteCertificationsByEmployee(employeeId: string): Promise<boolean>;
 
   // Language methods
   getLanguage(id: string): Promise<Language | undefined>;
@@ -59,6 +64,7 @@ export interface IStorage {
   createLanguage(language: InsertLanguage): Promise<Language>;
   updateLanguage(id: string, language: Partial<InsertLanguage>): Promise<Language>;
   deleteLanguage(id: string): Promise<boolean>;
+  deleteLanguagesByEmployee(employeeId: string): Promise<boolean>;
 
   // Skill methods
   getSkill(id: string): Promise<Skill | undefined>;
@@ -108,6 +114,22 @@ export interface IStorage {
   updateProject(id: string, project: Partial<InsertProject>): Promise<Project>;
   deleteProject(id: string): Promise<boolean>;
   
+  // Training Hours methods
+  getTrainingHours(id: string): Promise<TrainingHours | undefined>;
+  getAllTrainingHours(): Promise<TrainingHours[]>;
+  getTrainingHoursByYearRange(startYear: number, endYear: number): Promise<TrainingHours[]>;
+  createTrainingHours(trainingHours: InsertTrainingHours): Promise<TrainingHours>;
+  updateTrainingHours(id: string, trainingHours: Partial<InsertTrainingHours>): Promise<TrainingHours>;
+  deleteTrainingHours(id: string): Promise<boolean>;
+
+  // Team Employees methods
+  getTeamEmployees(id: string): Promise<TeamEmployees | undefined>;
+  getAllTeamEmployees(): Promise<TeamEmployees[]>;
+  getTeamEmployeesByYearRange(startYear: number, endYear: number): Promise<TeamEmployees[]>;
+  createTeamEmployees(teamEmployees: InsertTeamEmployees): Promise<TeamEmployees>;
+  updateTeamEmployees(id: string, teamEmployees: Partial<InsertTeamEmployees>): Promise<TeamEmployees>;
+  deleteTeamEmployees(id: string): Promise<boolean>;
+
   // Full profile method
   getEmployeeFullProfile(employeeId: string): Promise<{
     employee: Employee;
@@ -134,6 +156,8 @@ export class MemStorage implements IStorage {
   private publications: Map<string, Publication>;
   private awards: Map<string, Award>;
   private projects: Map<string, Project>;
+  private trainingHours: Map<string, TrainingHours>;
+  private teamEmployees: Map<string, TeamEmployees>;
   private viewState: any;
   private dataFile: string;
 
@@ -148,6 +172,8 @@ export class MemStorage implements IStorage {
     this.publications = new Map();
     this.awards = new Map();
     this.projects = new Map();
+    this.trainingHours = new Map();
+    this.teamEmployees = new Map();
     this.viewState = null;
     this.dataFile = join(process.cwd(), 'data.json');
     
@@ -178,6 +204,80 @@ export class MemStorage implements IStorage {
           Object.entries(data.trainingHistory).forEach(([id, item]) => {
             this.trainingHistory.set(id, item as TrainingHistory);
           });
+        }
+        
+        // Load certifications
+        if (data.certifications) {
+          Object.entries(data.certifications).forEach(([id, item]) => {
+            this.certifications.set(id, item as Certification);
+          });
+          console.log(`✅ ${this.certifications.size}개의 자격증 데이터 로드 완료`);
+        }
+        
+        // Load languages
+        if (data.languages) {
+          Object.entries(data.languages).forEach(([id, item]) => {
+            this.languages.set(id, item as Language);
+          });
+          console.log(`✅ ${this.languages.size}개의 어학능력 데이터 로드 완료`);
+        }
+        
+        // Load skills
+        if (data.skills) {
+          Object.entries(data.skills).forEach(([id, item]) => {
+            this.skills.set(id, item as Skill);
+          });
+        }
+        
+        // Load skill calculations
+        if (data.skillCalculations) {
+          Object.entries(data.skillCalculations).forEach(([id, item]) => {
+            this.skillCalculations.set(id, item as SkillCalculation);
+          });
+        }
+        
+        // Load patents
+        if (data.patents) {
+          Object.entries(data.patents).forEach(([id, item]) => {
+            this.patents.set(id, item as Patent);
+          });
+        }
+        
+        // Load publications
+        if (data.publications) {
+          Object.entries(data.publications).forEach(([id, item]) => {
+            this.publications.set(id, item as Publication);
+          });
+        }
+        
+        // Load awards
+        if (data.awards) {
+          Object.entries(data.awards).forEach(([id, item]) => {
+            this.awards.set(id, item as Award);
+          });
+        }
+        
+        // Load projects
+        if (data.projects) {
+          Object.entries(data.projects).forEach(([id, item]) => {
+            this.projects.set(id, item as Project);
+          });
+        }
+        
+        // Load training hours
+        if (data.trainingHours) {
+          Object.entries(data.trainingHours).forEach(([id, item]) => {
+            this.trainingHours.set(id, item as TrainingHours);
+          });
+          console.log(`✅ ${this.trainingHours.size}개의 교육 시간 데이터 로드 완료`);
+        }
+        
+        // Load team employees
+        if (data.teamEmployees) {
+          Object.entries(data.teamEmployees).forEach(([id, item]) => {
+            this.teamEmployees.set(id, item as TeamEmployees);
+          });
+          console.log(`✅ ${this.teamEmployees.size}개의 팀 인원 데이터 로드 완료`);
         }
         
         // Load view state if exists
@@ -213,6 +313,8 @@ export class MemStorage implements IStorage {
         publications: Object.fromEntries(this.publications),
         awards: Object.fromEntries(this.awards),
         projects: Object.fromEntries(this.projects),
+        trainingHours: Object.fromEntries(this.trainingHours),
+        teamEmployees: Object.fromEntries(this.teamEmployees),
         viewState: this.viewState
       };
       
@@ -485,7 +587,27 @@ export class MemStorage implements IStorage {
         isActive: true,
         createdAt: new Date(),
         updatedAt: new Date()
-      }
+      },
+      
+      // 연구소 추가 직원들 (R&D 인원 34명을 위한 샘플 데이터)
+      ...Array.from({ length: 30 }, (_, i) => ({
+        id: `emp${13 + i}`,
+        employeeNumber: `${13 + i}`.padStart(3, '0'),
+        departmentCode: "RD",
+        teamCode: i < 15 ? "RD01" : "RD02", // 개발팀 15명, 연구팀 15명
+        name: i < 15 ? `개발자${i + 1}` : `연구원${i - 14}`,
+        position: i < 15 ? "개발팀 사원" : "연구팀 사원",
+        department: "연구소",
+        team: i < 15 ? "개발팀" : "연구팀",
+        email: i < 15 ? `dev${i + 1}@ashimori.co.kr` : `research${i - 14}@ashimori.co.kr`,
+        phone: `010-${String(1000 + i).padStart(4, '0')}-${String(1000 + i).padStart(4, '0')}`,
+        hireDate: new Date(`202${Math.floor(i / 10)}-${String((i % 12) + 1).padStart(2, '0')}-${String((i % 28) + 1).padStart(2, '0')}`),
+        managerId: i < 15 ? "emp7" : "emp8", // 개발팀장 또는 연구팀장
+        photoUrl: null,
+        isActive: true,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      }))
     ];
 
     // Store sample employees
@@ -579,6 +701,7 @@ export class MemStorage implements IStorage {
       updatedAt: new Date()
     };
     this.trainingHistory.set(id, newTraining);
+    this.saveData(); // 데이터 저장
     return newTraining;
   }
 
@@ -592,11 +715,14 @@ export class MemStorage implements IStorage {
       updatedAt: new Date()
     };
     this.trainingHistory.set(id, updated);
+    this.saveData(); // 데이터 저장
     return updated;
   }
 
   async deleteTrainingHistory(id: string): Promise<boolean> {
-    return this.trainingHistory.delete(id);
+    const result = this.trainingHistory.delete(id);
+    this.saveData(); // 데이터 저장
+    return result;
   }
 
   // Certification methods
@@ -621,6 +747,7 @@ export class MemStorage implements IStorage {
       updatedAt: new Date()
     };
     this.certifications.set(id, newCertification);
+    this.saveData(); // 데이터 저장
     return newCertification;
   }
 
@@ -634,11 +761,26 @@ export class MemStorage implements IStorage {
       updatedAt: new Date()
     };
     this.certifications.set(id, updated);
+    this.saveData(); // 데이터 저장
     return updated;
   }
 
   async deleteCertification(id: string): Promise<boolean> {
-    return this.certifications.delete(id);
+    const result = this.certifications.delete(id);
+    this.saveData(); // 데이터 저장
+    return result;
+  }
+
+  async deleteCertificationsByEmployee(employeeId: string): Promise<boolean> {
+    const certificationsToDelete = Array.from(this.certifications.values())
+      .filter(c => c.employeeId === employeeId);
+    
+    for (const certification of certificationsToDelete) {
+      this.certifications.delete(certification.id);
+    }
+    
+    this.saveData(); // 데이터 저장
+    return true;
   }
 
   // Language methods
@@ -663,6 +805,7 @@ export class MemStorage implements IStorage {
       updatedAt: new Date()
     };
     this.languages.set(id, newLanguage);
+    this.saveData(); // 데이터 저장
     return newLanguage;
   }
 
@@ -676,11 +819,26 @@ export class MemStorage implements IStorage {
       updatedAt: new Date()
     };
     this.languages.set(id, updated);
+    this.saveData(); // 데이터 저장
     return updated;
   }
 
   async deleteLanguage(id: string): Promise<boolean> {
-    return this.languages.delete(id);
+    const result = this.languages.delete(id);
+    this.saveData(); // 데이터 저장
+    return result;
+  }
+
+  async deleteLanguagesByEmployee(employeeId: string): Promise<boolean> {
+    const languagesToDelete = Array.from(this.languages.values())
+      .filter(l => l.employeeId === employeeId);
+    
+    for (const language of languagesToDelete) {
+      this.languages.delete(language.id);
+    }
+    
+    this.saveData(); // 데이터 저장
+    return true;
   }
 
   // Skill methods
@@ -705,6 +863,7 @@ export class MemStorage implements IStorage {
       updatedAt: new Date()
     };
     this.skills.set(id, newSkill);
+    this.saveData(); // 데이터 저장
     return newSkill;
   }
 
@@ -718,11 +877,14 @@ export class MemStorage implements IStorage {
       updatedAt: new Date()
     };
     this.skills.set(id, updated);
+    this.saveData(); // 데이터 저장
     return updated;
   }
 
   async deleteSkill(id: string): Promise<boolean> {
-    return this.skills.delete(id);
+    const result = this.skills.delete(id);
+    this.saveData(); // 데이터 저장
+    return result;
   }
 
   // Skill Calculation methods
@@ -789,6 +951,7 @@ export class MemStorage implements IStorage {
       updatedAt: new Date()
     };
     this.patents.set(id, newPatent);
+    this.saveData(); // 데이터 저장
     return newPatent;
   }
 
@@ -802,11 +965,14 @@ export class MemStorage implements IStorage {
       updatedAt: new Date()
     };
     this.patents.set(id, updated);
+    this.saveData(); // 데이터 저장
     return updated;
   }
 
   async deletePatent(id: string): Promise<boolean> {
-    return this.patents.delete(id);
+    const result = this.patents.delete(id);
+    this.saveData(); // 데이터 저장
+    return result;
   }
 
   // Publication methods
@@ -831,6 +997,7 @@ export class MemStorage implements IStorage {
       updatedAt: new Date()
     };
     this.publications.set(id, newPublication);
+    this.saveData(); // 데이터 저장
     return newPublication;
   }
 
@@ -844,11 +1011,14 @@ export class MemStorage implements IStorage {
       updatedAt: new Date()
     };
     this.publications.set(id, updated);
+    this.saveData(); // 데이터 저장
     return updated;
   }
 
   async deletePublication(id: string): Promise<boolean> {
-    return this.publications.delete(id);
+    const result = this.publications.delete(id);
+    this.saveData(); // 데이터 저장
+    return result;
   }
 
   // Award methods
@@ -873,6 +1043,7 @@ export class MemStorage implements IStorage {
       updatedAt: new Date()
     };
     this.awards.set(id, newAward);
+    this.saveData(); // 데이터 저장
     return newAward;
   }
 
@@ -886,11 +1057,14 @@ export class MemStorage implements IStorage {
       updatedAt: new Date()
     };
     this.awards.set(id, updated);
-      return updated;
+    this.saveData(); // 데이터 저장
+    return updated;
   }
 
   async deleteAward(id: string): Promise<boolean> {
-    return this.awards.delete(id);
+    const result = this.awards.delete(id);
+    this.saveData(); // 데이터 저장
+    return result;
   }
 
   // Project methods
@@ -915,6 +1089,7 @@ export class MemStorage implements IStorage {
       updatedAt: new Date()
     };
     this.projects.set(id, newProject);
+    this.saveData(); // 데이터 저장
     return newProject;
   }
 
@@ -928,11 +1103,14 @@ export class MemStorage implements IStorage {
       updatedAt: new Date()
     };
     this.projects.set(id, updated);
+    this.saveData(); // 데이터 저장
     return updated;
   }
 
   async deleteProject(id: string): Promise<boolean> {
-    return this.projects.delete(id);
+    const result = this.projects.delete(id);
+    this.saveData(); // 데이터 저장
+    return result;
   }
 
   // Full profile method
@@ -1009,6 +1187,110 @@ export class MemStorage implements IStorage {
       console.error('❌ 보기 상태 불러오기 중 오류:', error);
       return null;
     }
+  }
+
+  // ===== 교육 시간 데이터 메서드들 =====
+  
+  async getTrainingHours(id: string): Promise<TrainingHours | undefined> {
+    return this.trainingHours.get(id);
+  }
+
+  async getAllTrainingHours(): Promise<TrainingHours[]> {
+    return Array.from(this.trainingHours.values());
+  }
+
+  async getTrainingHoursByYearRange(startYear: number, endYear: number): Promise<TrainingHours[]> {
+    return Array.from(this.trainingHours.values()).filter(
+      th => th.year >= startYear && th.year <= endYear
+    );
+  }
+
+  async createTrainingHours(trainingHours: InsertTrainingHours): Promise<TrainingHours> {
+    const id = randomUUID();
+    const newTrainingHours: TrainingHours = {
+      id,
+      ...trainingHours,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+    this.trainingHours.set(id, newTrainingHours);
+    this.saveData();
+    return newTrainingHours;
+  }
+
+  async updateTrainingHours(id: string, trainingHours: Partial<InsertTrainingHours>): Promise<TrainingHours> {
+    const existing = this.trainingHours.get(id);
+    if (!existing) {
+      throw new Error('Training hours not found');
+    }
+    const updated: TrainingHours = {
+      ...existing,
+      ...trainingHours,
+      updatedAt: new Date()
+    };
+    this.trainingHours.set(id, updated);
+    this.saveData();
+    return updated;
+  }
+
+  async deleteTrainingHours(id: string): Promise<boolean> {
+    const deleted = this.trainingHours.delete(id);
+    if (deleted) {
+      this.saveData();
+    }
+    return deleted;
+  }
+
+  // ===== 팀 인원 데이터 메서드들 =====
+  
+  async getTeamEmployees(id: string): Promise<TeamEmployees | undefined> {
+    return this.teamEmployees.get(id);
+  }
+
+  async getAllTeamEmployees(): Promise<TeamEmployees[]> {
+    return Array.from(this.teamEmployees.values());
+  }
+
+  async getTeamEmployeesByYearRange(startYear: number, endYear: number): Promise<TeamEmployees[]> {
+    return Array.from(this.teamEmployees.values()).filter(
+      te => te.year >= startYear && te.year <= endYear
+    );
+  }
+
+  async createTeamEmployees(teamEmployees: InsertTeamEmployees): Promise<TeamEmployees> {
+    const id = randomUUID();
+    const newTeamEmployees: TeamEmployees = {
+      id,
+      ...teamEmployees,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+    this.teamEmployees.set(id, newTeamEmployees);
+    this.saveData();
+    return newTeamEmployees;
+  }
+
+  async updateTeamEmployees(id: string, teamEmployees: Partial<InsertTeamEmployees>): Promise<TeamEmployees> {
+    const existing = this.teamEmployees.get(id);
+    if (!existing) {
+      throw new Error('Team employees not found');
+    }
+    const updated: TeamEmployees = {
+      ...existing,
+      ...teamEmployees,
+      updatedAt: new Date()
+    };
+    this.teamEmployees.set(id, updated);
+    this.saveData();
+    return updated;
+  }
+
+  async deleteTeamEmployees(id: string): Promise<boolean> {
+    const deleted = this.teamEmployees.delete(id);
+    if (deleted) {
+      this.saveData();
+    }
+    return deleted;
   }
 }
 

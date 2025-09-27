@@ -15,8 +15,13 @@ export const employees = pgTable("employees", {
   email: text("email"),
   phone: text("phone"),
   hireDate: timestamp("hire_date"),
+  birthDate: timestamp("birth_date"), // 생년월일
   managerId: varchar("manager_id"),
   photoUrl: text("photo_url"),
+  education: text("education"), // 최종학력 (예: "대학교 졸업", "대학원 졸업", "고등학교 졸업", "재학중")
+  major: text("major"), // 전공 (예: "컴퓨터공학", "경영학")
+  school: text("school"), // 학교명 (예: "서울대학교", "연세대학교")
+  graduationYear: integer("graduation_year"), // 졸업년도
   isDepartmentHead: boolean("is_department_head").default(false), // 부문장 여부
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").default(sql`now()`),
@@ -292,3 +297,48 @@ export type Department = typeof departments.$inferSelect;
 export type InsertDepartment = z.infer<typeof insertDepartmentSchema>;
 export type Team = typeof teams.$inferSelect;
 export type InsertTeam = z.infer<typeof insertTeamSchema>;
+
+// 교육 시간 데이터 테이블
+export const trainingHours = pgTable("training_hours", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  year: integer("year").notNull(), // 연도
+  team: text("team").notNull(), // 팀명
+  trainingType: text("training_type").notNull(), // 교육 유형 (외부교육, 내부교육)
+  hours: real("hours").notNull(), // 교육 시간
+  description: text("description"), // 설명
+  createdAt: timestamp("created_at").default(sql`now()`),
+  updatedAt: timestamp("updated_at").default(sql`now()`)
+});
+
+// 팀별 인원 데이터 테이블
+export const teamEmployees = pgTable("team_employees", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  year: integer("year").notNull(), // 기준 연도
+  team: text("team").notNull(), // 팀명
+  employeeCount: integer("employee_count").notNull(), // 인원수
+  description: text("description"), // 설명
+  createdAt: timestamp("created_at").default(sql`now()`),
+  updatedAt: timestamp("updated_at").default(sql`now()`)
+});
+
+// Zod 스키마 정의
+export const insertTrainingHoursSchema = z.object({
+  year: z.number().int().min(2000).max(2030),
+  team: z.string().min(1),
+  trainingType: z.string().min(1),
+  hours: z.number().min(0),
+  description: z.string().optional()
+});
+
+export const insertTeamEmployeesSchema = z.object({
+  year: z.number().int().min(2000).max(2030),
+  team: z.string().min(1),
+  employeeCount: z.number().int().min(0),
+  description: z.string().optional()
+});
+
+// TypeScript 타입 정의
+export type TrainingHours = typeof trainingHours.$inferSelect;
+export type InsertTrainingHours = z.infer<typeof insertTrainingHoursSchema>;
+export type TeamEmployees = typeof teamEmployees.$inferSelect;
+export type InsertTeamEmployees = z.infer<typeof insertTeamEmployeesSchema>;

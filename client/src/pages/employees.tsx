@@ -6,12 +6,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Plus, Search, Filter } from "lucide-react";
 import EmployeeCard from "@/components/employees/employee-card";
+import EmployeeCreateModal from "@/components/employees/employee-create-modal";
 import type { Employee } from "@shared/schema";
 
 export default function Employees() {
   const [searchTerm, setSearchTerm] = useState("");
   const [departmentFilter, setDepartmentFilter] = useState("");
   const [skillLevelFilter, setSkillLevelFilter] = useState("");
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
   const { data: employees, isLoading } = useQuery<Employee[]>({
     queryKey: ['/api/employees']
@@ -57,7 +59,13 @@ export default function Employees() {
           <h1 className="text-2xl font-bold">직원 관리</h1>
           <p className="text-muted-foreground">직원 정보 및 능력치 관리</p>
         </div>
-        <Button data-testid="button-add-employee">
+        <Button 
+          onClick={() => {
+            console.log('➕ 새 직원 추가 버튼 클릭');
+            setIsCreateModalOpen(true);
+          }}
+          data-testid="button-add-employee"
+        >
           <Plus className="w-4 h-4 mr-2" />
           새 직원 추가
         </Button>
@@ -144,6 +152,12 @@ export default function Employees() {
           ))}
         </div>
       )}
+      
+      {/* Create Employee Modal */}
+      <EmployeeCreateModal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+      />
     </div>
   );
 }

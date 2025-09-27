@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
-import SimpleEditModal from './simple-edit-modal';
+import EmployeeEditModal from '../employees/employee-edit-modal';
 import type { Employee } from "@shared/schema";
 import { DepartmentTeamManager } from "@/lib/departments-teams";
 
@@ -873,19 +873,30 @@ export default function D3OrgChart({ employees, searchTerm, zoomLevel, onEmploye
     // Multiple roots 문제 해결: 단일 루트 노드 보장
     const rootNodes = processedData.filter(emp => emp.parentId === "");
     
+    console.log('🌳 루트 노드 확인:', rootNodes.length, '개');
+    console.log('🌳 루트 노드들:', rootNodes.map(emp => ({ id: emp.id, name: emp.name, managerId: emp.managerId })));
+    
     if (rootNodes.length > 1) {
-      // 첫 번째 노드를 메인 루트로 설정
-      const mainRoot = rootNodes[0];
-      mainRoot.parentId = "";
+      // CEO나 최고 직책을 가진 직원을 메인 루트로 선택
+      const mainRoot = rootNodes.find(emp => 
+        emp.position?.includes('CEO') || 
+        emp.position?.includes('대표') || 
+        emp.position?.includes('사장') ||
+        emp.isDepartmentHead === true
+      ) || rootNodes[0];
       
-      // 나머지 루트 노드들을 첫 번째 노드의 자식으로 설정
-      const otherRoots = rootNodes.slice(1);
+      console.log('🌳 메인 루트 선택:', { id: mainRoot.id, name: mainRoot.name });
+      
+      // 나머지 루트 노드들을 메인 루트의 자식으로 설정
+      const otherRoots = rootNodes.filter(emp => emp.id !== mainRoot.id);
       otherRoots.forEach(emp => {
+        console.log('🌳 루트 노드를 자식으로 설정:', { id: emp.id, name: emp.name, parentId: mainRoot.id });
         emp.parentId = mainRoot.id;
       });
       
     } else if (rootNodes.length === 0) {
       if (processedData.length > 0) {
+        console.log('🌳 루트 노드가 없어서 첫 번째 직원을 루트로 설정');
         processedData[0].parentId = "";
       }
     }
@@ -2155,6 +2166,27 @@ export default function D3OrgChart({ employees, searchTerm, zoomLevel, onEmploye
     d3.select(chartRef.current).selectAll("*").remove();
 
     try {
+      console.log('🏢 조직도 렌더링 시작');
+      console.log('📊 변환된 데이터:', data);
+      console.log('📊 데이터 개수:', data.length);
+      
+      // 데이터 검증
+      if (!data || data.length === 0) {
+        console.warn('⚠️ 조직도 데이터가 없습니다');
+        return;
+      }
+      
+      // 루트 노드 확인
+      const rootNodes = data.filter((d: any) => !d.parentId || d.parentId === "");
+      console.log('🌳 루트 노드들:', rootNodes.map((d: any) => ({ id: d.id, name: d.name, parentId: d.parentId })));
+      
+      if (rootNodes.length === 0) {
+        console.warn('⚠️ 루트 노드가 없습니다. 첫 번째 노드를 루트로 설정');
+        if (data.length > 0) {
+          data[0].parentId = "";
+        }
+      }
+      
       // 개선된 노드 디자인에 맞는 차트 생성
     const chart = new OrgChart()
         .nodeHeight((d: any) => 140)  // 새로운 노드 높이
@@ -2732,8 +2764,8 @@ export default function D3OrgChart({ employees, searchTerm, zoomLevel, onEmploye
         </DialogContent>
       </Dialog>
       
-      {/* 간단한 편집 모달 */}
-      <SimpleEditModal
+      {/* 직원 편집 모달 */}
+      <EmployeeEditModal
         isOpen={isEditModalOpen}
         employee={editingEmployee}
         onClose={() => setIsEditModalOpen(false)}

@@ -1,11 +1,10 @@
 import { useState, useEffect, useMemo } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
 import { DatePicker } from "@/components/ui/date-picker";
 import { Loader2 } from "lucide-react";
 import { format } from "date-fns";
@@ -13,39 +12,42 @@ import { ko } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { DepartmentTeamManager } from "@/lib/departments-teams";
 import { useToast } from "@/hooks/use-toast";
-import type { Employee, InsertEmployee } from "@shared/schema";
+import type { InsertEmployee } from "@shared/schema";
 
-interface EmployeeEditModalProps {
-  employee: Employee | null;
+interface EmployeeCreateModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-export default function EmployeeEditModal({ employee, isOpen, onClose }: EmployeeEditModalProps) {
+export default function EmployeeCreateModal({ isOpen, onClose }: EmployeeCreateModalProps) {
   const queryClient = useQueryClient();
   const { toast } = useToast();
-  const [formData, setFormData] = useState<Partial<InsertEmployee>>({});
-  const [date, setDate] = useState<Date | undefined>();
-  const [birthDate, setBirthDate] = useState<Date | undefined>();
-  const [departments, setDepartments] = useState<any[]>([]);
-  const [teams, setTeams] = useState<any[]>([]);
-  const [selectedDepartment, setSelectedDepartment] = useState<string>("");
+  
+  const [formData, setFormData] = useState<Partial<InsertEmployee>>({
+    isActive: true,
+    isDepartmentHead: false
+  });
   const [education, setEducation] = useState({
     degree: '',
     major: '',
     school: '',
     graduationYear: ''
   });
+  const [date, setDate] = useState<Date | undefined>();
+  const [birthDate, setBirthDate] = useState<Date | undefined>();
+  const [departments, setDepartments] = useState<any[]>([]);
+  const [teams, setTeams] = useState<any[]>([]);
+  const [selectedDepartment, setSelectedDepartment] = useState<string>("");
 
   // 부서/팀 데이터를 useMemo로 메모이제이션
   const { departments: memoizedDepartments, teams: memoizedTeams } = useMemo(() => {
     if (!isOpen) return { departments: [], teams: [] };
     
-    console.log('🏢 직원 수정 - 부서/팀 데이터 로드 중...');
+    console.log('🏢 부서/팀 데이터 로드 중...');
     const deptData = DepartmentTeamManager.getAllDepartments();
     const teamData = DepartmentTeamManager.getAllTeams();
-    console.log('📊 직원 수정 - 로드된 부서 데이터:', deptData);
-    console.log('📊 직원 수정 - 로드된 팀 데이터:', teamData);
+    console.log('📊 로드된 부서 데이터:', deptData);
+    console.log('📊 로드된 팀 데이터:', teamData);
     return { departments: deptData, teams: teamData };
   }, [isOpen]);
 
@@ -55,55 +57,24 @@ export default function EmployeeEditModal({ employee, isOpen, onClose }: Employe
     setTeams(memoizedTeams);
   }, [memoizedDepartments, memoizedTeams]);
 
-  // 직원 데이터를 폼에 로드
+  // 모달이 열릴 때 폼 초기화
   useEffect(() => {
-    if (employee) {
+    if (isOpen) {
+      console.log('📝 직원 생성 모달 열림');
       setFormData({
-        employeeNumber: employee.employeeNumber,
-        departmentCode: employee.departmentCode,
-        teamCode: employee.teamCode,
-        name: employee.name,
-        position: employee.position,
-        department: employee.department,
-        team: employee.team,
-        email: employee.email || "",
-        phone: employee.phone || "",
-        hireDate: employee.hireDate ? new Date(employee.hireDate) : undefined,
-        birthDate: employee.birthDate ? new Date(employee.birthDate) : undefined,
-        managerId: employee.managerId || "",
-        photoUrl: employee.photoUrl || "",
-        education: employee.education || "",
-        major: employee.major || "",
-        school: employee.school || "",
-        graduationYear: employee.graduationYear || undefined,
-        isActive: employee.isActive
+        isActive: true,
+        isDepartmentHead: false
       });
-      setDate(employee.hireDate ? new Date(employee.hireDate) : undefined);
-      setBirthDate(employee.birthDate ? new Date(employee.birthDate) : undefined);
-      setSelectedDepartment(employee.departmentCode || "");
-      
-      // 학력 정보 초기화
-      setEducation({
-        degree: employee.education || '',
-        major: employee.major || '',
-        school: employee.school || '',
-        graduationYear: employee.graduationYear?.toString() || ''
-      });
+      setDate(undefined);
+      setSelectedDepartment("");
     }
-  }, [employee]);
+  }, [isOpen]);
 
-  // 직원 목록 조회 (상사 선택용)
-  const { data: allEmployees, isLoading: isLoadingEmployees } = useQuery<Employee[]>({
-    queryKey: ['/api/employees']
-  });
-
-  // 직원 수정 mutation
-  const updateEmployeeMutation = useMutation({
-    mutationFn: async (data: Partial<InsertEmployee>) => {
-      if (!employee) throw new Error("No employee selected");
-      
-      const response = await fetch(`/api/employees/${employee.id}`, {
-        method: 'PUT',
+  // 직원 생성 mutation
+  const createEmployeeMutation = useMutation({
+    mutationFn: async (data: InsertEmployee) => {
+      const response = await fetch('/api/employees', {
+        method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
@@ -111,7 +82,8 @@ export default function EmployeeEditModal({ employee, isOpen, onClose }: Employe
       });
 
       if (!response.ok) {
-        throw new Error('Failed to update employee');
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to create employee');
       }
 
       return response.json();
@@ -119,15 +91,15 @@ export default function EmployeeEditModal({ employee, isOpen, onClose }: Employe
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['/api/employees'] });
       toast({
-        title: "직원 수정 완료",
-        description: `${data.name}님의 정보가 성공적으로 수정되었습니다.`,
+        title: "직원 등록 완료",
+        description: `${data.name}님이 성공적으로 등록되었습니다.`,
       });
       onClose();
     },
     onError: (error) => {
       toast({
-        title: "직원 수정 실패",
-        description: error.message || "직원 정보 수정 중 오류가 발생했습니다.",
+        title: "직원 등록 실패",
+        description: error.message || "직원 등록 중 오류가 발생했습니다.",
         variant: "destructive",
       });
     }
@@ -135,20 +107,41 @@ export default function EmployeeEditModal({ employee, isOpen, onClose }: Employe
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!employee) return;
+    
+    // 필수 필드 검증
+    if (!formData.name || !formData.position || !formData.employeeNumber || !formData.departmentCode) {
+      toast({
+        title: "입력 오류",
+        description: "필수 항목을 모두 입력해주세요.",
+        variant: "destructive",
+      });
+      return;
+    }
 
-    const submitData = {
-      ...formData,
-      hireDate: date,
-      birthDate: birthDate,
+    const submitData: InsertEmployee = {
+      employeeNumber: formData.employeeNumber!,
+      departmentCode: formData.departmentCode!,
+      teamCode: formData.teamCode || null,
+      name: formData.name!,
+      position: formData.position!,
+      department: formData.department!,
+      team: formData.team || null,
+      email: formData.email || null,
+      phone: formData.phone || null,
+      hireDate: date || null,
+      birthDate: birthDate || null,
+      managerId: formData.managerId || null,
+      photoUrl: formData.photoUrl || null,
       education: education.degree,
       major: education.major,
       school: education.school,
-      graduationYear: education.graduationYear ? parseInt(education.graduationYear) : undefined
+      graduationYear: education.graduationYear ? parseInt(education.graduationYear) : undefined,
+      isDepartmentHead: formData.isDepartmentHead || false,
+      isActive: formData.isActive ?? true
     };
 
-    console.log('🚀 직원 수정 요청:', { employeeId: employee.id, submitData });
-    updateEmployeeMutation.mutate(submitData);
+    console.log('🚀 직원 생성 요청:', submitData);
+    createEmployeeMutation.mutate(submitData);
   };
 
   const handleInputChange = (field: keyof InsertEmployee, value: any) => {
@@ -158,15 +151,13 @@ export default function EmployeeEditModal({ employee, isOpen, onClose }: Employe
     }));
   };
 
-  if (!employee) return null;
-
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>직원 정보 수정</DialogTitle>
+          <DialogTitle>새 직원 등록</DialogTitle>
           <DialogDescription>
-            직원의 기본 정보, 조직 정보, 추가 정보를 수정할 수 있습니다.
+            새로운 직원의 기본 정보와 조직 정보를 입력해주세요.
           </DialogDescription>
         </DialogHeader>
 
@@ -177,31 +168,34 @@ export default function EmployeeEditModal({ employee, isOpen, onClose }: Employe
               <h3 className="text-lg font-semibold">기본 정보</h3>
               
               <div>
-                <Label htmlFor="employeeNumber">사원번호</Label>
+                <Label htmlFor="employeeNumber">사원번호 *</Label>
                 <Input
                   id="employeeNumber"
                   value={formData.employeeNumber || ""}
                   onChange={(e) => handleInputChange("employeeNumber", e.target.value)}
+                  placeholder="예: EMP001"
                   required
                 />
               </div>
 
               <div>
-                <Label htmlFor="name">이름</Label>
+                <Label htmlFor="name">이름 *</Label>
                 <Input
                   id="name"
                   value={formData.name || ""}
                   onChange={(e) => handleInputChange("name", e.target.value)}
+                  placeholder="이름을 입력하세요"
                   required
                 />
               </div>
 
               <div>
-                <Label htmlFor="position">직책</Label>
+                <Label htmlFor="position">직책 *</Label>
                 <Input
                   id="position"
                   value={formData.position || ""}
                   onChange={(e) => handleInputChange("position", e.target.value)}
+                  placeholder="예: 주임, 대리, 과장"
                   required
                 />
               </div>
@@ -213,6 +207,7 @@ export default function EmployeeEditModal({ employee, isOpen, onClose }: Employe
                   type="email"
                   value={formData.email || ""}
                   onChange={(e) => handleInputChange("email", e.target.value)}
+                  placeholder="email@company.com"
                 />
               </div>
 
@@ -222,6 +217,7 @@ export default function EmployeeEditModal({ employee, isOpen, onClose }: Employe
                   id="phone"
                   value={formData.phone || ""}
                   onChange={(e) => handleInputChange("phone", e.target.value)}
+                  placeholder="010-1234-5678"
                 />
               </div>
 
@@ -305,7 +301,7 @@ export default function EmployeeEditModal({ employee, isOpen, onClose }: Employe
               <h3 className="text-lg font-semibold">조직 정보</h3>
               
               <div>
-                <Label htmlFor="department">부서</Label>
+                <Label htmlFor="department">부서 *</Label>
                 <Select 
                   value={selectedDepartment} 
                   onValueChange={(value) => {
@@ -315,10 +311,13 @@ export default function EmployeeEditModal({ employee, isOpen, onClose }: Employe
                       setFormData(prev => ({
                         ...prev,
                         departmentCode: dept.code,
-                        department: dept.name
+                        department: dept.name,
+                        teamCode: null, // 부서 변경 시 팀 초기화
+                        team: null
                       }));
                     }
                   }}
+                  required
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="부서 선택" />
@@ -373,31 +372,29 @@ export default function EmployeeEditModal({ employee, isOpen, onClose }: Employe
               </div>
 
               <div>
-                <Label htmlFor="managerId">상사</Label>
-                <Select 
-                  value={formData.managerId || "none"} 
-                  onValueChange={(value) => {
-                    if (value === "none") {
-                      handleInputChange("managerId", null);
-                    } else {
-                      handleInputChange("managerId", value);
-                    }
-                  }}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="상사 선택" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">상사 없음</SelectItem>
-                    {allEmployees
-                      ?.filter(emp => emp.id !== employee.id) // 자기 자신 제외
-                      .map(emp => (
-                        <SelectItem key={emp.id} value={emp.id}>
-                          {emp.name} ({emp.position}) - {emp.department}
-                        </SelectItem>
-                      ))}
-                  </SelectContent>
-                </Select>
+                <Label htmlFor="isDepartmentHead">부문장 여부</Label>
+                <div className="flex space-x-4 mt-2">
+                  <label className="flex items-center space-x-2">
+                    <input
+                      type="radio"
+                      name="isDepartmentHead"
+                      checked={formData.isDepartmentHead === false}
+                      onChange={() => handleInputChange("isDepartmentHead", false)}
+                      className="w-4 h-4"
+                    />
+                    <span className="text-sm">일반 직원</span>
+                  </label>
+                  <label className="flex items-center space-x-2">
+                    <input
+                      type="radio"
+                      name="isDepartmentHead"
+                      checked={formData.isDepartmentHead === true}
+                      onChange={() => handleInputChange("isDepartmentHead", true)}
+                      className="w-4 h-4"
+                    />
+                    <span className="text-sm">부문장</span>
+                  </label>
+                </div>
               </div>
             </div>
           </div>
@@ -426,35 +423,8 @@ export default function EmployeeEditModal({ employee, isOpen, onClose }: Employe
                   id="photoUrl"
                   value={formData.photoUrl || ""}
                   onChange={(e) => handleInputChange("photoUrl", e.target.value)}
+                  placeholder="https://example.com/photo.jpg"
                 />
-              </div>
-            </div>
-
-            <div>
-              <Label htmlFor="isActive">활성 상태</Label>
-              <div className="flex space-x-4">
-                <label className="flex items-center space-x-2">
-                  <input
-                    type="radio"
-                    name="isActive"
-                    value="true"
-                    checked={formData.isActive === true}
-                    onChange={(e) => handleInputChange("isActive", true)}
-                    className="w-4 h-4"
-                  />
-                  <span className="text-sm">활성</span>
-                </label>
-                <label className="flex items-center space-x-2">
-                  <input
-                    type="radio"
-                    name="isActive"
-                    value="false"
-                    checked={formData.isActive === false}
-                    onChange={(e) => handleInputChange("isActive", false)}
-                    className="w-4 h-4"
-                  />
-                  <span className="text-sm">비활성</span>
-                </label>
               </div>
             </div>
           </div>
@@ -465,12 +435,12 @@ export default function EmployeeEditModal({ employee, isOpen, onClose }: Employe
             </Button>
             <Button 
               type="submit" 
-              disabled={updateEmployeeMutation.isPending}
+              disabled={createEmployeeMutation.isPending}
             >
-              {updateEmployeeMutation.isPending && (
+              {createEmployeeMutation.isPending && (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               )}
-              수정 완료
+              직원 등록
             </Button>
           </DialogFooter>
         </form>

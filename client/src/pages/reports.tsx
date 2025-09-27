@@ -4,9 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { Download, FileText, BarChart3, PieChart, Users } from "lucide-react";
+import { Download, FileText, BarChart3, PieChart, Users, Award, Globe } from "lucide-react";
 import SkillRadarChart from "@/components/charts/radar-chart";
-import { PieChart as RechartsPieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from "recharts";
+import { PieChart as RechartsPieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend, BarChart, Bar, XAxis, YAxis, CartesianGrid } from "recharts";
 
 interface DepartmentSkills {
   department: string;
@@ -33,6 +33,18 @@ interface DepartmentRatiosResponse {
   departments: DepartmentRatio[];
 }
 
+interface CertificationStats {
+  name: string;
+  count: number;
+  percentage: number;
+}
+
+interface LanguageStats {
+  language: string;
+  total: number;
+  levels: { [key: string]: number };
+}
+
 export default function Reports() {
   const [reportType, setReportType] = useState("");
   const [period, setPeriod] = useState("");
@@ -51,7 +63,15 @@ export default function Reports() {
     queryKey: ['/api/dashboard/department-ratios']
   });
 
-  if (isLoading || isLoadingRatios) {
+  const { data: certificationStats, isLoading: isLoadingCertifications } = useQuery<CertificationStats[]>({
+    queryKey: ['/api/reports/certifications']
+  });
+
+  const { data: languageStats, isLoading: isLoadingLanguages } = useQuery<LanguageStats[]>({
+    queryKey: ['/api/reports/language-skills']
+  });
+
+  if (isLoading || isLoadingRatios || isLoadingCertifications || isLoadingLanguages) {
     return (
       <div className="p-6">
         <div className="animate-pulse space-y-6">
@@ -228,34 +248,109 @@ export default function Reports() {
           </CardContent>
         </Card>
 
-        {/* Certification Overview - Placeholder */}
+        {/* Certification Overview */}
         <Card data-testid="chart-certification-overview">
           <CardHeader>
-            <CardTitle>자격증 보유 현황</CardTitle>
+            <CardTitle className="flex items-center">
+              <Award className="w-5 h-5 mr-2" />
+              자격증 보유 현황
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="h-64 flex items-center justify-center text-muted-foreground">
-              <div className="text-center">
-                <BarChart3 className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                <p>자격증 현황 분석 중...</p>
-                <p className="text-sm">데이터 집계 중입니다</p>
-              </div>
+            <div className="h-64">
+              {certificationStats && certificationStats.length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={certificationStats}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis 
+                      dataKey="name" 
+                      angle={-45}
+                      textAnchor="end"
+                      height={80}
+                      fontSize={12}
+                    />
+                    <YAxis />
+                    <Tooltip 
+                      formatter={(value: number, name: string) => [
+                        `${value}명 (${certificationStats.find(c => c.name === name)?.percentage.toFixed(1)}%)`,
+                        '보유자 수'
+                      ]}
+                      labelFormatter={(label: string) => `자격증: ${label}`}
+                    />
+                    <Bar dataKey="count" fill="#8884d8" />
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : certificationStats && certificationStats.length === 0 ? (
+                <div className="h-64 flex items-center justify-center text-muted-foreground">
+                  <div className="text-center">
+                    <Award className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                    <p>등록된 자격증이 없습니다</p>
+                    <p className="text-sm">직원들이 자격증을 등록하면 현황이 표시됩니다</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="h-64 flex items-center justify-center text-muted-foreground">
+                  <div className="text-center">
+                    <Award className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                    <p>자격증 현황 분석 중...</p>
+                    <p className="text-sm">데이터 집계 중입니다</p>
+                  </div>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
 
-        {/* Language Proficiency - Placeholder */}
+        {/* Language Proficiency */}
         <Card data-testid="chart-language-proficiency">
           <CardHeader>
-            <CardTitle>어학능력 수준별 분포</CardTitle>
+            <CardTitle className="flex items-center">
+              <Globe className="w-5 h-5 mr-2" />
+              어학능력 수준별 분포
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="h-64 flex items-center justify-center text-muted-foreground">
-              <div className="text-center">
-                <PieChart className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                <p>어학능력 분석 중...</p>
-                <p className="text-sm">언어별 분포 계산 중입니다</p>
-              </div>
+            <div className="h-64">
+              {languageStats && languageStats.length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={languageStats}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis 
+                      dataKey="language" 
+                      angle={-45}
+                      textAnchor="end"
+                      height={80}
+                      fontSize={12}
+                    />
+                    <YAxis />
+                    <Tooltip 
+                      formatter={(value: number, name: string) => [
+                        `${value}명`,
+                        '보유자 수'
+                      ]}
+                      labelFormatter={(label: string) => `언어: ${label}`}
+                    />
+                    <Legend />
+                    <Bar dataKey="total" fill="#8884d8" name="총 보유자" />
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : languageStats && languageStats.length === 0 ? (
+                <div className="h-64 flex items-center justify-center text-muted-foreground">
+                  <div className="text-center">
+                    <Globe className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                    <p>등록된 어학능력이 없습니다</p>
+                    <p className="text-sm">직원들이 어학능력을 등록하면 현황이 표시됩니다</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="h-64 flex items-center justify-center text-muted-foreground">
+                  <div className="text-center">
+                    <Globe className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                    <p>어학능력 분석 중...</p>
+                    <p className="text-sm">언어별 분포 계산 중입니다</p>
+                  </div>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>

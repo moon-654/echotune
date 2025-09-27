@@ -4,7 +4,7 @@ import { useLocation } from "wouter";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Search, ZoomIn, ZoomOut, RotateCcw, Building2, UserCheck, Settings } from "lucide-react";
+import { Search, ZoomIn, ZoomOut, RotateCcw } from "lucide-react";
 import D3OrgChart from "@/components/orgchart/d3-org-chart";
 import EmployeePanel from "@/components/orgchart/employee-panel";
 import type { Employee } from "@shared/schema";
@@ -123,41 +123,6 @@ export default function OrgChart() {
           </div>
         </div>
 
-        {/* Bottom Right: Organization Management */}
-        <div className="absolute bottom-4 right-4 z-10 bg-card border border-border rounded-lg p-3 shadow-lg">
-          <div className="flex items-center space-x-2">
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={() => setLocation('/departments')}
-              className="flex items-center space-x-2"
-              data-testid="button-departments"
-            >
-              <Building2 className="w-4 h-4" />
-              <span>부서 관리</span>
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={() => setLocation('/teams')}
-              className="flex items-center space-x-2"
-              data-testid="button-teams"
-            >
-              <UserCheck className="w-4 h-4" />
-              <span>팀 관리</span>
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={() => setLocation('/employees')}
-              className="flex items-center space-x-2"
-              data-testid="button-employees"
-            >
-              <Settings className="w-4 h-4" />
-              <span>직원 관리</span>
-            </Button>
-          </div>
-        </div>
 
         {/* Org Chart */}
         <D3OrgChart

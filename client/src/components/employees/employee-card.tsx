@@ -33,6 +33,7 @@ export default function EmployeeCard({ employee }: EmployeeCardProps) {
   };
 
   const handleEditEmployee = () => {
+    console.log('📝 직원 수정 버튼 클릭:', employee);
     setIsEditModalOpen(true);
   };
 

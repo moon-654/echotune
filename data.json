@@ -98,12 +98,10 @@
     "emp5": {
       "id": "emp5",
       "employeeNumber": "005",
-      "departmentCode": "SL",
-      "teamCode": "RD02",
+      "departmentCode": "GN",
       "name": "최영업",
       "position": "국내영업팀장",
-      "department": "영업부문",
-      "team": "연구팀",
+      "department": "일반부서",
       "email": "choi.sales@ashimori.co.kr",
       "phone": "010-5678-9012",
       "hireDate": "2020-02-15T00:00:00.000Z",
@@ -111,18 +109,16 @@
       "photoUrl": null,
       "isActive": true,
       "createdAt": "2025-09-21T00:04:14.912Z",
-      "updatedAt": "2025-09-21T09:55:53.028Z",
+      "updatedAt": "2025-09-27T14:34:59.775Z",
       "isDepartmentHead": false
     },
     "emp6": {
       "id": "emp6",
       "employeeNumber": "006",
-      "departmentCode": "SL",
-      "teamCode": "RD02",
+      "departmentCode": "GN",
       "name": "한해외",
       "position": "해외영업팀장",
-      "department": "영업부문",
-      "team": "연구팀",
+      "department": "일반부서",
       "email": "han.overseas@ashimori.co.kr",
       "phone": "010-6789-0123",
       "hireDate": "2019-05-20T00:00:00.000Z",
@@ -130,7 +126,7 @@
       "photoUrl": null,
       "isActive": true,
       "createdAt": "2025-09-21T00:04:14.912Z",
-      "updatedAt": "2025-09-21T09:55:54.636Z",
+      "updatedAt": "2025-09-27T14:34:59.726Z",
       "isDepartmentHead": false
     },
     "emp7": {
@@ -212,11 +208,10 @@
     "emp11": {
       "id": "emp11",
       "employeeNumber": "011",
-      "departmentCode": "SL",
+      "departmentCode": "GN",
       "name": "김국내",
       "position": "국내영업팀 사원",
-      "department": "영업부문",
-      "team": "연구팀",
+      "department": "일반부서",
       "email": "kim.domestic@ashimori.co.kr",
       "phone": "010-1234-5678",
       "hireDate": "2021-01-15T00:00:00.000Z",
@@ -224,8 +219,7 @@
       "photoUrl": null,
       "isActive": true,
       "createdAt": "2025-09-21T00:04:14.912Z",
-      "updatedAt": "2025-09-21T09:56:02.188Z",
-      "teamCode": "RD02",
+      "updatedAt": "2025-09-27T14:34:59.691Z",
       "isDepartmentHead": false
     },
     "emp12": {
@@ -346,18 +340,16 @@
     "eb170c01-d8fe-476f-a0bf-2e0ba442b234": {
       "id": "eb170c01-d8fe-476f-a0bf-2e0ba442b234",
       "employeeNumber": "15245",
-      "departmentCode": "SL",
-      "teamCode": "RD02",
+      "departmentCode": "GN",
       "name": "박국내",
       "position": "사원",
-      "department": "영업부문",
-      "team": "연구팀",
+      "department": "일반부서",
       "email": "",
       "phone": "",
       "managerId": "emp5",
       "isActive": true,
       "createdAt": "2025-09-21T10:20:22.626Z",
-      "updatedAt": "2025-09-21T10:20:22.626Z"
+      "updatedAt": "2025-09-27T14:34:59.809Z"
     },
     "c62ed8f6-0b36-4393-88a2-d2f1c66f6228": {
       "id": "c62ed8f6-0b36-4393-88a2-d2f1c66f6228",
@@ -522,50 +514,44 @@
     "8bfb665d-7356-4fc9-b25f-9225e2d7912c": {
       "id": "8bfb665d-7356-4fc9-b25f-9225e2d7912c",
       "employeeNumber": "353258",
-      "departmentCode": "SL",
-      "teamCode": "RD02",
+      "departmentCode": "GN",
       "name": "신해외",
       "position": "사원",
-      "department": "영업부문",
-      "team": "연구팀",
+      "department": "일반부서",
       "email": "",
       "phone": "",
       "managerId": "emp6",
       "isActive": true,
       "createdAt": "2025-09-21T10:40:35.452Z",
-      "updatedAt": "2025-09-21T10:40:35.452Z"
+      "updatedAt": "2025-09-27T14:34:59.830Z"
     },
     "4142d6a4-9951-423c-8752-eeb3751caf63": {
       "id": "4142d6a4-9951-423c-8752-eeb3751caf63",
       "employeeNumber": "35320",
-      "departmentCode": "SL",
-      "teamCode": "RD02",
+      "departmentCode": "GN",
       "name": "신신애",
       "position": "사원",
-      "department": "영업부문",
-      "team": "연구팀",
+      "department": "일반부서",
       "email": "",
       "phone": "",
       "managerId": "emp6",
       "isActive": true,
       "createdAt": "2025-09-21T10:40:57.516Z",
-      "updatedAt": "2025-09-21T10:40:57.516Z"
+      "updatedAt": "2025-09-27T14:34:59.869Z"
     },
     "2cef6f6f-22b6-4bfd-b2c3-eb063e14bb53": {
       "id": "2cef6f6f-22b6-4bfd-b2c3-eb063e14bb53",
       "employeeNumber": "1353",
-      "departmentCode": "SL",
-      "teamCode": "RD02",
+      "departmentCode": "GN",
       "name": "신신규규",
       "position": "사원",
-      "department": "영업부문",
-      "team": "연구팀",
+      "department": "일반부서",
       "email": "",
       "phone": "",
       "managerId": "emp6",
       "isActive": true,
       "createdAt": "2025-09-21T10:43:17.880Z",
-      "updatedAt": "2025-09-21T10:43:17.880Z"
+      "updatedAt": "2025-09-27T14:34:59.899Z"
     },
     "36374d31-115e-424d-9bf7-b8db70e0f7df": {
       "id": "36374d31-115e-424d-9bf7-b8db70e0f7df",
@@ -934,20 +920,120 @@
       "isActive": true,
       "createdAt": "2025-09-21T12:33:24.392Z",
       "updatedAt": "2025-09-21T12:34:04.156Z"
+    },
+    "ef202e24-47a6-434d-ae9a-3a47c87b64be": {
+      "id": "ef202e24-47a6-434d-ae9a-3a47c87b64be",
+      "employeeNumber": "akc18031",
+      "departmentCode": "RND",
+      "name": "문현진",
+      "position": "책임매니저",
+      "department": "기술연구소",
+      "team": "연구기획팀",
+      "email": "hyunjin_moon@ashimori.co.kr",
+      "phone": "010-9507-7771",
+      "hireDate": null,
+      "managerId": "emp2",
+      "photoUrl": "",
+      "isDepartmentHead": true,
+      "isActive": true,
+      "createdAt": "2025-09-27T07:45:40.303Z",
+      "updatedAt": "2025-09-27T07:48:53.768Z"
     }
   },
-  "trainingHistory": {},
-  "certifications": {},
-  "languages": {},
-  "skills": {},
+  "trainingHistory": {
+    "4b1e8cb1-fdd6-4220-a2f5-b0581b321079": {
+      "id": "4b1e8cb1-fdd6-4220-a2f5-b0581b321079",
+      "employeeId": "emp7",
+      "courseName": "다른교육",
+      "provider": "",
+      "type": "optional",
+      "category": "",
+      "startDate": null,
+      "completionDate": "2024-12-01T15:00:00.000Z",
+      "duration": 5,
+      "status": "planned",
+      "createdAt": "2025-09-27T15:04:31.204Z",
+      "updatedAt": "2025-09-27T15:04:31.204Z"
+    }
+  },
+  "certifications": {
+    "2089b8da-508e-4f4a-a42b-e232cae18a50": {
+      "id": "2089b8da-508e-4f4a-a42b-e232cae18a50",
+      "employeeId": "emp0",
+      "name": "123",
+      "issuer": "",
+      "category": "technical",
+      "isActive": true,
+      "createdAt": "2025-09-27T11:33:12.816Z",
+      "updatedAt": "2025-09-27T11:33:12.816Z"
+    },
+    "66e0f15c-ac6e-4d46-b899-c90871108dc6": {
+      "id": "66e0f15c-ac6e-4d46-b899-c90871108dc6",
+      "employeeId": "emp0",
+      "name": "123",
+      "issuer": "",
+      "credentialId": "",
+      "category": "technical",
+      "isActive": true,
+      "createdAt": "2025-09-27T11:33:43.482Z",
+      "updatedAt": "2025-09-27T11:33:43.482Z"
+    },
+    "69d84dde-651c-45f2-973b-478e01f40007": {
+      "id": "69d84dde-651c-45f2-973b-478e01f40007",
+      "employeeId": "emp0",
+      "name": "123123",
+      "issuer": "",
+      "category": "technical",
+      "isActive": true,
+      "createdAt": "2025-09-27T11:33:43.487Z",
+      "updatedAt": "2025-09-27T11:33:43.487Z"
+    }
+  },
+  "languages": {
+    "b01d9269-af73-4e23-b8a7-53603958b9b0": {
+      "id": "b01d9269-af73-4e23-b8a7-53603958b9b0",
+      "employeeId": "emp0",
+      "language": "1111",
+      "proficiencyLevel": "beginner",
+      "isActive": true,
+      "createdAt": "2025-09-27T11:23:48.171Z",
+      "updatedAt": "2025-09-27T11:23:48.171Z"
+    }
+  },
+  "skills": {
+    "9cf44297-a756-4d3a-966a-0d0a56e81526": {
+      "id": "9cf44297-a756-4d3a-966a-0d0a56e81526",
+      "employeeId": "emp0",
+      "skillType": "technical",
+      "skillName": "111",
+      "proficiencyLevel": 50,
+      "yearsOfExperience": 0,
+      "assessedBy": "",
+      "createdAt": "2025-09-27T11:26:55.232Z",
+      "updatedAt": "2025-09-27T11:26:55.232Z"
+    }
+  },
   "skillCalculations": {},
   "patents": {},
   "publications": {},
   "awards": {},
   "projects": {},
+  "trainingHours": {
+    "75ec0d95-223e-4da7-8870-b70cd3f9636e": {
+      "id": "75ec0d95-223e-4da7-8870-b70cd3f9636e",
+      "year": 2024,
+      "team": "개발팀",
+      "trainingType": "optional",
+      "hours": 5,
+      "description": "개발팀 optional 교육시간 (2024년)",
+      "createdAt": "2025-09-27T15:13:28.367Z",
+      "updatedAt": "2025-09-27T15:13:28.367Z"
+    }
+  },
+  "teamEmployees": {},
   "viewState": {
     "transform": "scale(1)",
-    "gTransform": "translate(-7,131) scale(1)",
+    "gTransform": "translate(-10,140) scale(1)",
     "zoomLevel": 100,
     "nodeStates": [
       {
@@ -1137,8 +1223,44 @@
       {
         "id": "65d36960-35e6-41f6-a049-54253d82f5be",
         "expanded": false
+      },
+      {
+        "id": "d3b678a0-2dfe-4262-8c3c-ade478da76cc",
+        "expanded": false
+      },
+      {
+        "id": "00888a92-47e2-4cc8-9b8b-215a2a0b0bb3",
+        "expanded": false
+      },
+      {
+        "id": "ff57a59f-3349-43c1-be68-509c91cf3a5e",
+        "expanded": false
+      },
+      {
+        "id": "fefaa9a4-5e63-4dbe-8853-c50062f0d710",
+        "expanded": false
+      },
+      {
+        "id": "56271c10-4eaf-4986-a7a5-d6a98d84677f",
+        "expanded": false
+      },
+      {
+        "id": "367551f7-5e96-40ae-87c0-5997cc985908",
+        "expanded": false
+      },
+      {
+        "id": "6cb4a92b-6d53-4f7c-86d8-0262e6b9dd87",
+        "expanded": false
+      },
+      {
+        "id": "8ba0432f-39c3-47eb-b706-cccd586a31c6",
+        "expanded": false
+      },
+      {
+        "id": "37ad4ae2-e9bd-4194-9127-e710ea266638",
+        "expanded": false
       }
     ],
-    "timestamp": "2025-09-21T12:14:14.301Z"
+    "timestamp": "2025-09-27T07:32:52.930Z"
   }
 }
