@@ -1132,12 +1132,12 @@ export default function RdEvaluationCriteriaModal({ isOpen, onClose }: RdEvaluat
                     <div className="p-4 border rounded-lg">
                       <h4 className="font-medium mb-2">제안제도</h4>
                       <p className="text-sm text-muted-foreground">제안 채택, 포상 실적</p>
-                      <Badge variant="outline" className="mt-2">수동 입력</Badge>
+                      <Badge className="mt-2">자동 연동</Badge>
                     </div>
                     <div className="p-4 border rounded-lg">
                       <h4 className="font-medium mb-2">멘토링</h4>
                       <p className="text-sm text-muted-foreground">멘토링 활동, 교육 진행</p>
-                      <Badge variant="outline" className="mt-2">수동 입력</Badge>
+                      <Badge className="mt-2">자동 연동</Badge>
                     </div>
                   </div>
                 </div>

@@ -925,22 +925,27 @@
       "id": "ef202e24-47a6-434d-ae9a-3a47c87b64be",
       "employeeNumber": "akc18031",
       "departmentCode": "RND",
+      "teamCode": "RND01",
       "name": "문현진",
       "position": "책임매니저",
       "department": "기술연구소",
       "team": "연구기획팀",
       "email": "hyunjin_moon@ashimori.co.kr",
       "phone": "010-9507-7771",
-      "hireDate": null,
+      "hireDate": "2018-07-02T00:00:00.000Z",
+      "birthDate": "1986-01-10T00:00:00.000Z",
       "managerId": "emp2",
       "photoUrl": "",
       "isDepartmentHead": true,
       "isActive": true,
       "createdAt": "2025-09-27T07:45:40.303Z",
-      "updatedAt": "2025-09-27T22:57:18.804Z",
-      "education": "",
-      "major": "",
-      "school": ""
+      "updatedAt": "2025-09-28T10:11:57.656Z",
+      "education": "bachelor",
+      "major": "기계제어공학과",
+      "school": "고려사이버대학교",
+      "previousExperienceYears": 6,
+      "previousExperienceMonths": 0,
+      "graduationYear": 2016
     },
     "53fd46eb-3810-4f3a-a78a-74ee7474de0c": {
       "id": "53fd46eb-3810-4f3a-a78a-74ee7474de0c",
@@ -990,6 +995,20 @@
       "status": "planned",
       "createdAt": "2025-09-27T23:31:41.254Z",
       "updatedAt": "2025-09-27T23:31:41.254Z"
+    },
+    "e07073b1-d824-40ce-bc69-eca449d10d74": {
+      "id": "e07073b1-d824-40ce-bc69-eca449d10d74",
+      "employeeId": "ef202e24-47a6-434d-ae9a-3a47c87b64be",
+      "courseName": "test 교육",
+      "provider": "온라인",
+      "type": "optional",
+      "category": "기술",
+      "startDate": "2024-12-10T00:00:00.000Z",
+      "completionDate": null,
+      "duration": 8,
+      "status": "completed",
+      "createdAt": "2025-09-28T10:13:23.562Z",
+      "updatedAt": "2025-09-28T10:13:23.562Z"
     }
   },
   "certifications": {
@@ -1023,6 +1042,17 @@
       "isActive": true,
       "createdAt": "2025-09-27T11:33:43.487Z",
       "updatedAt": "2025-09-27T11:33:43.487Z"
+    },
+    "a4f6adfa-c202-49ac-981e-39f84f2b492a": {
+      "id": "a4f6adfa-c202-49ac-981e-39f84f2b492a",
+      "employeeId": "ef202e24-47a6-434d-ae9a-3a47c87b64be",
+      "name": "test 자격증",
+      "issuer": "test 기관",
+      "category": "technical",
+      "level": "advanced",
+      "isActive": true,
+      "createdAt": "2025-09-28T10:15:30.465Z",
+      "updatedAt": "2025-09-28T10:15:30.465Z"
     }
   },
   "languages": {
@@ -1074,10 +1104,61 @@
     }
   },
   "skillCalculations": {},
-  "patents": {},
-  "publications": {},
-  "awards": {},
-  "projects": {},
+  "patents": {
+    "4250a8a3-f420-4501-9d7e-fa821669e951": {
+      "id": "4250a8a3-f420-4501-9d7e-fa821669e951",
+      "employeeId": "ef202e24-47a6-434d-ae9a-3a47c87b64be",
+      "title": "test 특허",
+      "status": "pending",
+      "applicationDate": "2025-08-31T15:00:00.000Z",
+      "grantDate": "2025-08-31T15:00:00.000Z",
+      "applicationNumber": "",
+      "patentNumber": "",
+      "inventors": "",
+      "description": "",
+      "createdAt": "2025-09-28T10:14:57.340Z",
+      "updatedAt": "2025-09-28T10:14:57.340Z"
+    }
+  },
+  "publications": {
+    "d9fc669c-e35c-4bdb-b0c3-17d40a653b37": {
+      "id": "d9fc669c-e35c-4bdb-b0c3-17d40a653b37",
+      "employeeId": "ef202e24-47a6-434d-ae9a-3a47c87b64be",
+      "title": "test 논문",
+      "authors": "문현진",
+      "type": "journal",
+      "publicationDate": "2025-08-31T15:00:00.000Z",
+      "createdAt": "2025-09-28T10:14:57.344Z",
+      "updatedAt": "2025-09-28T10:14:57.344Z"
+    }
+  },
+  "awards": {
+    "27ecb291-06b1-46ba-bc1c-d3286e2e6739": {
+      "id": "27ecb291-06b1-46ba-bc1c-d3286e2e6739",
+      "employeeId": "ef202e24-47a6-434d-ae9a-3a47c87b64be",
+      "name": "test 수상",
+      "issuer": "회사",
+      "category": "performance",
+      "level": "company",
+      "createdAt": "2025-09-28T10:15:13.243Z",
+      "updatedAt": "2025-09-28T10:15:13.243Z"
+    }
+  },
+  "projects": {
+    "43c4386d-6fd1-4977-a15a-251155b6dc68": {
+      "id": "43c4386d-6fd1-4977-a15a-251155b6dc68",
+      "employeeId": "ef202e24-47a6-434d-ae9a-3a47c87b64be",
+      "projectName": "test 프로젝트1",
+      "role": "PL",
+      "status": "completed",
+      "startDate": "2024-05-31T15:00:00.000Z",
+      "endDate": "2025-08-31T15:00:00.000Z",
+      "teamSize": 8,
+      "client": "TEST회사",
+      "createdAt": "2025-09-28T10:14:11.729Z",
+      "updatedAt": "2025-09-28T10:14:11.729Z"
+    }
+  },
   "trainingHours": {
     "9b40baad-4a5c-42de-ae41-86f6ba776a6a": {
       "id": "9b40baad-4a5c-42de-ae41-86f6ba776a6a",
@@ -1098,6 +1179,16 @@
       "description": "개발팀 optional 교육시간 (2024년)",
       "createdAt": "2025-09-27T23:50:14.799Z",
       "updatedAt": "2025-09-27T23:50:14.799Z"
+    },
+    "e3b68ceb-eef4-46f2-8669-d584fd34ecf5": {
+      "id": "e3b68ceb-eef4-46f2-8669-d584fd34ecf5",
+      "year": 1970,
+      "team": "연구기획팀",
+      "trainingType": "optional",
+      "hours": 8,
+      "description": "연구기획팀 optional 교육시간 (자동생성)",
+      "createdAt": "2025-09-28T10:13:23.564Z",
+      "updatedAt": "2025-09-28T10:13:23.564Z"
     }
   },
   "teamEmployees": {},
@@ -1332,46 +1423,5 @@
       }
     ],
     "timestamp": "2025-09-27T07:32:52.930Z"
-  },
-  "rdEvaluationCriteria": {
-    "technical_competency": {
-      "education": { "박사": 30, "석사": 20, "학사": 10, "전문대": 5 },
-      "experience": { "15년 이상": 50, "10년 이상": 40, "5년 이상": 30, "5년 미만": 20 },
-      "certifications": { "기술사": 20, "기사": 10, "산업기사": 5, "기타": 3 }
-    },
-    "project_experience": {
-      "leadership": { "Project Leader": 15, "핵심 멤버": 10, "일반 멤버": 5 },
-      "count": { "3개 이상": 30, "2개": 20, "1개": 10 }
-    },
-    "rd_achievement": {
-      "patents": { "등록": 20, "출원": 5 },
-      "publications": { "SCI(E)급": 25, "국내 학술지": 10 },
-      "awards": { "국제": 15, "국가": 10, "산업": 5 }
-    },
-    "global_competency": {
-      "english": {
-        "toeic": { "950-990": 10, "900-949": 8, "800-899": 6, "700-799": 4, "700미만": 2 },
-        "toefl": { "113-120": 10, "105-112": 8, "90-104": 6, "70-89": 4, "70미만": 2 },
-        "ielts": { "8.5-9.0": 10, "7.5-8.4": 8, "6.5-7.4": 6, "5.5-6.4": 4, "5.5미만": 2 },
-        "teps": { "526-600": 10, "453-525": 8, "387-452": 6, "327-386": 4, "327미만": 2 }
-      },
-      "japanese": {
-        "jlpt": { "N1": 10, "N2": 7, "N3": 4, "N4": 2, "N5": 1 },
-        "jpt": { "900-990": 8, "800-899": 6, "700-799": 4, "700미만": 2 }
-      },
-      "chinese": {
-        "hsk": { "6급": 10, "5급": 8, "4급": 6, "3급": 4, "2급": 2, "1급": 1 },
-        "tocfl": { "Band C Level 6": 10, "Band C Level 5": 8, "Band B Level 4": 6, "Band B Level 3": 4, "Band A Level 2": 2, "Band A Level 1": 1 }
-      }
-    },
-    "knowledge_sharing": {
-      "training": { "40시간 이상": 5, "20시간 이상": 3, "10시간 이상": 2 },
-      "certifications": { "신규 취득": 5 },
-      "mentoring": { "멘토링 1명": 3 }
-    },
-    "innovation_proposal": {
-      "awards": { "최우수상": 80, "우수상": 60, "장려상": 40 },
-      "adoption": { "채택": 5 }
-    }
   }
 }

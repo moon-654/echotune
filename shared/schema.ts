@@ -22,6 +22,8 @@ export const employees = pgTable("employees", {
   major: text("major"), // 전공 (예: "컴퓨터공학", "경영학")
   school: text("school"), // 학교명 (예: "서울대학교", "연세대학교")
   graduationYear: integer("graduation_year"), // 졸업년도
+  previousExperienceYears: integer("previous_experience_years").default(0), // 이전 경력 년수
+  previousExperienceMonths: integer("previous_experience_months").default(0), // 이전 경력 개월수
   isDepartmentHead: boolean("is_department_head").default(false), // 부문장 여부
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").default(sql`now()`),

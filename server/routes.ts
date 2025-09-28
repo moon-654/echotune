@@ -172,24 +172,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
 app.put("/api/employees/:id", async (req, res) => {
   try {
-    console.log('🛠️ PUT /api/employees/:id 호출됨');
-    console.log('📝 요청 ID:', req.params.id);
-    console.log('📝 요청 Body:', req.body);
-    
     // 기존 직원 데이터 확인
     const existingEmployee = await storage.getEmployee(req.params.id);
-    console.log('👤 기존 직원 데이터:', {
-      id: existingEmployee?.id,
-      name: existingEmployee?.name,
-      position: existingEmployee?.position,
-      department: existingEmployee?.department,
-      departmentCode: existingEmployee?.departmentCode,
-      team: existingEmployee?.team,
-      teamCode: existingEmployee?.teamCode,
-      managerId: existingEmployee?.managerId,
-      employeeNumber: existingEmployee?.employeeNumber,
-      isDepartmentHead: existingEmployee?.isDepartmentHead
-    });
+    
+    if (!existingEmployee) {
+      console.log('❌ 직원을 찾을 수 없음:', req.params.id);
+      return res.status(404).json({ error: "Employee not found" });
+    }
     
     // null 값들을 undefined로 변환하여 스키마 검증 통과
     const cleanedBody = { ...req.body };
@@ -207,19 +196,18 @@ app.put("/api/employees/:id", async (req, res) => {
       cleanedBody.isActive = cleanedBody.isActive === 'true' || cleanedBody.isActive === true;
     }
     
-    console.log('🧹 정리된 요청 데이터:', cleanedBody);
+    // 날짜 필드들을 Date 객체로 변환
+    if (cleanedBody.birthDate && typeof cleanedBody.birthDate === 'string') {
+      console.log('📅 birthDate 문자열을 Date 객체로 변환:', cleanedBody.birthDate, '->', new Date(cleanedBody.birthDate));
+      cleanedBody.birthDate = new Date(cleanedBody.birthDate);
+    }
+    if (cleanedBody.hireDate && typeof cleanedBody.hireDate === 'string') {
+      console.log('📅 hireDate 문자열을 Date 객체로 변환:', cleanedBody.hireDate, '->', new Date(cleanedBody.hireDate));
+      cleanedBody.hireDate = new Date(cleanedBody.hireDate);
+    }
     
     const employeeData = insertEmployeeSchema.partial().parse(cleanedBody);
-    console.log('✅ 스키마 검증 완료:', employeeData);
     
-    console.log('🔄 업데이트 전후 비교:');
-    console.log('📋 managerId:', { 기존: existingEmployee?.managerId, 요청: employeeData.managerId, 변경: existingEmployee?.managerId !== employeeData.managerId });
-    console.log('📋 departmentCode:', { 기존: existingEmployee?.departmentCode, 요청: employeeData.departmentCode, 변경: existingEmployee?.departmentCode !== employeeData.departmentCode });
-    console.log('📋 department:', { 기존: existingEmployee?.department, 요청: employeeData.department, 변경: existingEmployee?.department !== employeeData.department });
-    console.log('📋 teamCode:', { 기존: existingEmployee?.teamCode, 요청: employeeData.teamCode, 변경: existingEmployee?.teamCode !== employeeData.teamCode });
-    console.log('📋 team:', { 기존: existingEmployee?.team, 요청: employeeData.team, 변경: existingEmployee?.team !== employeeData.team });
-    console.log('📋 employeeNumber:', { 기존: existingEmployee?.employeeNumber, 요청: employeeData.employeeNumber, 변경: existingEmployee?.employeeNumber !== employeeData.employeeNumber });
-    console.log('📋 isDepartmentHead:', { 기존: existingEmployee?.isDepartmentHead, 요청: employeeData.isDepartmentHead, 변경: existingEmployee?.isDepartmentHead !== employeeData.isDepartmentHead });
     
     // 변경사항이 있는지 확인
     const hasChanges = Object.keys(employeeData).some(key => {
@@ -228,9 +216,7 @@ app.put("/api/employees/:id", async (req, res) => {
       return existingValue !== newValue;
     });
     
-    console.log('🔍 변경사항 존재 여부:', hasChanges);
     if (!hasChanges) {
-      console.log('⚠️ 변경사항이 없어 업데이트를 건너뜁니다.');
       return res.json(existingEmployee);
     }
     
@@ -242,45 +228,17 @@ app.put("/api/employees/:id", async (req, res) => {
     });
     
     if (isDuplicateRequest) {
-      console.log('⚠️ 중복 요청 감지 - 업데이트를 건너뜁니다.');
       return res.json(existingEmployee);
     }
     
     const employee = await storage.updateEmployee(req.params.id, employeeData);
-    console.log('💾 데이터베이스 업데이트 완료:', {
-      id: employee.id,
-      name: employee.name,
-      position: employee.position,
-      department: employee.department,
-      departmentCode: employee.departmentCode,
-      team: employee.team,
-      teamCode: employee.teamCode,
-      managerId: employee.managerId
-    });
-    
-    // 업데이트 후 데이터 재확인
-    const updatedEmployee = await storage.getEmployee(req.params.id);
-    console.log('🔍 업데이트 후 직원 데이터:', {
-      id: updatedEmployee?.id,
-      name: updatedEmployee?.name,
-      position: updatedEmployee?.position,
-      department: updatedEmployee?.department,
-      departmentCode: updatedEmployee?.departmentCode,
-      team: updatedEmployee?.team,
-      teamCode: updatedEmployee?.teamCode,
-      managerId: updatedEmployee?.managerId
-    });
-    
-    console.log('🔍 최종 변경사항 검증:');
-    console.log('✅ managerId 변경:', { 기존: existingEmployee?.managerId, 결과: updatedEmployee?.managerId, 성공: existingEmployee?.managerId !== updatedEmployee?.managerId });
-    console.log('✅ departmentCode 변경:', { 기존: existingEmployee?.departmentCode, 결과: updatedEmployee?.departmentCode, 성공: existingEmployee?.departmentCode !== updatedEmployee?.departmentCode });
-    console.log('✅ department 변경:', { 기존: existingEmployee?.department, 결과: updatedEmployee?.department, 성공: existingEmployee?.department !== updatedEmployee?.department });
-    console.log('✅ teamCode 변경:', { 기존: existingEmployee?.teamCode, 결과: updatedEmployee?.teamCode, 성공: existingEmployee?.teamCode !== updatedEmployee?.teamCode });
-    console.log('✅ team 변경:', { 기존: existingEmployee?.team, 결과: updatedEmployee?.team, 성공: existingEmployee?.team !== updatedEmployee?.team });
     
     res.json(employee);
   } catch (error) {
     console.error('❌ 직원 업데이트 실패:', error);
+    console.error('❌ 오류 스택:', error.stack);
+    console.error('❌ 오류 타입:', typeof error);
+    console.error('❌ 오류 메시지:', error.message);
     res.status(400).json({ error: "Failed to update employee", details: error.message });
   }
 });
@@ -1324,6 +1282,389 @@ app.put("/api/employees/:id", async (req, res) => {
         message: '저장 중 오류가 발생했습니다.',
         error: error.message
       });
+    }
+  });
+
+  // Departments and Teams routes
+  app.get("/api/departments", async (req, res) => {
+    try {
+      console.log('🔍 부서 목록 조회 요청');
+      
+      // data.json에서 부서 데이터 로드
+      const fs = require('fs');
+      const path = require('path');
+      const dataPath = path.join(process.cwd(), 'data.json');
+      
+      let departments = [];
+      if (fs.existsSync(dataPath)) {
+        const fileContent = fs.readFileSync(dataPath, 'utf8');
+        const data = JSON.parse(fileContent);
+        departments = data.departments || [];
+      }
+      
+      console.log('✅ 부서 데이터 로드 완료:', departments.length, '개');
+      res.json(departments);
+    } catch (error) {
+      console.error("부서 조회 오류:", error);
+      res.status(500).json({ error: "부서를 불러올 수 없습니다." });
+    }
+  });
+
+  app.post("/api/departments", async (req, res) => {
+    try {
+      const { code, name } = req.body;
+      console.log('🔧 부서 추가 요청:', { code, name });
+      
+      const fs = require('fs');
+      const path = require('path');
+      const dataPath = path.join(process.cwd(), 'data.json');
+      
+      let data = {};
+      if (fs.existsSync(dataPath)) {
+        const fileContent = fs.readFileSync(dataPath, 'utf8');
+        data = JSON.parse(fileContent);
+      }
+      
+      // 부서 데이터 추가
+      if (!data.departments) {
+        data.departments = [];
+      }
+      
+      // 중복 체크
+      if (data.departments.find((d: any) => d.code === code)) {
+        return res.status(400).json({ error: "이미 존재하는 부서코드입니다." });
+      }
+      
+      const newDepartment = {
+        code,
+        name,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+      
+      data.departments.push(newDepartment);
+      
+      // 파일 저장
+      fs.writeFileSync(dataPath, JSON.stringify(data, null, 2));
+      console.log('✅ 부서 추가 완료:', code);
+      
+      res.json({ success: true, data: newDepartment });
+    } catch (error) {
+      console.error("부서 추가 오류:", error);
+      res.status(500).json({ error: "부서를 추가할 수 없습니다." });
+    }
+  });
+
+  app.put("/api/departments/:code", async (req, res) => {
+    try {
+      const { code } = req.params;
+      const { name } = req.body;
+      console.log('🔧 부서 수정 요청:', { code, name });
+      
+      const fs = require('fs');
+      const path = require('path');
+      const dataPath = path.join(process.cwd(), 'data.json');
+      
+      let data = {};
+      if (fs.existsSync(dataPath)) {
+        const fileContent = fs.readFileSync(dataPath, 'utf8');
+        data = JSON.parse(fileContent);
+      }
+      
+      if (!data.departments) {
+        return res.status(404).json({ error: "부서를 찾을 수 없습니다." });
+      }
+      
+      const departmentIndex = data.departments.findIndex((d: any) => d.code === code);
+      if (departmentIndex === -1) {
+        return res.status(404).json({ error: "부서를 찾을 수 없습니다." });
+      }
+      
+      data.departments[departmentIndex] = {
+        ...data.departments[departmentIndex],
+        name,
+        updatedAt: new Date().toISOString()
+      };
+      
+      // 파일 저장
+      fs.writeFileSync(dataPath, JSON.stringify(data, null, 2));
+      console.log('✅ 부서 수정 완료:', code);
+      
+      res.json({ success: true, data: data.departments[departmentIndex] });
+    } catch (error) {
+      console.error("부서 수정 오류:", error);
+      res.status(500).json({ error: "부서를 수정할 수 없습니다." });
+    }
+  });
+
+  app.delete("/api/departments/:code", async (req, res) => {
+    try {
+      const { code } = req.params;
+      console.log('🔧 부서 삭제 요청:', code);
+      
+      const fs = require('fs');
+      const path = require('path');
+      const dataPath = path.join(process.cwd(), 'data.json');
+      
+      let data = {};
+      if (fs.existsSync(dataPath)) {
+        const fileContent = fs.readFileSync(dataPath, 'utf8');
+        data = JSON.parse(fileContent);
+      }
+      
+      if (!data.departments) {
+        return res.status(404).json({ error: "부서를 찾을 수 없습니다." });
+      }
+      
+      const departmentIndex = data.departments.findIndex((d: any) => d.code === code);
+      if (departmentIndex === -1) {
+        return res.status(404).json({ error: "부서를 찾을 수 없습니다." });
+      }
+      
+      // 관련 팀도 삭제
+      if (data.teams) {
+        data.teams = data.teams.filter((t: any) => t.departmentCode !== code);
+      }
+      
+      data.departments.splice(departmentIndex, 1);
+      
+      // 파일 저장
+      fs.writeFileSync(dataPath, JSON.stringify(data, null, 2));
+      console.log('✅ 부서 삭제 완료:', code);
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error("부서 삭제 오류:", error);
+      res.status(500).json({ error: "부서를 삭제할 수 없습니다." });
+    }
+  });
+
+  app.get("/api/teams", async (req, res) => {
+    try {
+      const { departmentCode } = req.query;
+      console.log('🔍 팀 목록 조회 요청:', { departmentCode });
+      
+      // data.json에서 팀 데이터 로드
+      const fs = require('fs');
+      const path = require('path');
+      const dataPath = path.join(process.cwd(), 'data.json');
+      
+      let teams = [];
+      if (fs.existsSync(dataPath)) {
+        const fileContent = fs.readFileSync(dataPath, 'utf8');
+        const data = JSON.parse(fileContent);
+        teams = data.teams || [];
+        
+        // 부서코드가 있으면 필터링
+        if (departmentCode) {
+          teams = teams.filter((t: any) => t.departmentCode === departmentCode);
+        }
+      }
+      
+      console.log('✅ 팀 데이터 로드 완료:', teams.length, '개');
+      res.json(teams);
+    } catch (error) {
+      console.error("팀 조회 오류:", error);
+      res.status(500).json({ error: "팀을 불러올 수 없습니다." });
+    }
+  });
+
+  app.post("/api/teams", async (req, res) => {
+    try {
+      const { code, name, departmentCode } = req.body;
+      console.log('🔧 팀 추가 요청:', { code, name, departmentCode });
+      
+      const fs = require('fs');
+      const path = require('path');
+      const dataPath = path.join(process.cwd(), 'data.json');
+      
+      let data = {};
+      if (fs.existsSync(dataPath)) {
+        const fileContent = fs.readFileSync(dataPath, 'utf8');
+        data = JSON.parse(fileContent);
+      }
+      
+      // 팀 데이터 추가
+      if (!data.teams) {
+        data.teams = [];
+      }
+      
+      // 중복 체크
+      if (data.teams.find((t: any) => t.code === code)) {
+        return res.status(400).json({ error: "이미 존재하는 팀코드입니다." });
+      }
+      
+      const newTeam = {
+        code,
+        name,
+        departmentCode,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+      
+      data.teams.push(newTeam);
+      
+      // 파일 저장
+      fs.writeFileSync(dataPath, JSON.stringify(data, null, 2));
+      console.log('✅ 팀 추가 완료:', code);
+      
+      res.json({ success: true, data: newTeam });
+    } catch (error) {
+      console.error("팀 추가 오류:", error);
+      res.status(500).json({ error: "팀을 추가할 수 없습니다." });
+    }
+  });
+
+  app.put("/api/teams/:code", async (req, res) => {
+    try {
+      const { code } = req.params;
+      const { name, departmentCode } = req.body;
+      console.log('🔧 팀 수정 요청:', { code, name, departmentCode });
+      
+      const fs = require('fs');
+      const path = require('path');
+      const dataPath = path.join(process.cwd(), 'data.json');
+      
+      let data = {};
+      if (fs.existsSync(dataPath)) {
+        const fileContent = fs.readFileSync(dataPath, 'utf8');
+        data = JSON.parse(fileContent);
+      }
+      
+      if (!data.teams) {
+        return res.status(404).json({ error: "팀을 찾을 수 없습니다." });
+      }
+      
+      const teamIndex = data.teams.findIndex((t: any) => t.code === code);
+      if (teamIndex === -1) {
+        return res.status(404).json({ error: "팀을 찾을 수 없습니다." });
+      }
+      
+      data.teams[teamIndex] = {
+        ...data.teams[teamIndex],
+        name,
+        departmentCode,
+        updatedAt: new Date().toISOString()
+      };
+      
+      // 파일 저장
+      fs.writeFileSync(dataPath, JSON.stringify(data, null, 2));
+      console.log('✅ 팀 수정 완료:', code);
+      
+      res.json({ success: true, data: data.teams[teamIndex] });
+    } catch (error) {
+      console.error("팀 수정 오류:", error);
+      res.status(500).json({ error: "팀을 수정할 수 없습니다." });
+    }
+  });
+
+  app.delete("/api/teams/:code", async (req, res) => {
+    try {
+      const { code } = req.params;
+      console.log('🔧 팀 삭제 요청:', code);
+      
+      const fs = require('fs');
+      const path = require('path');
+      const dataPath = path.join(process.cwd(), 'data.json');
+      
+      let data = {};
+      if (fs.existsSync(dataPath)) {
+        const fileContent = fs.readFileSync(dataPath, 'utf8');
+        data = JSON.parse(fileContent);
+      }
+      
+      if (!data.teams) {
+        return res.status(404).json({ error: "팀을 찾을 수 없습니다." });
+      }
+      
+      const teamIndex = data.teams.findIndex((t: any) => t.code === code);
+      if (teamIndex === -1) {
+        return res.status(404).json({ error: "팀을 찾을 수 없습니다." });
+      }
+      
+      data.teams.splice(teamIndex, 1);
+      
+      // 파일 저장
+      fs.writeFileSync(dataPath, JSON.stringify(data, null, 2));
+      console.log('✅ 팀 삭제 완료:', code);
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error("팀 삭제 오류:", error);
+      res.status(500).json({ error: "팀을 삭제할 수 없습니다." });
+    }
+  });
+
+  // Proposals routes
+  app.get("/api/proposals", async (req, res) => {
+    try {
+      const { employeeId } = req.query;
+      console.log('🔍 제안제도 조회 요청:', { employeeId });
+      
+      // data.json에서 제안제도 데이터 로드
+      const fs = require('fs');
+      const path = require('path');
+      const dataPath = path.join(process.cwd(), 'data.json');
+      
+      let proposals = [];
+      if (fs.existsSync(dataPath)) {
+        const fileContent = fs.readFileSync(dataPath, 'utf8');
+        const data = JSON.parse(fileContent);
+        proposals = data.proposals || [];
+        
+        // employeeId가 있으면 필터링
+        if (employeeId) {
+          proposals = proposals.filter((p: any) => p.employeeId === employeeId);
+        }
+      }
+      
+      console.log('✅ 제안제도 데이터 로드 완료:', proposals.length, '개');
+      res.json(proposals);
+    } catch (error) {
+      console.error("제안제도 조회 오류:", error);
+      res.status(500).json({ error: "제안제도를 불러올 수 없습니다." });
+    }
+  });
+
+  app.post("/api/proposals", async (req, res) => {
+    try {
+      const proposalData = req.body;
+      console.log('🔧 제안제도 저장 요청:', proposalData);
+      
+      const fs = require('fs');
+      const path = require('path');
+      const dataPath = path.join(process.cwd(), 'data.json');
+      
+      let data = {};
+      if (fs.existsSync(dataPath)) {
+        const fileContent = fs.readFileSync(dataPath, 'utf8');
+        data = JSON.parse(fileContent);
+      }
+      
+      // 제안제도 데이터 추가
+      if (!data.proposals) {
+        data.proposals = [];
+      }
+      
+      // ID 생성
+      const newId = `proposal_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      const newProposal = {
+        id: newId,
+        ...proposalData,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+      
+      data.proposals.push(newProposal);
+      
+      // 파일 저장
+      fs.writeFileSync(dataPath, JSON.stringify(data, null, 2));
+      console.log('✅ 제안제도 저장 완료:', newId);
+      
+      res.json({ success: true, id: newId, data: newProposal });
+    } catch (error) {
+      console.error("제안제도 저장 오류:", error);
+      res.status(500).json({ error: "제안제도를 저장할 수 없습니다." });
     }
   });
 

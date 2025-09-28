@@ -13,6 +13,7 @@ import { ko } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { DepartmentTeamManager } from "@/lib/departments-teams";
 import { useToast } from "@/hooks/use-toast";
+import DepartmentTeamManagerModal from "./department-team-manager-modal";
 import type { Employee, InsertEmployee } from "@shared/schema";
 
 interface EmployeeEditModalProps {
@@ -27,8 +28,6 @@ export default function EmployeeEditModal({ employee, isOpen, onClose }: Employe
   const [formData, setFormData] = useState<Partial<InsertEmployee>>({});
   const [date, setDate] = useState<Date | undefined>();
   const [birthDate, setBirthDate] = useState<Date | undefined>();
-  const [departments, setDepartments] = useState<any[]>([]);
-  const [teams, setTeams] = useState<any[]>([]);
   const [selectedDepartment, setSelectedDepartment] = useState<string>("");
   const [education, setEducation] = useState({
     degree: '',
@@ -36,29 +35,81 @@ export default function EmployeeEditModal({ employee, isOpen, onClose }: Employe
     school: '',
     graduationYear: ''
   });
+  const [previousExperience, setPreviousExperience] = useState({
+    years: 0,
+    months: 0
+  });
+  const [isDepartmentTeamManagerOpen, setIsDepartmentTeamManagerOpen] = useState(false);
 
-  // 부서/팀 데이터를 useMemo로 메모이제이션
-  const { departments: memoizedDepartments, teams: memoizedTeams } = useMemo(() => {
-    if (!isOpen) return { departments: [], teams: [] };
-    
-    const deptData = DepartmentTeamManager.getAllDepartments();
-    const teamData = DepartmentTeamManager.getAllTeams();
-    return { departments: deptData, teams: teamData };
-  }, [isOpen]);
+  // 부서/팀 데이터 로드
+  const [departments, setDepartments] = useState<Department[]>([]);
+  const [teams, setTeams] = useState<Team[]>([]);
+  const [loading, setLoading] = useState(false);
 
-  // 메모이제이션된 데이터를 상태에 설정
+  // 부서/팀 데이터 로드
   useEffect(() => {
-    setDepartments(memoizedDepartments);
-    setTeams(memoizedTeams);
-  }, [memoizedDepartments, memoizedTeams]);
+    const loadData = async () => {
+      if (isOpen) {
+        setLoading(true);
+        try {
+          const [deptData, teamData] = await Promise.all([
+            DepartmentTeamManager.getAllDepartments(),
+            DepartmentTeamManager.getAllTeams()
+          ]);
+          setDepartments(deptData);
+          setTeams(teamData);
+          console.log('🔍 부서/팀 데이터 로드:', {
+            departments: deptData,
+            teams: teamData
+          });
+        } catch (error) {
+          console.error('부서/팀 데이터 로드 실패:', error);
+        } finally {
+          setLoading(false);
+        }
+      }
+    };
+    loadData();
+  }, [isOpen]);
 
   // 직원 데이터를 폼에 로드
   useEffect(() => {
-    if (employee) {
+    if (employee && teams.length > 0) {
+      console.log('🔍 직원 데이터 로드:', {
+        name: employee.name,
+        departmentCode: employee.departmentCode,
+        department: employee.department,
+        teamCode: employee.teamCode,
+        team: employee.team
+      });
+      
+      // 팀 매칭 로직 개선
+      let matchedTeamCode = employee.teamCode;
+      if (!matchedTeamCode && employee.team && employee.departmentCode) {
+        // team 필드가 있으면 해당 팀을 찾아서 teamCode 설정
+        const matchedTeam = teams.find(t => 
+          t.name === employee.team && t.departmentCode === employee.departmentCode
+        );
+        if (matchedTeam) {
+          matchedTeamCode = matchedTeam.code;
+          console.log('✅ 팀 매칭 성공:', {
+            teamName: employee.team,
+            departmentCode: employee.departmentCode,
+            matchedTeamCode: matchedTeam.code
+          });
+        } else {
+          console.log('❌ 팀 매칭 실패:', {
+            teamName: employee.team,
+            departmentCode: employee.departmentCode,
+            availableTeams: teams.filter(t => t.departmentCode === employee.departmentCode)
+          });
+        }
+      }
+
       setFormData({
         employeeNumber: employee.employeeNumber,
         departmentCode: employee.departmentCode,
-        teamCode: employee.teamCode,
+        teamCode: matchedTeamCode,
         name: employee.name,
         position: employee.position,
         department: employee.department,
@@ -86,8 +137,14 @@ export default function EmployeeEditModal({ employee, isOpen, onClose }: Employe
         school: employee.school || '',
         graduationYear: employee.graduationYear?.toString() || ''
       });
+      
+      // 이전 경력 정보 초기화
+      setPreviousExperience({
+        years: Number(employee.previousExperienceYears) || 0,
+        months: Number(employee.previousExperienceMonths) || 0
+      });
     }
-  }, [employee]);
+  }, [employee, teams]);
 
   // 직원 목록 조회 (상사 선택용)
   const { data: allEmployees, isLoading: isLoadingEmployees } = useQuery<Employee[]>({
@@ -99,6 +156,12 @@ export default function EmployeeEditModal({ employee, isOpen, onClose }: Employe
     mutationFn: async (data: Partial<InsertEmployee>) => {
       if (!employee) throw new Error("No employee selected");
       
+      console.log('🚀 API 호출 시작:', {
+        url: `/api/employees/${employee.id}`,
+        method: 'PUT',
+        data: data
+      });
+      
       const response = await fetch(`/api/employees/${employee.id}`, {
         method: 'PUT',
         headers: {
@@ -107,13 +170,21 @@ export default function EmployeeEditModal({ employee, isOpen, onClose }: Employe
         body: JSON.stringify(data)
       });
 
+      console.log('📡 API 응답 상태:', response.status);
+      console.log('📡 API 응답 헤더:', Object.fromEntries(response.headers.entries()));
+
       if (!response.ok) {
-        throw new Error('Failed to update employee');
+        const errorText = await response.text();
+        console.error('❌ API 오류 응답:', errorText);
+        throw new Error(`Failed to update employee: ${response.status} ${errorText}`);
       }
 
-      return response.json();
+      const result = await response.json();
+      console.log('✅ API 성공 응답:', result);
+      return result;
     },
     onSuccess: (data) => {
+      console.log('🎉 직원 수정 성공:', data);
       queryClient.invalidateQueries({ queryKey: ['/api/employees'] });
       toast({
         title: "직원 수정 완료",
@@ -122,6 +193,10 @@ export default function EmployeeEditModal({ employee, isOpen, onClose }: Employe
       onClose();
     },
     onError: (error) => {
+      console.error('💥 직원 수정 실패:', error);
+      console.error('💥 오류 타입:', typeof error);
+      console.error('💥 오류 메시지:', error.message);
+      console.error('💥 오류 스택:', error.stack);
       toast({
         title: "직원 수정 실패",
         description: error.message || "직원 정보 수정 중 오류가 발생했습니다.",
@@ -134,14 +209,28 @@ export default function EmployeeEditModal({ employee, isOpen, onClose }: Employe
     e.preventDefault();
     if (!employee) return;
 
-    const submitData = {
-      ...formData,
-      hireDate: date,
-      birthDate: birthDate,
-      education: education.degree,
+    const submitData: Partial<InsertEmployee> = {
+      name: formData.name,
+      position: formData.position,
+      department: formData.department,
+      departmentCode: formData.departmentCode,
+      team: formData.team,
+      teamCode: formData.teamCode,
+      managerId: formData.managerId || null,
+      employeeNumber: formData.employeeNumber,
+      isDepartmentHead: formData.isDepartmentHead,
+      isActive: formData.isActive,
+      phone: formData.phone,
+      email: formData.email,
+      address: formData.address,
+      birthDate: birthDate ? birthDate.toISOString() : null, // ISO 문자열로 전송
+      hireDate: date ? date.toISOString() : null, // ISO 문자열로 전송
+      education: education.degree, // 문자열로 전송 (객체가 아닌)
       major: education.major,
       school: education.school,
-      graduationYear: education.graduationYear ? parseInt(education.graduationYear) : undefined
+      graduationYear: education.graduationYear ? parseInt(education.graduationYear) : undefined,
+      previousExperienceYears: Number(previousExperience.years), // 숫자로 변환
+      previousExperienceMonths: Number(previousExperience.months) // 숫자로 변환
     };
 
     updateEmployeeMutation.mutate(submitData);
@@ -226,8 +315,7 @@ export default function EmployeeEditModal({ employee, isOpen, onClose }: Employe
                 <DatePicker
                   date={birthDate}
                   onDateChange={setBirthDate}
-                  placeholder="생년월일 선택"
-                  className="w-full"
+                  placeholder="생년월일을 선택하세요"
                 />
               </div>
 
@@ -301,18 +389,31 @@ export default function EmployeeEditModal({ employee, isOpen, onClose }: Employe
               <h3 className="text-lg font-semibold">조직 정보</h3>
               
               <div>
-                <Label htmlFor="department">부서</Label>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="department">부서</Label>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setIsDepartmentTeamManagerOpen(true)}
+                  >
+                    부서/팀 관리
+                  </Button>
+                </div>
                 <Select 
                   value={selectedDepartment} 
                   onValueChange={(value) => {
+                    console.log('🏢 부서 선택:', { value, departments });
                     setSelectedDepartment(value);
                     const dept = departments.find(d => d.code === value);
+                    console.log('🏢 선택된 부서:', dept);
                     if (dept) {
                       setFormData(prev => ({
                         ...prev,
                         departmentCode: dept.code,
                         department: dept.name
                       }));
+                      console.log('🏢 부서 정보 업데이트:', { departmentCode: dept.code, department: dept.name });
                     }
                   }}
                 >
@@ -334,20 +435,24 @@ export default function EmployeeEditModal({ employee, isOpen, onClose }: Employe
                 <Select 
                   value={formData.teamCode || "none"} 
                   onValueChange={(value) => {
+                    console.log('👥 팀 선택:', { value, teams });
                     if (value === "none") {
                       setFormData(prev => ({
                         ...prev,
                         teamCode: null,
                         team: null
                       }));
+                      console.log('👥 팀 정보 제거');
                     } else {
                       const team = teams.find(t => t.code === value);
+                      console.log('👥 선택된 팀:', team);
                       if (team) {
                         setFormData(prev => ({
                           ...prev,
                           teamCode: team.code,
                           team: team.name
                         }));
+                        console.log('👥 팀 정보 업데이트:', { teamCode: team.code, team: team.name });
                       }
                     }
                   }}
@@ -408,11 +513,42 @@ export default function EmployeeEditModal({ employee, isOpen, onClose }: Employe
                 <DatePicker
                   date={date}
                   onDateChange={setDate}
-                  placeholder="입사일 선택"
-                  className="w-full"
+                  placeholder="입사일을 선택하세요"
                 />
+              </div>
+
+              <div>
+                <Label>이전 경력</Label>
+                <div className="flex items-center space-x-2">
+                  <Input
+                    type="number"
+                    min="0"
+                    max="50"
+                    value={previousExperience.years}
+                    onChange={(e) => setPreviousExperience(prev => ({
+                      ...prev,
+                      years: Number(e.target.value) || 0
+                    }))}
+                    className="w-20"
+                    placeholder="년"
+                  />
+                  <span className="text-sm text-muted-foreground">년</span>
+                  <Input
+                    type="number"
+                    min="0"
+                    max="11"
+                    value={previousExperience.months}
+                    onChange={(e) => setPreviousExperience(prev => ({
+                      ...prev,
+                      months: Number(e.target.value) || 0
+                    }))}
+                    className="w-20"
+                    placeholder="월"
+                  />
+                  <span className="text-sm text-muted-foreground">개월</span>
+                </div>
                 <p className="text-xs text-muted-foreground mt-1">
-                  직접 입력하거나 달력 아이콘을 클릭하여 선택하세요
+                  입사 전 총 경력을 입력하세요
                 </p>
               </div>
 
@@ -471,6 +607,19 @@ export default function EmployeeEditModal({ employee, isOpen, onClose }: Employe
           </DialogFooter>
         </form>
       </DialogContent>
+      
+      {/* 부서/팀 관리 모달 */}
+      <DepartmentTeamManagerModal
+        isOpen={isDepartmentTeamManagerOpen}
+        onClose={() => {
+          setIsDepartmentTeamManagerOpen(false);
+          // 부서/팀 데이터 새로고침
+          const deptData = DepartmentTeamManager.getAllDepartments();
+          const teamData = DepartmentTeamManager.getAllTeams();
+          setDepartments(deptData);
+          setTeams(teamData);
+        }}
+      />
     </Dialog>
   );
 }

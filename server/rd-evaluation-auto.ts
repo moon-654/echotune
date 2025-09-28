@@ -103,6 +103,24 @@ async function getRelatedData(employeeId: string) {
     }
   }
   
+  // 제안제도 데이터 (data.json에서 로드)
+  try {
+    const fs = require('fs');
+    const path = require('path');
+    const dataPath = path.join(process.cwd(), 'data.json');
+    
+    let proposals = [];
+    if (fs.existsSync(dataPath)) {
+      const fileContent = fs.readFileSync(dataPath, 'utf8');
+      const data = JSON.parse(fileContent);
+      proposals = (data.proposals || []).filter((p: any) => p.employeeId === employeeId);
+    }
+    results.proposals = proposals;
+  } catch (error) {
+    console.error("제안제도 데이터 조회 오류:", error);
+    results.proposals = [];
+  }
+  
   return results;
 }
 
@@ -162,10 +180,26 @@ function generateDetailDescription(criteria: any, data: any): string {
         const totalHours = data.trainingHistory.reduce((sum: number, t: any) => sum + (t.duration || 0), 0);
         descriptions.push(`교육 이수 ${totalHours}시간`);
       }
+      // 멘토링 활동 (교육 진행 포함)
+      if (data.trainingHistory?.length > 0) {
+        const instructorCount = data.trainingHistory.filter((t: any) => t.role === 'instructor' || t.role === 'mentor').length;
+        if (instructorCount > 0) {
+          descriptions.push(`멘토링/교육진행 ${instructorCount}회`);
+        }
+      }
       break;
       
     case 'innovation_proposal':
-      descriptions.push("제안제도 데이터 수동 입력 필요");
+      if (data.proposals?.length > 0) {
+        const approvedCount = data.proposals.filter((p: any) => p.status === 'approved' || p.status === 'implemented').length;
+        const totalReward = data.proposals.reduce((sum: number, p: any) => sum + (p.rewardAmount || 0), 0);
+        descriptions.push(`제안 ${data.proposals.length}건 (채택 ${approvedCount}건)`);
+        if (totalReward > 0) {
+          descriptions.push(`포상금액 ${totalReward.toLocaleString()}원`);
+        }
+      } else {
+        descriptions.push("제안제도 참여 없음");
+      }
       break;
   }
   

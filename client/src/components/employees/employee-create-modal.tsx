@@ -35,24 +35,30 @@ export default function EmployeeCreateModal({ isOpen, onClose }: EmployeeCreateM
   });
   const [date, setDate] = useState<Date | undefined>();
   const [birthDate, setBirthDate] = useState<Date | undefined>();
+  const [birthDateInput, setBirthDateInput] = useState<string>("");
+  const [hireDateInput, setHireDateInput] = useState<string>("");
   const [departments, setDepartments] = useState<any[]>([]);
   const [teams, setTeams] = useState<any[]>([]);
   const [selectedDepartment, setSelectedDepartment] = useState<string>("");
 
-  // 부서/팀 데이터를 useMemo로 메모이제이션
-  const { departments: memoizedDepartments, teams: memoizedTeams } = useMemo(() => {
-    if (!isOpen) return { departments: [], teams: [] };
-    
-    const deptData = DepartmentTeamManager.getAllDepartments();
-    const teamData = DepartmentTeamManager.getAllTeams();
-    return { departments: deptData, teams: teamData };
-  }, [isOpen]);
-
-  // 메모이제이션된 데이터를 상태에 설정
+  // 부서/팀 데이터 로드
   useEffect(() => {
-    setDepartments(memoizedDepartments);
-    setTeams(memoizedTeams);
-  }, [memoizedDepartments, memoizedTeams]);
+    const loadData = async () => {
+      if (isOpen) {
+        try {
+          const [deptData, teamData] = await Promise.all([
+            DepartmentTeamManager.getAllDepartments(),
+            DepartmentTeamManager.getAllTeams()
+          ]);
+          setDepartments(deptData);
+          setTeams(teamData);
+        } catch (error) {
+          console.error('부서/팀 데이터 로드 실패:', error);
+        }
+      }
+    };
+    loadData();
+  }, [isOpen]);
 
   // 모달이 열릴 때 폼 초기화
   useEffect(() => {
@@ -124,14 +130,16 @@ export default function EmployeeCreateModal({ isOpen, onClose }: EmployeeCreateM
       team: formData.team || null,
       email: formData.email || null,
       phone: formData.phone || null,
-      hireDate: date || null,
-      birthDate: birthDate || null,
+      hireDate: date ? date.toISOString() : null, // ISO 문자열로 전송
+      birthDate: birthDate ? birthDate.toISOString() : null, // ISO 문자열로 전송
       managerId: formData.managerId || null,
       photoUrl: formData.photoUrl || null,
-      education: education.degree,
+      education: education.degree, // 문자열로 전송 (객체가 아닌)
       major: education.major,
       school: education.school,
       graduationYear: education.graduationYear ? parseInt(education.graduationYear) : undefined,
+      previousExperienceYears: Number(previousExperience.years), // 숫자로 변환
+      previousExperienceMonths: Number(previousExperience.months), // 숫자로 변환
       isDepartmentHead: formData.isDepartmentHead || false,
       isActive: formData.isActive ?? true
     };
@@ -221,8 +229,7 @@ export default function EmployeeCreateModal({ isOpen, onClose }: EmployeeCreateM
                 <DatePicker
                   date={birthDate}
                   onDateChange={setBirthDate}
-                  placeholder="생년월일 선택"
-                  className="w-full"
+                  placeholder="생년월일을 선택하세요"
                 />
               </div>
 
@@ -404,12 +411,8 @@ export default function EmployeeCreateModal({ isOpen, onClose }: EmployeeCreateM
                 <DatePicker
                   date={date}
                   onDateChange={setDate}
-                  placeholder="입사일 선택"
-                  className="w-full"
+                  placeholder="입사일을 선택하세요"
                 />
-                <p className="text-xs text-muted-foreground mt-1">
-                  직접 입력하거나 달력 아이콘을 클릭하여 선택하세요
-                </p>
               </div>
 
               <div>

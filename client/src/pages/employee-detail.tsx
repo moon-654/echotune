@@ -15,7 +15,9 @@ import AchievementsEditModal from "@/components/employees/achievements-edit-moda
 import AwardsEditModal from "@/components/employees/awards-edit-modal";
 import CertificationEditModal from "@/components/employees/certification-edit-modal";
 import LanguageEditModal from "@/components/employees/language-edit-modal";
+import ProposalEditModal from "@/components/employees/proposal-edit-modal";
 import type { Employee, Patent, Publication, Award as AwardType, Project } from "@shared/schema";
+import type { ProposalFormData } from "@/types/employee";
 
 interface EmployeeDetailProps {
   employeeId?: string;
@@ -32,6 +34,7 @@ export default function EmployeeDetail({ employeeId: propEmployeeId }: EmployeeD
   const [isAwardsModalOpen, setIsAwardsModalOpen] = useState(false);
   const [isCertificationModalOpen, setIsCertificationModalOpen] = useState(false);
   const [isLanguageModalOpen, setIsLanguageModalOpen] = useState(false);
+  const [isProposalModalOpen, setIsProposalModalOpen] = useState(false);
 
   // props로 받은 employeeId가 있으면 사용, 없으면 URL에서 가져오기
   const employeeId = propEmployeeId || location.split('/').pop() || "emp1";
@@ -43,6 +46,10 @@ export default function EmployeeDetail({ employeeId: propEmployeeId }: EmployeeD
   // 실제 스킬 데이터 상태 관리
   const [skills, setSkills] = useState([]);
   const [skillsLoading, setSkillsLoading] = useState(true);
+
+  // 제안제도 데이터 상태 관리
+  const [proposals, setProposals] = useState<ProposalFormData[]>([]);
+  const [proposalsLoading, setProposalsLoading] = useState(true);
 
   // 직원 데이터 로드
   useEffect(() => {
@@ -117,6 +124,30 @@ export default function EmployeeDetail({ employeeId: propEmployeeId }: EmployeeD
 
     if (employeeId) {
       loadTrainings();
+    }
+  }, [employeeId]);
+
+  // 제안제도 데이터 로드
+  useEffect(() => {
+    const loadProposals = async () => {
+      try {
+        const response = await fetch(`/api/proposals?employeeId=${employeeId}`);
+        if (response.ok) {
+          const data = await response.json();
+          setProposals(data);
+        } else {
+          setProposals([]);
+        }
+      } catch (error) {
+        console.error('제안제도 데이터 로드 오류:', error);
+        setProposals([]);
+      } finally {
+        setProposalsLoading(false);
+      }
+    };
+
+    if (employeeId) {
+      loadProposals();
     }
   }, [employeeId]);
 
@@ -421,7 +452,7 @@ export default function EmployeeDetail({ employeeId: propEmployeeId }: EmployeeD
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="grid w-full grid-cols-8">
+        <TabsList className="grid w-full grid-cols-9">
           <TabsTrigger value="overview">개요</TabsTrigger>
           <TabsTrigger value="skills">스킬</TabsTrigger>
           <TabsTrigger value="training">교육</TabsTrigger>
@@ -430,6 +461,7 @@ export default function EmployeeDetail({ employeeId: propEmployeeId }: EmployeeD
           <TabsTrigger value="awards">수상</TabsTrigger>
           <TabsTrigger value="certifications">자격증</TabsTrigger>
           <TabsTrigger value="languages">어학능력</TabsTrigger>
+          <TabsTrigger value="proposals">제안제도</TabsTrigger>
         </TabsList>
 
         {/* Overview Tab */}
@@ -499,6 +531,15 @@ export default function EmployeeDetail({ employeeId: propEmployeeId }: EmployeeD
                 <div className="flex justify-between">
                   <span>상태</span>
                   <span className="font-semibold">{employee.isActive ? '활성' : '비활성'}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>이전 경력</span>
+                  <span className="font-semibold">
+                    {employee.previousExperienceYears > 0 || employee.previousExperienceMonths > 0 
+                      ? `${employee.previousExperienceYears || 0}년 ${employee.previousExperienceMonths || 0}개월`
+                      : '없음'
+                    }
+                  </span>
                 </div>
                 
                 {/* R&D 역량평가 결과 */}
@@ -962,6 +1003,98 @@ export default function EmployeeDetail({ employeeId: propEmployeeId }: EmployeeD
             </CardContent>
           </Card>
         </TabsContent>
+
+        {/* Proposals Tab */}
+        <TabsContent value="proposals" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center">
+                  <Lightbulb className="w-5 h-5 mr-2" />
+                  제안제도 현황
+                </CardTitle>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => setIsProposalModalOpen(true)}
+                >
+                  <Edit className="w-4 h-4 mr-2" />
+                  제안 추가
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {proposalsLoading ? (
+                  <p className="text-muted-foreground text-center py-8">제안제도 데이터 로딩 중...</p>
+                ) : proposals.length === 0 ? (
+                  <p className="text-muted-foreground text-center py-8">등록된 제안이 없습니다.</p>
+                ) : (
+                  proposals.map((proposal, index) => (
+                    <div key={index} className="p-4 border rounded-lg">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="font-medium">{proposal.title}</div>
+                          <div className="text-sm text-muted-foreground mt-2">
+                            <div className="grid grid-cols-2 gap-4">
+                              <div>카테고리: {proposal.category}</div>
+                              <div>제출일: {proposal.submissionDate.toLocaleDateString()}</div>
+                              <div>상태: {proposal.status}</div>
+                              <div>영향도: {proposal.impactLevel}</div>
+                            </div>
+                          </div>
+                          {proposal.description && (
+                            <div className="text-sm text-muted-foreground mt-2">
+                              내용: {proposal.description}
+                            </div>
+                          )}
+                          {proposal.adoptionDate && (
+                            <div className="text-sm text-muted-foreground mt-2">
+                              채택일: {proposal.adoptionDate.toLocaleDateString()}
+                            </div>
+                          )}
+                          {proposal.rewardAmount && proposal.rewardAmount > 0 && (
+                            <div className="text-sm text-muted-foreground mt-2">
+                              포상금액: {proposal.rewardAmount.toLocaleString()}원
+                            </div>
+                          )}
+                          {proposal.notes && (
+                            <div className="text-sm text-muted-foreground mt-2">
+                              비고: {proposal.notes}
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex flex-col items-end space-y-2">
+                          <Badge 
+                            variant={
+                              proposal.status === 'approved' ? 'default' :
+                              proposal.status === 'implemented' ? 'default' :
+                              proposal.status === 'rejected' ? 'destructive' :
+                              'secondary'
+                            }
+                          >
+                            {proposal.status === 'submitted' ? '제출' :
+                             proposal.status === 'under_review' ? '검토중' :
+                             proposal.status === 'approved' ? '승인' :
+                             proposal.status === 'rejected' ? '반려' :
+                             proposal.status === 'implemented' ? '구현완료' : proposal.status}
+                          </Badge>
+                          {proposal.impactLevel && (
+                            <Badge variant="outline">
+                              {proposal.impactLevel === 'high' ? '높음' :
+                               proposal.impactLevel === 'medium' ? '보통' :
+                               proposal.impactLevel === 'low' ? '낮음' : proposal.impactLevel}
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
       </Tabs>
       
       {/* Employee Edit Modal */}
@@ -1131,6 +1264,48 @@ export default function EmployeeDetail({ employeeId: propEmployeeId }: EmployeeD
             }
           };
           loadLanguages();
+        }}
+      />
+
+      {/* Proposal Edit Modal */}
+      <ProposalEditModal
+        employeeId={employeeId}
+        isOpen={isProposalModalOpen}
+        onClose={() => {
+          setIsProposalModalOpen(false);
+          // 제안제도 데이터 다시 로드
+          const loadProposals = async () => {
+            try {
+              const response = await fetch(`/api/proposals?employeeId=${employeeId}`);
+              if (response.ok) {
+                const data = await response.json();
+                setProposals(data);
+              }
+            } catch (error) {
+              console.error('제안제도 데이터 재로드 오류:', error);
+            }
+          };
+          loadProposals();
+        }}
+        onSave={async (data) => {
+          try {
+            const response = await fetch('/api/proposals', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify(data),
+            });
+
+            if (response.ok) {
+              // 데이터 새로고침
+              window.location.reload();
+            } else {
+              console.error('제안제도 저장 실패');
+            }
+          } catch (error) {
+            console.error('제안제도 저장 오류:', error);
+          }
         }}
       />
     </div>
