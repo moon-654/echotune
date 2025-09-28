@@ -2219,26 +2219,18 @@ export default function D3OrgChart({ employees, searchTerm, zoomLevel, onEmploye
       setIsEditModalOpen(true);
 
     };
-    console.log('✅ editNode 함수 등록 완료');
     
     // 직원 정보 표시 함수 등록
-    console.log('ℹ️ showEmployeeInfo 함수 등록 중...');
     (window as any).showEmployeeInfo = (employeeId: string) => {
-      console.log('ℹ️ 직원 정보 표시:', employeeId);
       setSelectedEmployeeId(employeeId);
       setIsInfoPanelOpen(true);
     };
-    console.log('✅ showEmployeeInfo 함수 등록 완료');
     
     // 하위 직원 추가 함수 등록
-    console.log('➕ addSubordinate 함수 등록 중...');
     (window as any).addSubordinate = async (parentId: string) => {
-      console.log('➕ 하위 직원 추가:', parentId);
-      
       // 부모 직원 정보 찾기
       const parentEmployee = employees.find(emp => emp.id === parentId);
       if (!parentEmployee) {
-        console.error('❌ 부모 직원을 찾을 수 없습니다:', parentId);
         toast({
           title: "오류",
           description: "부모 직원을 찾을 수 없습니다.",
@@ -2246,8 +2238,6 @@ export default function D3OrgChart({ employees, searchTerm, zoomLevel, onEmploye
         });
         return;
       }
-      
-      console.log('👤 부모 직원 정보:', parentEmployee);
       
       // 하위 직원 추가 모달 열기 (부서/팀 정보 상속)
       setAddModalType('new-employee');
@@ -2263,7 +2253,6 @@ export default function D3OrgChart({ employees, searchTerm, zoomLevel, onEmploye
       });
       setShowAddModal(true);
     };
-    console.log('✅ addSubordinate 함수 등록 완료');
 
       // 줌 레벨 적용
     const svg = d3.select(chartRef.current).select('svg');

@@ -11,6 +11,7 @@ import {
   insertSkillSchema,
   insertSkillCalculationSchema 
 } from "@shared/schema";
+import { setupRdEvaluationRoutes } from "./rd-evaluation-routes";
 
 // Helper function to parse Excel dates
 function parseExcelDate(cellValue: any): string | null {
@@ -84,18 +85,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           : await storage.getAllEmployees();
       }
       
-      // 김국내 데이터 디버깅
-      const kimDomestic = employees.find(emp => emp.id === 'emp11');
-      if (kimDomestic) {
-        console.log('🔍 김국내 API 응답 데이터:', {
-          id: kimDomestic.id,
-          name: kimDomestic.name,
-          team: kimDomestic.team,
-          teamCode: kimDomestic.teamCode,
-          department: kimDomestic.department,
-          managerId: kimDomestic.managerId
-        });
-      }
       
       res.json(employees);
     } catch (error) {
@@ -586,14 +575,12 @@ app.put("/api/employees/:id", async (req, res) => {
   app.get("/api/skills", async (req, res) => {
     try {
       const employeeId = req.query.employeeId as string;
-      console.log('🔍 스킬 조회 API 호출:', { employeeId });
       const skills = employeeId 
         ? await storage.getSkillsByEmployee(employeeId)
         : await storage.getAllSkills();
-      console.log('🔍 스킬 조회 결과:', skills);
       res.json(skills);
     } catch (error) {
-      console.error('🔍 스킬 조회 오류:', error);
+      console.error('스킬 조회 오류:', error);
       res.status(500).json({ error: "Failed to fetch skills" });
     }
   });
@@ -658,14 +645,12 @@ app.put("/api/employees/:id", async (req, res) => {
   app.get("/api/training-history", async (req, res) => {
     try {
       const employeeId = req.query.employeeId as string;
-      console.log('🔍 교육 이력 조회 API 호출:', { employeeId });
       const trainings = employeeId 
         ? await storage.getTrainingHistoryByEmployee(employeeId)
         : await storage.getAllTrainingHistory();
-      console.log('🔍 교육 이력 조회 결과:', trainings);
       res.json(trainings);
     } catch (error) {
-      console.error('🔍 교육 이력 조회 오류:', error);
+      console.error('교육 이력 조회 오류:', error);
       res.status(500).json({ error: "Failed to fetch training history" });
     }
   });
@@ -746,19 +731,15 @@ app.put("/api/employees/:id", async (req, res) => {
   app.delete("/api/training-history", async (req, res) => {
     try {
       const employeeId = req.query.employeeId as string;
-      console.log('🔍 직원 교육 이력 전체 삭제:', { employeeId });
       if (!employeeId) {
         return res.status(400).json({ error: "Employee ID is required" });
       }
       
       const trainings = await storage.getTrainingHistoryByEmployee(employeeId);
-      console.log('🔍 삭제할 교육 이력 목록:', trainings);
       
       for (const training of trainings) {
         await storage.deleteTrainingHistory(training.id);
       }
-      
-      console.log('🔍 직원 교육 이력 전체 삭제 완료');
       res.json({ success: true, deletedCount: trainings.length });
     } catch (error) {
       console.error('🔍 직원 교육 이력 전체 삭제 오류:', error);
@@ -770,14 +751,12 @@ app.put("/api/employees/:id", async (req, res) => {
   app.get("/api/projects", async (req, res) => {
     try {
       const employeeId = req.query.employeeId as string;
-      console.log('🔍 프로젝트 조회 API 호출:', { employeeId });
       const projects = employeeId 
         ? await storage.getProjectsByEmployee(employeeId)
         : await storage.getAllProjects();
-      console.log('🔍 프로젝트 조회 결과:', projects);
       res.json(projects);
     } catch (error) {
-      console.error('🔍 프로젝트 조회 오류:', error);
+      console.error('프로젝트 조회 오류:', error);
       res.status(500).json({ error: "Failed to fetch projects" });
     }
   });
@@ -842,14 +821,12 @@ app.put("/api/employees/:id", async (req, res) => {
   app.get("/api/patents", async (req, res) => {
     try {
       const employeeId = req.query.employeeId as string;
-      console.log('🔍 특허 조회 API 호출:', { employeeId });
       const patents = employeeId 
         ? await storage.getPatentsByEmployee(employeeId)
         : await storage.getAllPatents();
-      console.log('🔍 특허 조회 결과:', patents);
       res.json(patents);
     } catch (error) {
-      console.error('🔍 특허 조회 오류:', error);
+      console.error('특허 조회 오류:', error);
       res.status(500).json({ error: "Failed to fetch patents" });
     }
   });
@@ -914,14 +891,12 @@ app.put("/api/employees/:id", async (req, res) => {
   app.get("/api/publications", async (req, res) => {
     try {
       const employeeId = req.query.employeeId as string;
-      console.log('🔍 논문 조회 API 호출:', { employeeId });
       const publications = employeeId 
         ? await storage.getPublicationsByEmployee(employeeId)
         : await storage.getAllPublications();
-      console.log('🔍 논문 조회 결과:', publications);
       res.json(publications);
     } catch (error) {
-      console.error('🔍 논문 조회 오류:', error);
+      console.error('논문 조회 오류:', error);
       res.status(500).json({ error: "Failed to fetch publications" });
     }
   });
@@ -986,14 +961,12 @@ app.put("/api/employees/:id", async (req, res) => {
   app.get("/api/awards", async (req, res) => {
     try {
       const employeeId = req.query.employeeId as string;
-      console.log('🔍 수상 조회 API 호출:', { employeeId });
       const awards = employeeId 
         ? await storage.getAwardsByEmployee(employeeId)
         : await storage.getAllAwards();
-      console.log('🔍 수상 조회 결과:', awards);
       res.json(awards);
     } catch (error) {
-      console.error('🔍 수상 조회 오류:', error);
+      console.error('수상 조회 오류:', error);
       res.status(500).json({ error: "Failed to fetch awards" });
     }
   });
@@ -1051,6 +1024,306 @@ app.put("/api/employees/:id", async (req, res) => {
     } catch (error) {
       console.error('🔍 직원 수상 전체 삭제 오류:', error);
       res.status(500).json({ error: "Failed to delete awards" });
+    }
+  });
+
+  // R&D Evaluation Criteria Management routes
+  app.get('/api/rd-evaluation-criteria', async (req, res) => {
+    try {
+      console.log('🔍 R&D 역량평가 기준 조회 요청');
+      
+      // 파일에서 기준 조회
+      const fs = require('fs');
+      const path = require('path');
+      const criteriaPath = path.join(__dirname, '..', 'data', 'rd-evaluation-criteria.json');
+      
+      let criteria;
+      if (fs.existsSync(criteriaPath)) {
+        // 저장된 기준이 있으면 로드
+        const fileContent = fs.readFileSync(criteriaPath, 'utf8');
+        criteria = JSON.parse(fileContent);
+        console.log('✅ 저장된 R&D 역량평가 기준 로드:', criteria);
+      } else {
+        // 기본 설정 반환
+        criteria = {
+          global_competency: {
+            english: {
+              toeic: { "950-990": 10, "900-949": 8, "800-899": 6, "700-799": 4, "700미만": 2 },
+              toefl: { "113-120": 10, "105-112": 8, "90-104": 6, "70-89": 4, "70미만": 2 },
+              ielts: { "8.5-9.0": 10, "7.5-8.4": 8, "6.5-7.4": 6, "5.5-6.4": 4, "5.5미만": 2 },
+              teps: { "526-600": 10, "453-525": 8, "387-452": 6, "327-386": 4, "327미만": 2 }
+            },
+            japanese: {
+              jlpt: { "N1": 10, "N2": 7, "N3": 4, "N4": 2, "N5": 1 },
+              jpt: { "900-990": 8, "800-899": 6, "700-799": 4, "700미만": 2 }
+            },
+            chinese: {
+              hsk: { "6급": 10, "5급": 8, "4급": 6, "3급": 4, "2급": 2, "1급": 1 },
+              tocfl: { "Band C Level 6": 10, "Band C Level 5": 8, "Band B Level 4": 6, "Band B Level 3": 4, "Band A Level 2": 2, "Band A Level 1": 1 }
+            }
+          }
+        };
+      }
+      
+      // 글로벌 역량 설정에서 언어 시험 정보 추출
+      const globalCompetency = criteria.global_competency || {};
+      const languageTests = {};
+      
+      // 영어 시험들
+      if (globalCompetency.english?.toeic) {
+        languageTests.English = languageTests.English || { tests: [] };
+        languageTests.English.tests.push({
+          value: 'TOEIC',
+          label: 'TOEIC',
+          hasScore: true,
+          scoreRange: '10-990점',
+          criteria: globalCompetency.english.toeic
+        });
+      }
+      
+      if (globalCompetency.english?.toefl) {
+        languageTests.English = languageTests.English || { tests: [] };
+        languageTests.English.tests.push({
+          value: 'TOEFL',
+          label: 'TOEFL iBT',
+          hasScore: true,
+          scoreRange: '0-120점',
+          criteria: globalCompetency.english.toefl
+        });
+      }
+      
+      if (globalCompetency.english?.ielts) {
+        languageTests.English = languageTests.English || { tests: [] };
+        languageTests.English.tests.push({
+          value: 'IELTS',
+          label: 'IELTS',
+          hasScore: true,
+          scoreRange: '1.0-9.0점',
+          criteria: globalCompetency.english.ielts
+        });
+      }
+      
+      if (globalCompetency.english?.teps) {
+        languageTests.English = languageTests.English || { tests: [] };
+        languageTests.English.tests.push({
+          value: 'TEPS',
+          label: 'TEPS',
+          hasScore: true,
+          scoreRange: '0-600점',
+          criteria: globalCompetency.english.teps
+        });
+      }
+      
+      // 일본어 시험들
+      if (globalCompetency.japanese?.jlpt) {
+        languageTests.Japanese = languageTests.Japanese || { tests: [] };
+        languageTests.Japanese.tests.push({
+          value: 'JLPT',
+          label: 'JLPT',
+          hasLevel: true,
+          levels: ['N1', 'N2', 'N3', 'N4', 'N5'],
+          criteria: globalCompetency.japanese.jlpt
+        });
+      }
+      
+      if (globalCompetency.japanese?.jpt) {
+        languageTests.Japanese = languageTests.Japanese || { tests: [] };
+        languageTests.Japanese.tests.push({
+          value: 'JPT',
+          label: 'JPT',
+          hasScore: true,
+          scoreRange: '10-990점',
+          criteria: globalCompetency.japanese.jpt
+        });
+      }
+      
+      // 중국어 시험들
+      if (globalCompetency.chinese?.hsk) {
+        languageTests.Chinese = languageTests.Chinese || { tests: [] };
+        languageTests.Chinese.tests.push({
+          value: 'HSK',
+          label: 'HSK',
+          hasLevel: true,
+          levels: ['1급', '2급', '3급', '4급', '5급', '6급'],
+          criteria: globalCompetency.chinese.hsk
+        });
+      }
+      
+      if (globalCompetency.chinese?.tocfl) {
+        languageTests.Chinese = languageTests.Chinese || { tests: [] };
+        languageTests.Chinese.tests.push({
+          value: 'TOCFL',
+          label: 'TOCFL',
+          hasLevel: true,
+          levels: ['Band A (Level 1)', 'Band A (Level 2)', 'Band B (Level 3)', 'Band B (Level 4)', 'Band C (Level 5)', 'Band C (Level 6)'],
+          criteria: globalCompetency.chinese.tocfl
+        });
+      }
+      
+      console.log('📝 반환할 언어 시험 설정:', languageTests);
+      
+      res.json({
+        success: true,
+        criteria: criteria,
+        languageTests: languageTests
+      });
+      
+    } catch (error) {
+      console.error('R&D 역량평가 기준 조회 오류:', error);
+      res.status(500).json({
+        success: false,
+        message: '기준 조회 중 오류가 발생했습니다.',
+        error: error.message
+      });
+    }
+  });
+
+  app.post('/api/rd-evaluation-criteria', async (req, res) => {
+    try {
+      const { criteria, updateEmployeeForms } = req.body;
+      
+      console.log('🔧 R&D 역량평가 기준 저장 요청:', { criteria, updateEmployeeForms });
+      
+      // 1. R&D 역량평가 기준을 파일에 저장
+      const fs = require('fs');
+      const path = require('path');
+      const criteriaPath = path.join(__dirname, '..', 'data', 'rd-evaluation-criteria.json');
+      
+      // 디렉토리가 없으면 생성
+      const dataDir = path.dirname(criteriaPath);
+      if (!fs.existsSync(dataDir)) {
+        fs.mkdirSync(dataDir, { recursive: true });
+      }
+      
+      // 기준 저장
+      fs.writeFileSync(criteriaPath, JSON.stringify(criteria, null, 2));
+      console.log('✅ R&D 역량평가 기준 저장 완료:', criteriaPath);
+      
+      // 2. 직원 정보 입력 폼 업데이트가 요청된 경우
+      if (updateEmployeeForms) {
+        console.log('🔄 직원 정보 입력 폼 업데이트 시작');
+        
+        // 글로벌 역량 설정에서 언어 시험 정보 추출
+        const globalCompetency = criteria.global_competency || {};
+        const languageTests = {};
+        
+        // 영어 시험들
+        if (globalCompetency.english_toeic) {
+          languageTests.English = languageTests.English || { tests: [] };
+          languageTests.English.tests.push({
+            value: 'TOEIC',
+            label: 'TOEIC',
+            hasScore: true,
+            scoreRange: '10-990점',
+            criteria: globalCompetency.english_toeic
+          });
+        }
+        
+        if (globalCompetency.english_toefl) {
+          languageTests.English = languageTests.English || { tests: [] };
+          languageTests.English.tests.push({
+            value: 'TOEFL',
+            label: 'TOEFL iBT',
+            hasScore: true,
+            scoreRange: '0-120점',
+            criteria: globalCompetency.english_toefl
+          });
+        }
+        
+        if (globalCompetency.english_ielts) {
+          languageTests.English = languageTests.English || { tests: [] };
+          languageTests.English.tests.push({
+            value: 'IELTS',
+            label: 'IELTS',
+            hasScore: true,
+            scoreRange: '1.0-9.0점',
+            criteria: globalCompetency.english_ielts
+          });
+        }
+        
+        if (globalCompetency.english_teps) {
+          languageTests.English = languageTests.English || { tests: [] };
+          languageTests.English.tests.push({
+            value: 'TEPS',
+            label: 'TEPS',
+            hasScore: true,
+            scoreRange: '0-600점',
+            criteria: globalCompetency.english_teps
+          });
+        }
+        
+        // 일본어 시험들
+        if (globalCompetency.japanese_jlpt) {
+          languageTests.Japanese = languageTests.Japanese || { tests: [] };
+          languageTests.Japanese.tests.push({
+            value: 'JLPT',
+            label: 'JLPT',
+            hasLevel: true,
+            levels: ['N1', 'N2', 'N3', 'N4', 'N5'],
+            criteria: globalCompetency.japanese_jlpt
+          });
+        }
+        
+        if (globalCompetency.japanese_jpt) {
+          languageTests.Japanese = languageTests.Japanese || { tests: [] };
+          languageTests.Japanese.tests.push({
+            value: 'JPT',
+            label: 'JPT',
+            hasScore: true,
+            scoreRange: '10-990점',
+            criteria: globalCompetency.japanese_jpt
+          });
+        }
+        
+        // 중국어 시험들
+        if (globalCompetency.chinese_hsk) {
+          languageTests.Chinese = languageTests.Chinese || { tests: [] };
+          languageTests.Chinese.tests.push({
+            value: 'HSK',
+            label: 'HSK',
+            hasLevel: true,
+            levels: ['1급', '2급', '3급', '4급', '5급', '6급'],
+            criteria: globalCompetency.chinese_hsk
+          });
+        }
+        
+        if (globalCompetency.chinese_tocfl) {
+          languageTests.Chinese = languageTests.Chinese || { tests: [] };
+          languageTests.Chinese.tests.push({
+            value: 'TOCFL',
+            label: 'TOCFL',
+            hasLevel: true,
+            levels: ['Band A (Level 1)', 'Band A (Level 2)', 'Band B (Level 3)', 'Band B (Level 4)', 'Band C (Level 5)', 'Band C (Level 6)'],
+            criteria: globalCompetency.chinese_tocfl
+          });
+        }
+        
+        console.log('📝 생성된 언어 시험 설정:', languageTests);
+        
+        // TODO: 이 설정을 클라이언트의 언어 입력 폼에 반영
+        // 방법 1: 클라이언트에서 이 API를 호출하여 설정을 가져오도록 함
+        // 방법 2: WebSocket을 통해 실시간으로 클라이언트에 전달
+        // 방법 3: 설정을 파일로 저장하고 클라이언트가 주기적으로 확인
+        
+        res.json({
+          success: true,
+          message: 'R&D 역량평가 기준이 저장되고 직원 정보 입력 폼이 업데이트되었습니다.',
+          languageTests: languageTests
+        });
+      } else {
+        res.json({
+          success: true,
+          message: 'R&D 역량평가 기준이 저장되었습니다.'
+        });
+      }
+      
+    } catch (error) {
+      console.error('R&D 역량평가 기준 저장 오류:', error);
+      res.status(500).json({
+        success: false,
+        message: '저장 중 오류가 발생했습니다.',
+        error: error.message
+      });
     }
   });
 
@@ -2007,6 +2280,146 @@ app.put("/api/employees/:id", async (req, res) => {
       res.status(500).json({ error: "Failed to analyze training hours" });
     }
   });
+
+  // R&D 역량평가 기준 조회
+  app.get("/api/rd-evaluations/criteria", async (req, res) => {
+    try {
+      console.log('🔍 R&D 역량평가 기준 조회 요청 (routes.ts)');
+      
+      // data.json에서 기준 조회
+      const fs = require('fs');
+      const path = require('path');
+      
+      // 프로젝트 루트 기준으로 경로 설정
+      const dataPath = path.join(process.cwd(), 'data.json');
+      
+      let criteria;
+      if (fs.existsSync(dataPath)) {
+        // data.json에서 R&D 평가 기준 로드
+        const fileContent = fs.readFileSync(dataPath, 'utf8');
+        const data = JSON.parse(fileContent);
+        criteria = data.rdEvaluationCriteria || {};
+        console.log('✅ data.json에서 R&D 역량평가 기준 로드:', criteria);
+      } else {
+        // 기본 기준 설정
+        criteria = {
+          global_competency: {
+            english: {
+              toeic: { "950-990": 10, "900-949": 8, "800-899": 6, "700-799": 4, "700미만": 2 },
+              toefl: { "113-120": 10, "105-112": 8, "90-104": 6, "70-89": 4, "70미만": 2 },
+              ielts: { "8.5-9.0": 10, "7.5-8.4": 8, "6.5-7.4": 6, "5.5-6.4": 4, "5.5미만": 2 },
+              teps: { "526-600": 10, "453-525": 8, "387-452": 6, "327-386": 4, "327미만": 2 }
+            },
+            japanese: {
+              jlpt: { "N1": 10, "N2": 7, "N3": 4, "N4": 2, "N5": 1 },
+              jpt: { "900-990": 8, "800-899": 6, "700-799": 4, "700미만": 2 }
+            },
+            chinese: {
+              hsk: { "6급": 10, "5급": 8, "4급": 6, "3급": 4, "2급": 2, "1급": 1 },
+              tocfl: { "Band C Level 6": 10, "Band C Level 5": 8, "Band B Level 4": 6, "Band B Level 3": 4, "Band A Level 2": 2, "Band A Level 1": 1 }
+            }
+          }
+        };
+      }
+      
+      // 언어 테스트 정보 추출
+      const globalCompetency = criteria.global_competency || {};
+      const languageTests = {};
+      
+      // 영어 테스트
+      if (globalCompetency.english?.toeic) {
+        languageTests.English = languageTests.English || {};
+        languageTests.English.TOEIC = Object.keys(globalCompetency.english.toeic);
+      }
+      if (globalCompetency.english?.toefl) {
+        languageTests.English = languageTests.English || {};
+        languageTests.English.TOEFL = Object.keys(globalCompetency.english.toefl);
+      }
+      if (globalCompetency.english?.ielts) {
+        languageTests.English = languageTests.English || {};
+        languageTests.English.IELTS = Object.keys(globalCompetency.english.ielts);
+      }
+      if (globalCompetency.english?.teps) {
+        languageTests.English = languageTests.English || {};
+        languageTests.English.TEPS = Object.keys(globalCompetency.english.teps);
+      }
+      
+      // 일본어 테스트
+      if (globalCompetency.japanese?.jlpt) {
+        languageTests.Japanese = languageTests.Japanese || {};
+        languageTests.Japanese.JLPT = Object.keys(globalCompetency.japanese.jlpt);
+      }
+      if (globalCompetency.japanese?.jpt) {
+        languageTests.Japanese = languageTests.Japanese || {};
+        languageTests.Japanese.JPT = Object.keys(globalCompetency.japanese.jpt);
+      }
+      
+      // 중국어 테스트
+      if (globalCompetency.chinese?.hsk) {
+        languageTests.Chinese = languageTests.Chinese || {};
+        languageTests.Chinese.HSK = Object.keys(globalCompetency.chinese.hsk);
+      }
+      if (globalCompetency.chinese?.tocfl) {
+        languageTests.Chinese = languageTests.Chinese || {};
+        languageTests.Chinese.TOCFL = Object.keys(globalCompetency.chinese.tocfl);
+      }
+      
+      res.json({
+        success: true,
+        criteria: criteria,
+        languageTests: languageTests
+      });
+    } catch (error) {
+      console.error("평가 기준 조회 오류:", error);
+      res.status(500).json({ error: "평가 기준을 불러올 수 없습니다." });
+    }
+  });
+
+  // R&D 역량평가 기준 저장
+  app.put("/api/rd-evaluations/criteria", async (req, res) => {
+    try {
+      const { criteria, updateEmployeeForms } = req.body;
+      
+      console.log('🔧 R&D 역량평가 기준 저장 요청 (routes.ts):', { criteria, updateEmployeeForms });
+      
+      // data.json에 기준 저장
+      const fs = require('fs');
+      const path = require('path');
+      
+      // 프로젝트 루트 기준으로 경로 설정
+      const dataPath = path.join(process.cwd(), 'data.json');
+      
+      // 기존 data.json 로드
+      let data = {};
+      if (fs.existsSync(dataPath)) {
+        const fileContent = fs.readFileSync(dataPath, 'utf8');
+        data = JSON.parse(fileContent);
+      }
+      
+      // R&D 평가 기준 업데이트
+      data.rdEvaluationCriteria = criteria;
+      
+      // 기준 저장
+      try {
+        fs.writeFileSync(dataPath, JSON.stringify(data, null, 2));
+        console.log('✅ data.json에 R&D 역량평가 기준 저장 완료:', dataPath);
+      } catch (writeError) {
+        console.error('❌ 파일 쓰기 오류:', writeError);
+        throw new Error(`파일 저장 실패: ${writeError.message}`);
+      }
+      
+      res.json({
+        success: true,
+        message: 'R&D 역량평가 기준이 저장되었습니다.'
+      });
+    } catch (error) {
+      console.error("평가 기준 저장 오류:", error);
+      res.status(500).json({ error: "평가 기준을 저장할 수 없습니다." });
+    }
+  });
+
+  // R&D 역량평가 라우트 설정
+  setupRdEvaluationRoutes(app);
 
   const httpServer = createServer(app);
   return httpServer;

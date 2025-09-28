@@ -73,16 +73,16 @@ export default function Employees() {
           <h1 className="text-2xl font-bold">직원 관리</h1>
           <p className="text-muted-foreground">직원 정보 및 능력치 관리</p>
         </div>
-        <Button 
+        {/* 새 직원 추가 버튼 숨김 */}
+        {/*         <Button 
           onClick={() => {
-            console.log('➕ 새 직원 추가 버튼 클릭');
             setIsCreateModalOpen(true);
           }}
           data-testid="button-add-employee"
         >
           <Plus className="w-4 h-4 mr-2" />
           새 직원 추가
-        </Button>
+        </Button> */}
       </div>
 
       {/* Search and Filters */}

@@ -48,18 +48,15 @@ export default function EmployeeDetail({ employeeId: propEmployeeId }: EmployeeD
   useEffect(() => {
     const loadEmployee = async () => {
       try {
-        console.log('🔍 직원 데이터 로드 시작:', employeeId);
         const response = await fetch(`/api/employees/${employeeId}`);
         if (response.ok) {
           const data = await response.json();
-          console.log('🔍 직원 데이터 로드 성공:', data);
           setEmployee(data);
         } else {
-          console.log('🔍 직원 데이터 없음');
           setEmployee(null);
         }
       } catch (error) {
-        console.error('🔍 직원 데이터 로드 오류:', error);
+        console.error('직원 데이터 로드 오류:', error);
         setEmployee(null);
       } finally {
         setEmployeeLoading(false);
@@ -75,18 +72,15 @@ export default function EmployeeDetail({ employeeId: propEmployeeId }: EmployeeD
   useEffect(() => {
     const loadSkills = async () => {
       try {
-        console.log('🔍 스킬 데이터 로드 시작:', employeeId);
         const response = await fetch(`/api/skills?employeeId=${employeeId}`);
         if (response.ok) {
           const data = await response.json();
-          console.log('🔍 스킬 데이터 로드 성공:', data);
           setSkills(data);
         } else {
-          console.log('🔍 스킬 데이터 없음');
           setSkills([]);
         }
       } catch (error) {
-        console.error('🔍 스킬 데이터 로드 오류:', error);
+        console.error('스킬 데이터 로드 오류:', error);
         setSkills([]);
       } finally {
         setSkillsLoading(false);
@@ -106,18 +100,15 @@ export default function EmployeeDetail({ employeeId: propEmployeeId }: EmployeeD
   useEffect(() => {
     const loadTrainings = async () => {
       try {
-        console.log('🔍 교육 데이터 로드 시작:', employeeId);
         const response = await fetch(`/api/training-history?employeeId=${employeeId}`);
         if (response.ok) {
           const data = await response.json();
-          console.log('🔍 교육 데이터 로드 성공:', data);
           setTrainings(data);
         } else {
-          console.log('🔍 교육 데이터 없음');
           setTrainings([]);
         }
       } catch (error) {
-        console.error('🔍 교육 데이터 로드 오류:', error);
+        console.error('교육 데이터 로드 오류:', error);
         setTrainings([]);
       } finally {
         setTrainingsLoading(false);
@@ -137,18 +128,15 @@ export default function EmployeeDetail({ employeeId: propEmployeeId }: EmployeeD
   useEffect(() => {
     const loadProjects = async () => {
       try {
-        console.log('🔍 프로젝트 데이터 로드 시작:', employeeId);
         const response = await fetch(`/api/projects?employeeId=${employeeId}`);
         if (response.ok) {
           const data = await response.json();
-          console.log('🔍 프로젝트 데이터 로드 성공:', data);
           setProjects(data);
         } else {
-          console.log('🔍 프로젝트 데이터 없음');
           setProjects([]);
         }
       } catch (error) {
-        console.error('🔍 프로젝트 데이터 로드 오류:', error);
+        console.error('프로젝트 데이터 로드 오류:', error);
         setProjects([]);
       } finally {
         setProjectsLoading(false);
@@ -217,6 +205,7 @@ export default function EmployeeDetail({ employeeId: propEmployeeId }: EmployeeD
   // 실제 어학능력 데이터 상태 관리
   const [languages, setLanguages] = useState([]);
   const [languagesLoading, setLanguagesLoading] = useState(true);
+
 
   // 수상 데이터 로드
   useEffect(() => {
@@ -298,6 +287,7 @@ export default function EmployeeDetail({ employeeId: propEmployeeId }: EmployeeD
       loadLanguages();
     }
   }, [employeeId]);
+
 
   const overallSkill = skills.length > 0 
     ? Math.floor(skills.reduce((sum, skill) => sum + skill.proficiencyLevel, 0) / skills.length)
@@ -490,7 +480,7 @@ export default function EmployeeDetail({ employeeId: propEmployeeId }: EmployeeD
               <CardHeader>
                 <CardTitle className="flex items-center">
                   <Users className="w-5 h-5 mr-2" />
-                  조직 정보
+                  R&D 역량평가
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -509,6 +499,46 @@ export default function EmployeeDetail({ employeeId: propEmployeeId }: EmployeeD
                 <div className="flex justify-between">
                   <span>상태</span>
                   <span className="font-semibold">{employee.isActive ? '활성' : '비활성'}</span>
+                </div>
+                
+                {/* R&D 역량평가 결과 */}
+                <div className="mt-4 p-4 bg-blue-50 rounded-lg">
+                  <h4 className="text-sm font-semibold text-blue-800 mb-3">6대 역량 평가</h4>
+                  <div className="grid grid-cols-2 gap-2 text-sm">
+                    <div className="flex justify-between">
+                      <span>전문 기술 역량</span>
+                      <span className="font-medium">자동 계산</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>프로젝트 수행 경험</span>
+                      <span className="font-medium">자동 계산</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>연구개발 성과</span>
+                      <span className="font-medium">자동 계산</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>글로벌 역량</span>
+                      <span className="font-medium">자동 계산</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>기술 확산 및 자기계발</span>
+                      <span className="font-medium">자동 계산</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>업무개선 및 혁신 제안</span>
+                      <span className="font-medium">수동 입력</span>
+                    </div>
+                  </div>
+                  <div className="mt-3 pt-3 border-t border-blue-200">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm font-medium">종합 점수</span>
+                      <div className="flex items-center space-x-2">
+                        <span className="text-lg font-bold text-blue-600">자동 계산</span>
+                        <Badge variant="outline" className="text-xs">S/A/B/C/D</Badge>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </CardContent>
             </Card>

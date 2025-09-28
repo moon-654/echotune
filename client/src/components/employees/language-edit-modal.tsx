@@ -12,6 +12,66 @@ import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import type { Language, InsertLanguage } from "@shared/schema";
 
+// 언어별 시험 정보 정의 (R&D 역량평가 설정에서 동적으로 로드)
+let LANGUAGE_TESTS = {
+  English: {
+    tests: [
+      { value: 'TOEIC', label: 'TOEIC', hasScore: true, scoreRange: '10-990점' },
+      { value: 'TOEFL', label: 'TOEFL iBT', hasScore: true, scoreRange: '0-120점' },
+      { value: 'IELTS', label: 'IELTS', hasScore: true, scoreRange: '1.0-9.0점' },
+      { value: 'TEPS', label: 'TEPS', hasScore: true, scoreRange: '0-600점' },
+      { value: 'OPIc', label: 'OPIc', hasLevel: true, levels: ['Novice Low', 'Novice Mid', 'Novice High', 'Intermediate Low', 'Intermediate Mid', 'Intermediate High', 'Advanced Low', 'Advanced Mid', 'Advanced High', 'Superior'] }
+    ]
+  },
+  Japanese: {
+    tests: [
+      { value: 'JLPT', label: 'JLPT', hasLevel: true, levels: ['N1', 'N2', 'N3', 'N4', 'N5'] },
+      { value: 'JPT', label: 'JPT', hasScore: true, scoreRange: '10-990점' },
+      { value: 'BJT', label: 'BJT', hasScore: true, scoreRange: '0-800점' },
+      { value: 'NAT', label: 'NAT', hasLevel: true, levels: ['1급', '2급', '3급', '4급', '5급'] }
+    ]
+  },
+  Chinese: {
+    tests: [
+      { value: 'HSK', label: 'HSK', hasLevel: true, levels: ['1급', '2급', '3급', '4급', '5급', '6급'] },
+      { value: 'TOCFL', label: 'TOCFL', hasLevel: true, levels: ['Band A (Level 1)', 'Band A (Level 2)', 'Band B (Level 3)', 'Band B (Level 4)', 'Band C (Level 5)', 'Band C (Level 6)'] },
+      { value: 'BCT', label: 'BCT', hasScore: true, scoreRange: '0-300점' }
+    ]
+  }
+};
+
+// R&D 역량평가 설정에서 언어 시험 정보를 동적으로 로드하는 함수
+const loadLanguageTestsFromRdEvaluation = async () => {
+  try {
+    const response = await fetch('/api/rd-evaluation-criteria');
+    if (response.ok) {
+      const data = await response.json();
+      if (data.languageTests) {
+        LANGUAGE_TESTS = data.languageTests;
+        console.log('🔄 R&D 역량평가 설정에서 언어 시험 정보 로드:', LANGUAGE_TESTS);
+      }
+    }
+  } catch (error) {
+    console.error('R&D 역량평가 설정 로드 오류:', error);
+  }
+};
+
+// 지원 언어 목록
+const SUPPORTED_LANGUAGES = [
+  { value: 'English', label: '영어' },
+  { value: 'Japanese', label: '일본어' },
+  { value: 'Chinese', label: '중국어' },
+  { value: 'Korean', label: '한국어' },
+  { value: 'Spanish', label: '스페인어' },
+  { value: 'French', label: '프랑스어' },
+  { value: 'German', label: '독일어' },
+  { value: 'Russian', label: '러시아어' },
+  { value: 'Arabic', label: '아랍어' },
+  { value: 'Portuguese', label: '포르투갈어' },
+  { value: 'Italian', label: '이탈리아어' },
+  { value: 'Other', label: '기타' }
+];
+
 interface LanguageEditModalProps {
   employeeId: string;
   isOpen: boolean;
@@ -24,6 +84,7 @@ interface LanguageFormData {
   testType?: string;
   score?: number;
   maxScore?: number;
+  testLevel?: string; // 등급 (N1, N2, HSK 6급 등)
   testDate?: Date;
   certificateUrl?: string;
   isActive: boolean;
@@ -45,6 +106,9 @@ export default function LanguageEditModal({ employeeId, isOpen, onClose }: Langu
   // 기존 어학능력 데이터 로드
   useEffect(() => {
     if (!isOpen || !employeeId) return;
+
+    // R&D 역량평가 설정에서 언어 시험 정보 로드
+    loadLanguageTestsFromRdEvaluation();
 
     const loadLanguages = async () => {
       setIsLoading(true);
@@ -174,12 +238,21 @@ export default function LanguageEditModal({ employeeId, isOpen, onClose }: Langu
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="language">언어</Label>
-                  <Input
-                    id="language"
+                  <Select
                     value={newLanguage.language}
-                    onChange={(e) => setNewLanguage({ ...newLanguage, language: e.target.value })}
-                    placeholder="예: English, Chinese, Japanese"
-                  />
+                    onValueChange={(value) => setNewLanguage({ ...newLanguage, language: value, testType: '', score: undefined, testLevel: '' })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="언어를 선택하세요" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {SUPPORTED_LANGUAGES.map((lang) => (
+                        <SelectItem key={lang.value} value={lang.value}>
+                          {lang.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div>
                   <Label htmlFor="proficiencyLevel">수준</Label>
@@ -198,35 +271,94 @@ export default function LanguageEditModal({ employeeId, isOpen, onClose }: Langu
                     </SelectContent>
                   </Select>
                 </div>
-                <div>
-                  <Label htmlFor="testType">시험 종류</Label>
-                  <Input
-                    id="testType"
-                    value={newLanguage.testType}
-                    onChange={(e) => setNewLanguage({ ...newLanguage, testType: e.target.value })}
-                    placeholder="예: TOEIC, TOEFL, JLPT, HSK"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="score">점수</Label>
-                  <Input
-                    id="score"
-                    type="number"
-                    value={newLanguage.score || ''}
-                    onChange={(e) => setNewLanguage({ ...newLanguage, score: parseInt(e.target.value) || undefined })}
-                    min="0"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="maxScore">만점</Label>
-                  <Input
-                    id="maxScore"
-                    type="number"
-                    value={newLanguage.maxScore || ''}
-                    onChange={(e) => setNewLanguage({ ...newLanguage, maxScore: parseInt(e.target.value) || undefined })}
-                    min="0"
-                  />
-                </div>
+                {newLanguage.language && LANGUAGE_TESTS[newLanguage.language as keyof typeof LANGUAGE_TESTS] && (
+                  <div>
+                    <Label htmlFor="testType">시험 종류</Label>
+                    <Select
+                      value={newLanguage.testType || ''}
+                      onValueChange={(value) => {
+                        const selectedTest = LANGUAGE_TESTS[newLanguage.language as keyof typeof LANGUAGE_TESTS].tests.find(t => t.value === value);
+                        setNewLanguage({ 
+                          ...newLanguage, 
+                          testType: value,
+                          score: undefined,
+                          testLevel: '',
+                          maxScore: selectedTest?.hasScore ? (value === 'TOEIC' ? 990 : value === 'TOEFL' ? 120 : value === 'IELTS' ? 9 : value === 'TEPS' ? 600 : value === 'JPT' ? 990 : value === 'BJT' ? 800 : value === 'BCT' ? 300 : undefined) : undefined
+                        });
+                      }}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="시험 종류를 선택하세요" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {LANGUAGE_TESTS[newLanguage.language as keyof typeof LANGUAGE_TESTS].tests.map((test) => (
+                          <SelectItem key={test.value} value={test.value}>
+                            {test.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+                {newLanguage.testType && (() => {
+                  const selectedTest = LANGUAGE_TESTS[newLanguage.language as keyof typeof LANGUAGE_TESTS]?.tests.find(t => t.value === newLanguage.testType);
+                  if (selectedTest?.hasLevel) {
+                    return (
+                      <div>
+                        <Label htmlFor="testLevel">등급</Label>
+                        <Select
+                          value={newLanguage.testLevel || ''}
+                          onValueChange={(value) => setNewLanguage({ ...newLanguage, testLevel: value })}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="등급을 선택하세요" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {selectedTest.levels.map((level) => (
+                              <SelectItem key={level} value={level}>
+                                {level}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    );
+                  } else if (selectedTest?.hasScore) {
+                    return (
+                      <div>
+                        <Label htmlFor="score">점수</Label>
+                        <Input
+                          id="score"
+                          type="number"
+                          value={newLanguage.score || ''}
+                          onChange={(e) => setNewLanguage({ ...newLanguage, score: parseInt(e.target.value) || undefined })}
+                          placeholder={`예: ${selectedTest.scoreRange}`}
+                          min="0"
+                        />
+                      </div>
+                    );
+                  }
+                  return null;
+                })()}
+                {newLanguage.testType && (() => {
+                  const selectedTest = LANGUAGE_TESTS[newLanguage.language as keyof typeof LANGUAGE_TESTS]?.tests.find(t => t.value === newLanguage.testType);
+                  if (selectedTest?.hasScore) {
+                    return (
+                      <div>
+                        <Label htmlFor="maxScore">만점</Label>
+                        <Input
+                          id="maxScore"
+                          type="number"
+                          value={newLanguage.maxScore || ''}
+                          onChange={(e) => setNewLanguage({ ...newLanguage, maxScore: parseInt(e.target.value) || undefined })}
+                          placeholder={`예: ${selectedTest.scoreRange.split('-')[1]}`}
+                          min="0"
+                        />
+                      </div>
+                    );
+                  }
+                  return null;
+                })()}
                 <div>
                   <Label htmlFor="testDate">시험일</Label>
                   <DatePicker
@@ -284,10 +416,21 @@ export default function LanguageEditModal({ employeeId, isOpen, onClose }: Langu
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                           <Label>언어</Label>
-                          <Input
+                          <Select
                             value={language.language}
-                            onChange={(e) => updateLanguage(index, 'language', e.target.value)}
-                          />
+                            onValueChange={(value) => updateLanguage(index, 'language', value)}
+                          >
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {SUPPORTED_LANGUAGES.map((lang) => (
+                                <SelectItem key={lang.value} value={lang.value}>
+                                  {lang.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                         </div>
                         <div>
                           <Label>수준</Label>
@@ -308,29 +451,106 @@ export default function LanguageEditModal({ employeeId, isOpen, onClose }: Langu
                         </div>
                         <div>
                           <Label>시험 종류</Label>
-                          <Input
-                            value={language.testType}
-                            onChange={(e) => updateLanguage(index, 'testType', e.target.value)}
-                          />
+                          {language.language && LANGUAGE_TESTS[language.language as keyof typeof LANGUAGE_TESTS] ? (
+                            <Select
+                              value={language.testType || ''}
+                              onValueChange={(value) => updateLanguage(index, 'testType', value)}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="시험 종류를 선택하세요" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {LANGUAGE_TESTS[language.language as keyof typeof LANGUAGE_TESTS].tests.map((test) => (
+                                  <SelectItem key={test.value} value={test.value}>
+                                    {test.label}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          ) : (
+                            <Input
+                              value={language.testType || ''}
+                              onChange={(e) => updateLanguage(index, 'testType', e.target.value)}
+                              placeholder="시험 종류를 입력하세요"
+                            />
+                          )}
                         </div>
-                        <div>
-                          <Label>점수</Label>
-                          <Input
-                            type="number"
-                            value={language.score || ''}
-                            onChange={(e) => updateLanguage(index, 'score', parseInt(e.target.value) || undefined)}
-                            min="0"
-                          />
-                        </div>
-                        <div>
-                          <Label>만점</Label>
-                          <Input
-                            type="number"
-                            value={language.maxScore || ''}
-                            onChange={(e) => updateLanguage(index, 'maxScore', parseInt(e.target.value) || undefined)}
-                            min="0"
-                          />
-                        </div>
+                        {(() => {
+                          const selectedTest = language.language && LANGUAGE_TESTS[language.language as keyof typeof LANGUAGE_TESTS] 
+                            ? LANGUAGE_TESTS[language.language as keyof typeof LANGUAGE_TESTS].tests.find(t => t.value === language.testType)
+                            : null;
+                          
+                          if (selectedTest?.hasLevel) {
+                            return (
+                              <div>
+                                <Label>등급</Label>
+                                <Select
+                                  value={language.testLevel || ''}
+                                  onValueChange={(value) => updateLanguage(index, 'testLevel', value)}
+                                >
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="등급을 선택하세요" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {selectedTest.levels.map((level) => (
+                                      <SelectItem key={level} value={level}>
+                                        {level}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                            );
+                          } else if (selectedTest?.hasScore) {
+                            return (
+                              <>
+                                <div>
+                                  <Label>점수</Label>
+                                  <Input
+                                    type="number"
+                                    value={language.score || ''}
+                                    onChange={(e) => updateLanguage(index, 'score', parseInt(e.target.value) || undefined)}
+                                    placeholder={`예: ${selectedTest.scoreRange}`}
+                                    min="0"
+                                  />
+                                </div>
+                                <div>
+                                  <Label>만점</Label>
+                                  <Input
+                                    type="number"
+                                    value={language.maxScore || ''}
+                                    onChange={(e) => updateLanguage(index, 'maxScore', parseInt(e.target.value) || undefined)}
+                                    placeholder={`예: ${selectedTest.scoreRange.split('-')[1]}`}
+                                    min="0"
+                                  />
+                                </div>
+                              </>
+                            );
+                          } else {
+                            return (
+                              <>
+                                <div>
+                                  <Label>점수</Label>
+                                  <Input
+                                    type="number"
+                                    value={language.score || ''}
+                                    onChange={(e) => updateLanguage(index, 'score', parseInt(e.target.value) || undefined)}
+                                    min="0"
+                                  />
+                                </div>
+                                <div>
+                                  <Label>만점</Label>
+                                  <Input
+                                    type="number"
+                                    value={language.maxScore || ''}
+                                    onChange={(e) => updateLanguage(index, 'maxScore', parseInt(e.target.value) || undefined)}
+                                    min="0"
+                                  />
+                                </div>
+                              </>
+                            );
+                          }
+                        })()}
                         <div>
                           <Label>시험일</Label>
                           <DatePicker
