@@ -302,6 +302,13 @@ export class MemStorage implements IStorage {
 
   private saveData() {
     try {
+      // 기존 파일에서 departments와 teams 데이터 보존
+      let existingData = {};
+      if (existsSync(this.dataFile)) {
+        const fileContent = readFileSync(this.dataFile, 'utf8');
+        existingData = JSON.parse(fileContent);
+      }
+      
       const data = {
         employees: Object.fromEntries(this.employees),
         trainingHistory: Object.fromEntries(this.trainingHistory),
@@ -315,7 +322,11 @@ export class MemStorage implements IStorage {
         projects: Object.fromEntries(this.projects),
         trainingHours: Object.fromEntries(this.trainingHours),
         teamEmployees: Object.fromEntries(this.teamEmployees),
-        viewState: this.viewState
+        viewState: this.viewState,
+        // 기존 데이터에서 departments와 teams 보존
+        departments: existingData.departments || [],
+        teams: existingData.teams || [],
+        proposals: existingData.proposals || {}
       };
       
       writeFileSync(this.dataFile, JSON.stringify(data, null, 2));

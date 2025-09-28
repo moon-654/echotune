@@ -1,20 +1,27 @@
 import { storage } from "./storage";
 import { RD_EVALUATION_CRITERIA, calculateRdEvaluationScore } from "@shared/rd-evaluation-criteria";
+import fs from "fs";
+import path from "path";
 
 // 직원의 6대 역량 자동 평가 실행
 export async function calculateAutoRdEvaluation(employeeId: string, evaluationYear: number = new Date().getFullYear()) {
   try {
-    // 직원 기본 정보 조회
-    const employeeQuery = `
-      SELECT * FROM employees WHERE id = $1
-    `;
-    const employeeResult = await storage.query(employeeQuery, [employeeId]);
+    // 직원 기본 정보 조회 (data.json에서)
+    const dataPath = path.join(process.cwd(), 'data.json');
+    let employee = null;
     
-    if (employeeResult.rows.length === 0) {
-      throw new Error("직원을 찾을 수 없습니다.");
+    if (fs.existsSync(dataPath)) {
+      const fileContent = fs.readFileSync(dataPath, 'utf8');
+      const data = JSON.parse(fileContent);
+      
+      if (data.employees && data.employees[employeeId]) {
+        employee = data.employees[employeeId];
+      }
     }
     
-    const employee = employeeResult.rows[0];
+    if (!employee) {
+      throw new Error("직원을 찾을 수 없습니다.");
+    }
     
     // 관련 데이터 조회
     const relatedData = await getRelatedData(employeeId);
@@ -38,18 +45,107 @@ export async function calculateAutoRdEvaluation(employeeId: string, evaluationYe
       innovationProposal: ""
     };
     
-    // 각 역량별 점수 계산
-    for (const criteria of RD_EVALUATION_CRITERIA) {
-      if (criteria.scoringMethod === 'auto' || criteria.scoringMethod === 'hybrid') {
-        const score = calculateRdEvaluationScore(employeeId, criteria, {
-          ...employee,
-          ...relatedData
-        });
-        
-        scores[criteria.category as keyof typeof scores] = score;
-        details[criteria.category as keyof typeof details] = generateDetailDescription(criteria, relatedData);
+    // 각 역량별 점수 계산 (수동으로 계산)
+    console.log('🔍 관련 데이터:', relatedData);
+    
+    // 1. 전문기술 역량 계산
+    let technicalScore = 0;
+    if (employee.education === 'bachelor') technicalScore += 10;
+    if (employee.education === 'master') technicalScore += 20;
+    if (employee.education === 'doctor') technicalScore += 30;
+    
+    // 경력 계산
+    const hireDate = new Date(employee.hireDate);
+    const years = Math.floor((new Date().getTime() - hireDate.getTime()) / (1000 * 60 * 60 * 24 * 365));
+    if (years >= 15) technicalScore += 50;
+    else if (years >= 10) technicalScore += 40;
+    else if (years >= 5) technicalScore += 30;
+    else technicalScore += 20;
+    
+    // 자격증 점수
+    technicalScore += relatedData.certifications.length * 5;
+    
+    scores.technicalCompetency = Math.min(technicalScore, 100);
+    
+    // 2. 프로젝트 수행 경험 계산
+    let projectScore = 0;
+    if (relatedData.projects && relatedData.projects.length > 0) {
+      const leaderCount = relatedData.projects.filter((p: any) => p.role === 'PL' || p.role === 'Project Leader').length;
+      const memberCount = relatedData.projects.length - leaderCount;
+      
+      projectScore += leaderCount * 15; // PL당 15점
+      projectScore += memberCount * 5;  // 멤버당 5점
+      
+      // 프로젝트 개수에 따른 추가 점수
+      if (relatedData.projects.length >= 3) projectScore += 30;
+      else if (relatedData.projects.length >= 2) projectScore += 20;
+      else if (relatedData.projects.length >= 1) projectScore += 10;
+    }
+    
+    scores.projectExperience = Math.min(projectScore, 100);
+    
+    // 3. 연구개발 성과 계산
+    let rdScore = 0;
+    if (relatedData.patents && relatedData.patents.length > 0) {
+      rdScore += relatedData.patents.length * 10; // 특허당 10점
+    }
+    if (relatedData.publications && relatedData.publications.length > 0) {
+      rdScore += relatedData.publications.length * 15; // 논문당 15점
+    }
+    if (relatedData.awards && relatedData.awards.length > 0) {
+      rdScore += relatedData.awards.length * 20; // 수상당 20점
+    }
+    
+    scores.rdAchievement = Math.min(rdScore, 100);
+    
+    // 4. 글로벌 역량 계산
+    let globalScore = 0;
+    if (relatedData.languages && relatedData.languages.length > 0) {
+      for (const lang of relatedData.languages) {
+        if (lang.language === 'English' && lang.testType === 'TOEIC') {
+          const score = lang.score || 0;
+          if (score >= 950) globalScore += 10;
+          else if (score >= 900) globalScore += 8;
+          else if (score >= 800) globalScore += 6;
+          else if (score >= 700) globalScore += 4;
+          else globalScore += 2;
+        }
+        if (lang.language === 'Japanese' && lang.testType === 'JLPT') {
+          if (lang.proficiencyLevel === 'advanced') globalScore += 10;
+          else if (lang.proficiencyLevel === 'intermediate') globalScore += 7;
+          else if (lang.proficiencyLevel === 'beginner') globalScore += 4;
+        }
       }
     }
+    
+    scores.globalCompetency = Math.min(globalScore, 100);
+    
+    // 5. 기술 확산 및 자기계발 계산
+    let knowledgeScore = 0;
+    if (relatedData.trainingHistory && relatedData.trainingHistory.length > 0) {
+      const totalHours = relatedData.trainingHistory.reduce((sum: number, training: any) => sum + (training.duration || 0), 0);
+      if (totalHours >= 40) knowledgeScore += 5;
+      else if (totalHours >= 20) knowledgeScore += 3;
+      else if (totalHours >= 10) knowledgeScore += 2;
+    }
+    
+    scores.knowledgeSharing = Math.min(knowledgeScore, 100);
+    
+    // 6. 업무개선 및 혁신 제안 계산
+    let innovationScore = 0;
+    if (relatedData.proposals && relatedData.proposals.length > 0) {
+      innovationScore += relatedData.proposals.length * 10; // 제안당 10점
+    }
+    
+    scores.innovationProposal = Math.min(innovationScore, 100);
+    
+    // 상세 설명 생성
+    details.technicalCompetency = `학력: ${employee.education || '미입력'}, 경력: ${years}년, 자격증: ${relatedData.certifications.length}개`;
+    details.projectExperience = `프로젝트: ${relatedData.projects?.length || 0}개 (PL: ${relatedData.projects?.filter((p: any) => p.role === 'PL').length || 0}개)`;
+    details.rdAchievement = `특허: ${relatedData.patents?.length || 0}건, 논문: ${relatedData.publications?.length || 0}편, 수상: ${relatedData.awards?.length || 0}건`;
+    details.globalCompetency = `어학능력: ${relatedData.languages?.length || 0}개 언어`;
+    details.knowledgeSharing = `교육이수: ${relatedData.trainingHistory?.reduce((sum: number, t: any) => sum + (t.duration || 0), 0) || 0}시간`;
+    details.innovationProposal = `제안제도: ${relatedData.proposals?.length || 0}건`;
     
     // 종합 점수 계산
     const totalScore = 
@@ -79,46 +175,81 @@ export async function calculateAutoRdEvaluation(employeeId: string, evaluationYe
   }
 }
 
-// 관련 데이터 조회
+// 관련 데이터 조회 (data.json에서)
 async function getRelatedData(employeeId: string) {
-  const queries = {
-    certifications: `SELECT * FROM certifications WHERE employee_id = $1 AND is_active = true`,
-    languages: `SELECT * FROM languages WHERE employee_id = $1 AND is_active = true`,
-    projects: `SELECT * FROM projects WHERE employee_id = $1`,
-    patents: `SELECT * FROM patents WHERE employee_id = $1`,
-    publications: `SELECT * FROM publications WHERE employee_id = $1`,
-    awards: `SELECT * FROM awards WHERE employee_id = $1`,
-    trainingHistory: `SELECT * FROM training_history WHERE employee_id = $1 AND status = 'completed'`
+  const dataPath = path.join(process.cwd(), 'data.json');
+  const results: any = {
+    certifications: [],
+    languages: [],
+    projects: [],
+    patents: [],
+    publications: [],
+    awards: [],
+    trainingHistory: [],
+    proposals: []
   };
   
-  const results: any = {};
-  
-  for (const [key, query] of Object.entries(queries)) {
-    try {
-      const result = await storage.query(query, [employeeId]);
-      results[key] = result.rows;
-    } catch (error) {
-      console.error(`${key} 데이터 조회 오류:`, error);
-      results[key] = [];
-    }
-  }
-  
-  // 제안제도 데이터 (data.json에서 로드)
   try {
-    const fs = require('fs');
-    const path = require('path');
-    const dataPath = path.join(process.cwd(), 'data.json');
-    
-    let proposals = [];
     if (fs.existsSync(dataPath)) {
       const fileContent = fs.readFileSync(dataPath, 'utf8');
       const data = JSON.parse(fileContent);
-      proposals = (data.proposals || []).filter((p: any) => p.employeeId === employeeId);
+      
+      // 각 데이터 타입별로 필터링
+      if (data.certifications) {
+        results.certifications = Object.values(data.certifications).filter((item: any) => 
+          item.employeeId === employeeId && item.isActive
+        );
+      }
+      
+      if (data.languages) {
+        results.languages = Object.values(data.languages).filter((item: any) => 
+          item.employeeId === employeeId && item.isActive
+        );
+      }
+      
+      if (data.trainingHistory) {
+        results.trainingHistory = Object.values(data.trainingHistory).filter((item: any) => 
+          item.employeeId === employeeId && item.status === 'completed'
+        );
+      }
+      
+      if (data.projects) {
+        results.projects = Object.values(data.projects).filter((item: any) => 
+          item.employeeId === employeeId
+        );
+      }
+      
+      if (data.patents) {
+        results.patents = Object.values(data.patents).filter((item: any) => 
+          item.employeeId === employeeId
+        );
+      }
+      
+      if (data.publications) {
+        results.publications = Object.values(data.publications).filter((item: any) => 
+          item.employeeId === employeeId
+        );
+      }
+      
+      if (data.awards) {
+        results.awards = Object.values(data.awards).filter((item: any) => 
+          item.employeeId === employeeId
+        );
+      }
+      
+      // 제안제도 데이터 (data.json에서 로드)
+      if (data.proposals) {
+        let proposals = [];
+        if (Array.isArray(data.proposals)) {
+          proposals = data.proposals;
+        } else {
+          proposals = Object.values(data.proposals); // Convert object to array
+        }
+        results.proposals = proposals.filter((p: any) => p.employeeId === employeeId);
+      }
     }
-    results.proposals = proposals;
   } catch (error) {
-    console.error("제안제도 데이터 조회 오류:", error);
-    results.proposals = [];
+    console.error("관련 데이터 조회 오류:", error);
   }
   
   return results;

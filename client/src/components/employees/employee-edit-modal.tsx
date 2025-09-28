@@ -74,7 +74,7 @@ export default function EmployeeEditModal({ employee, isOpen, onClose }: Employe
 
   // 직원 데이터를 폼에 로드
   useEffect(() => {
-    if (employee && teams.length > 0) {
+    if (employee) {
       console.log('🔍 직원 데이터 로드:', {
         name: employee.name,
         departmentCode: employee.departmentCode,
@@ -83,9 +83,9 @@ export default function EmployeeEditModal({ employee, isOpen, onClose }: Employe
         team: employee.team
       });
       
-      // 팀 매칭 로직 개선
+      // 팀 매칭 로직 개선 (팀 데이터가 있을 때만)
       let matchedTeamCode = employee.teamCode;
-      if (!matchedTeamCode && employee.team && employee.departmentCode) {
+      if (teams.length > 0 && !matchedTeamCode && employee.team && employee.departmentCode) {
         // team 필드가 있으면 해당 팀을 찾아서 teamCode 설정
         const matchedTeam = teams.find(t => 
           t.name === employee.team && t.departmentCode === employee.departmentCode
@@ -145,6 +145,31 @@ export default function EmployeeEditModal({ employee, isOpen, onClose }: Employe
       });
     }
   }, [employee, teams]);
+
+  // 팀 데이터가 로드된 후 직원 데이터 재초기화
+  useEffect(() => {
+    if (employee && teams.length > 0) {
+      console.log('🔄 팀 데이터 로드 후 직원 데이터 재초기화');
+      
+      // 팀 매칭 로직
+      let matchedTeamCode = employee.teamCode;
+      if (!matchedTeamCode && employee.team && employee.departmentCode) {
+        const matchedTeam = teams.find(t => 
+          t.name === employee.team && t.departmentCode === employee.departmentCode
+        );
+        if (matchedTeam) {
+          matchedTeamCode = matchedTeam.code;
+          console.log('✅ 팀 매칭 성공 (재초기화):', matchedTeam.code);
+        }
+      }
+
+      // formData 업데이트
+      setFormData(prev => ({
+        ...prev,
+        teamCode: matchedTeamCode
+      }));
+    }
+  }, [teams.length, employee]);
 
   // 직원 목록 조회 (상사 선택용)
   const { data: allEmployees, isLoading: isLoadingEmployees } = useQuery<Employee[]>({
@@ -421,7 +446,7 @@ export default function EmployeeEditModal({ employee, isOpen, onClose }: Employe
                     <SelectValue placeholder="부서 선택" />
                   </SelectTrigger>
                   <SelectContent>
-                    {departments.map(dept => (
+                    {Array.isArray(departments) && departments.map(dept => (
                       <SelectItem key={dept.code} value={dept.code}>
                         {dept.name} ({dept.code})
                       </SelectItem>
@@ -462,7 +487,7 @@ export default function EmployeeEditModal({ employee, isOpen, onClose }: Employe
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="none">팀 없음 (부서장)</SelectItem>
-                    {teams
+                    {Array.isArray(teams) && teams
                       .filter(team => team.departmentCode === selectedDepartment)
                       .map(team => (
                         <SelectItem key={team.code} value={team.code}>

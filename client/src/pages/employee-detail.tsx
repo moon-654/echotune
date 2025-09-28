@@ -7,6 +7,9 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
 import { ArrowLeft, Edit, Mail, Phone, Calendar, MapPin, Users, Award, BookOpen, TrendingUp, FileText, Trophy, Lightbulb, GraduationCap, Building } from "lucide-react";
+import RdCapabilityBarChart from "@/components/charts/rd-capability-bar-chart";
+import SimpleBarChart from "@/components/charts/simple-bar-chart";
+import SimpleRadarChart from "@/components/charts/simple-radar-chart";
 import EmployeeEditModal from "@/components/employees/employee-edit-modal";
 import SkillEditModal from "@/components/employees/skill-edit-modal";
 import TrainingEditModal from "@/components/employees/training-edit-modal";
@@ -44,12 +47,31 @@ export default function EmployeeDetail({ employeeId: propEmployeeId }: EmployeeD
   const [employeeLoading, setEmployeeLoading] = useState(true);
 
   // 실제 스킬 데이터 상태 관리
-  const [skills, setSkills] = useState([]);
+  const [skills, setSkills] = useState<Array<{
+    skillName: string;
+    skillType: string;
+    proficiencyLevel: number;
+  }>>([]);
   const [skillsLoading, setSkillsLoading] = useState(true);
 
   // 제안제도 데이터 상태 관리
   const [proposals, setProposals] = useState<ProposalFormData[]>([]);
   const [proposalsLoading, setProposalsLoading] = useState(true);
+
+  // R&D 역량평가 데이터 상태 관리
+  const [rdEvaluation, setRdEvaluation] = useState<{
+    scores: {
+      technicalCompetency: number;
+      projectExperience: number;
+      rdAchievement: number;
+      globalCompetency: number;
+      knowledgeSharing: number;
+      innovationProposal: number;
+    };
+    totalScore: number;
+    grade: string;
+  } | null>(null);
+  const [rdEvaluationLoading, setRdEvaluationLoading] = useState(true);
 
   // 직원 데이터 로드
   useEffect(() => {
@@ -100,7 +122,13 @@ export default function EmployeeDetail({ employeeId: propEmployeeId }: EmployeeD
   }, [employeeId]);
 
   // 실제 교육 데이터 상태 관리
-  const [trainings, setTrainings] = useState([]);
+  const [trainings, setTrainings] = useState<Array<{
+    courseName: string;
+    completionDate?: string;
+    startDate?: string;
+    score?: number;
+    status: string;
+  }>>([]);
   const [trainingsLoading, setTrainingsLoading] = useState(true);
 
   // 교육 데이터 로드
@@ -151,8 +179,63 @@ export default function EmployeeDetail({ employeeId: propEmployeeId }: EmployeeD
     }
   }, [employeeId]);
 
+  // R&D 역량평가 데이터 로드
+  useEffect(() => {
+    const loadRdEvaluation = async () => {
+      try {
+        const response = await fetch(`/api/rd-evaluations/test/${employeeId}`);
+        
+        if (response.ok) {
+          const data = await response.json();
+          setRdEvaluation(data);
+        } else {
+          // 기본값 설정
+          setRdEvaluation({
+            scores: {
+              technicalCompetency: 0,
+              projectExperience: 0,
+              rdAchievement: 0,
+              globalCompetency: 0,
+              knowledgeSharing: 0,
+              innovationProposal: 0
+            },
+            totalScore: 0,
+            grade: 'D'
+          });
+        }
+      } catch (error) {
+        console.error('R&D 역량평가 데이터 로드 오류:', error);
+        // 기본값 설정
+        setRdEvaluation({
+          scores: {
+            technicalCompetency: 0,
+            projectExperience: 0,
+            rdAchievement: 0,
+            globalCompetency: 0,
+            knowledgeSharing: 0,
+            innovationProposal: 0
+          },
+          totalScore: 0,
+          grade: 'D'
+        });
+      } finally {
+        setRdEvaluationLoading(false);
+      }
+    };
+
+    if (employeeId) {
+      loadRdEvaluation();
+    }
+  }, [employeeId]);
+
   // 실제 프로젝트 데이터 상태 관리
-  const [projects, setProjects] = useState([]);
+  const [projects, setProjects] = useState<Array<{
+    projectName: string;
+    role: string;
+    startDate: string;
+    endDate?: string;
+    status: string;
+  }>>([]);
   const [projectsLoading, setProjectsLoading] = useState(true);
 
   // 프로젝트 데이터 로드
@@ -180,8 +263,20 @@ export default function EmployeeDetail({ employeeId: propEmployeeId }: EmployeeD
   }, [employeeId]);
 
   // 실제 성과 데이터 상태 관리
-  const [patents, setPatents] = useState([]);
-  const [publications, setPublications] = useState([]);
+  const [patents, setPatents] = useState<Array<{
+    title: string;
+    applicationNumber?: string;
+    applicationDate?: string;
+    status: string;
+  }>>([]);
+  const [publications, setPublications] = useState<Array<{
+    title: string;
+    authors?: string;
+    journal?: string;
+    conference?: string;
+    publicationDate?: string;
+    type: string;
+  }>>([]);
   const [achievementsLoading, setAchievementsLoading] = useState(true);
 
   // 성과 데이터 로드
@@ -226,15 +321,37 @@ export default function EmployeeDetail({ employeeId: propEmployeeId }: EmployeeD
   }, [employeeId]);
 
   // 실제 수상 데이터 상태 관리
-  const [awards, setAwards] = useState([]);
+  const [awards, setAwards] = useState<Array<{
+    name: string;
+    issuer: string;
+    awardDate: string;
+    category: string;
+  }>>([]);
   const [awardsLoading, setAwardsLoading] = useState(true);
 
   // 실제 자격증 데이터 상태 관리
-  const [certifications, setCertifications] = useState([]);
+  const [certifications, setCertifications] = useState<Array<{
+    name: string;
+    issuer: string;
+    issueDate: string;
+    expiryDate?: string;
+    score?: number;
+    status: string;
+    category: string;
+  }>>([]);
   const [certificationsLoading, setCertificationsLoading] = useState(true);
 
   // 실제 어학능력 데이터 상태 관리
-  const [languages, setLanguages] = useState([]);
+  const [languages, setLanguages] = useState<Array<{
+    language: string;
+    speaking: string;
+    reading: string;
+    writing: string;
+    listening: string;
+    overallLevel: string;
+    certification?: string;
+    score?: number;
+  }>>([]);
   const [languagesLoading, setLanguagesLoading] = useState(true);
 
 
@@ -383,7 +500,7 @@ export default function EmployeeDetail({ employeeId: propEmployeeId }: EmployeeD
         <CardContent className="p-6">
           <div className="flex items-start space-x-6">
             <Avatar className="w-20 h-20">
-              <AvatarImage src={employee?.photoUrl} />
+              <AvatarImage src={employee?.photoUrl || undefined} />
               <AvatarFallback className="text-lg">
                 {employee?.name?.charAt(0) || '?'}
               </AvatarFallback>
@@ -404,7 +521,7 @@ export default function EmployeeDetail({ employeeId: propEmployeeId }: EmployeeD
                 <div className="space-y-2">
                   <div className="flex items-center space-x-2">
                     <Calendar className="w-4 h-4 text-muted-foreground" />
-                    <span className="text-sm">입사일: {employee?.hireDate || '미정'}</span>
+                    <span className="text-sm">입사일: {employee?.hireDate ? new Date(employee.hireDate).toLocaleDateString() : '미정'}</span>
                   </div>
                   <div className="flex items-center space-x-2">
                     <MapPin className="w-4 h-4 text-muted-foreground" />
@@ -451,7 +568,7 @@ export default function EmployeeDetail({ employeeId: propEmployeeId }: EmployeeD
       </Card>
 
       {/* Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+      <Tabs key={employeeId} value={activeTab} onValueChange={setActiveTab} className="space-y-4">
         <TabsList className="grid w-full grid-cols-9">
           <TabsTrigger value="overview">개요</TabsTrigger>
           <TabsTrigger value="skills">스킬</TabsTrigger>
@@ -505,6 +622,36 @@ export default function EmployeeDetail({ employeeId: propEmployeeId }: EmployeeD
                   <span>수상이력</span>
                   <span className="font-semibold">{awards.length}건</span>
                 </div>
+                
+                <div className="flex justify-between">
+                  <span>자격증</span>
+                  <span className="font-semibold">{certifications.length}개</span>
+                </div>
+                
+                <div className="flex justify-between">
+                  <span>어학능력</span>
+                  <span className="font-semibold">{languages.length}개</span>
+                </div>
+                
+                <div className="flex justify-between">
+                  <span>제안제도</span>
+                  <span className="font-semibold">{proposals.length}건</span>
+                </div>
+                
+                <div className="flex justify-between">
+                  <span>보유 스킬</span>
+                  <span className="font-semibold">{skills.length}개</span>
+                </div>
+                
+                <div className="flex justify-between">
+                  <span>이전 경력</span>
+                  <span className="font-semibold">
+                    {employee?.previousExperienceYears && employee.previousExperienceYears > 0 || employee?.previousExperienceMonths && employee.previousExperienceMonths > 0 
+                      ? `${employee.previousExperienceYears || 0}년 ${employee.previousExperienceMonths || 0}개월`
+                      : '없음'
+                    }
+                  </span>
+                </div>
               </CardContent>
             </Card>
 
@@ -516,70 +663,52 @@ export default function EmployeeDetail({ employeeId: propEmployeeId }: EmployeeD
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="flex justify-between">
-                  <span>부서</span>
-                  <span className="font-semibold">{employee?.department || '부서 없음'}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>팀</span>
-                  <span className="font-semibold">{employee?.team || '팀 없음'}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>직책</span>
-                  <span className="font-semibold">{employee?.position || '직급 없음'}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>상태</span>
-                  <span className="font-semibold">{employee.isActive ? '활성' : '비활성'}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>이전 경력</span>
-                  <span className="font-semibold">
-                    {employee.previousExperienceYears > 0 || employee.previousExperienceMonths > 0 
-                      ? `${employee.previousExperienceYears || 0}년 ${employee.previousExperienceMonths || 0}개월`
-                      : '없음'
-                    }
-                  </span>
-                </div>
                 
-                {/* R&D 역량평가 결과 */}
+                {/* R&D 역량평가 결과 - 간단한 테스트 */}
                 <div className="mt-4 p-4 bg-blue-50 rounded-lg">
                   <h4 className="text-sm font-semibold text-blue-800 mb-3">6대 역량 평가</h4>
-                  <div className="grid grid-cols-2 gap-2 text-sm">
-                    <div className="flex justify-between">
-                      <span>전문 기술 역량</span>
-                      <span className="font-medium">자동 계산</span>
+                  {rdEvaluationLoading ? (
+                    <div className="flex items-center justify-center py-8">
+                      <p className="text-muted-foreground text-sm">R&D 역량평가 데이터 로딩 중...</p>
                     </div>
-                    <div className="flex justify-between">
-                      <span>프로젝트 수행 경험</span>
-                      <span className="font-medium">자동 계산</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>연구개발 성과</span>
-                      <span className="font-medium">자동 계산</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>글로벌 역량</span>
-                      <span className="font-medium">자동 계산</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>기술 확산 및 자기계발</span>
-                      <span className="font-medium">자동 계산</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>업무개선 및 혁신 제안</span>
-                      <span className="font-medium">수동 입력</span>
-                    </div>
-                  </div>
-                  <div className="mt-3 pt-3 border-t border-blue-200">
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm font-medium">종합 점수</span>
-                      <div className="flex items-center space-x-2">
-                        <span className="text-lg font-bold text-blue-600">자동 계산</span>
-                        <Badge variant="outline" className="text-xs">S/A/B/C/D</Badge>
+                  ) : (
+                    <div className="space-y-4">
+                      {/* R&D 역량 레이더차트 */}
+                      <div className="p-2 bg-blue-100 rounded">
+                        <p className="text-sm font-semibold mb-2 text-center">R&D 역량 레이더차트:</p>
+                        <SimpleRadarChart
+                          data={[
+                            { name: '전문기술', value: rdEvaluation?.scores?.technicalCompetency || 0 },
+                            { name: '프로젝트', value: rdEvaluation?.scores?.projectExperience || 0 },
+                            { name: '연구성과', value: rdEvaluation?.scores?.rdAchievement || 0 },
+                            { name: '글로벌', value: rdEvaluation?.scores?.globalCompetency || 0 },
+                            { name: '기술확산', value: rdEvaluation?.scores?.knowledgeSharing || 0 },
+                            { name: '혁신제안', value: rdEvaluation?.scores?.innovationProposal || 0 }
+                          ]}
+                          size={280}
+                        />
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-2 text-sm">
+                        <div className="flex justify-between">
+                          <span>종합 점수</span>
+                          <span className="font-semibold">{rdEvaluation?.totalScore?.toFixed(1) || 0}점</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>등급</span>
+                          <Badge variant={
+                            rdEvaluation?.grade === 'S' ? 'default' :
+                            rdEvaluation?.grade === 'A' ? 'default' :
+                            rdEvaluation?.grade === 'B' ? 'secondary' :
+                            rdEvaluation?.grade === 'C' ? 'destructive' :
+                            'destructive'
+                          }>
+                            {rdEvaluation?.grade || 'D'}
+                          </Badge>
+                        </div>
                       </div>
                     </div>
-                  </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -1038,7 +1167,7 @@ export default function EmployeeDetail({ employeeId: propEmployeeId }: EmployeeD
                           <div className="text-sm text-muted-foreground mt-2">
                             <div className="grid grid-cols-2 gap-4">
                               <div>카테고리: {proposal.category}</div>
-                              <div>제출일: {proposal.submissionDate.toLocaleDateString()}</div>
+                              <div>제출일: {proposal.submissionDate ? new Date(proposal.submissionDate).toLocaleDateString() : '날짜 없음'}</div>
                               <div>상태: {proposal.status}</div>
                               <div>영향도: {proposal.impactLevel}</div>
                             </div>
@@ -1095,6 +1224,7 @@ export default function EmployeeDetail({ employeeId: propEmployeeId }: EmployeeD
             </CardContent>
           </Card>
         </TabsContent>
+
       </Tabs>
       
       {/* Employee Edit Modal */}
@@ -1289,6 +1419,7 @@ export default function EmployeeDetail({ employeeId: propEmployeeId }: EmployeeD
         }}
         onSave={async (data) => {
           try {
+            console.log('🔧 제안제도 저장 요청 데이터:', data);
             const response = await fetch('/api/proposals', {
               method: 'POST',
               headers: {
@@ -1297,14 +1428,34 @@ export default function EmployeeDetail({ employeeId: propEmployeeId }: EmployeeD
               body: JSON.stringify(data),
             });
 
+            console.log('🔧 제안제도 저장 응답 상태:', response.status);
+            console.log('🔧 제안제도 저장 응답 헤더:', response.headers);
+
             if (response.ok) {
-              // 데이터 새로고침
-              window.location.reload();
+              const result = await response.json();
+              console.log('✅ 제안제도 저장 성공:', result);
+              
+              // 제안제도 데이터 새로고침
+              const loadProposals = async () => {
+                try {
+                  const response = await fetch(`/api/proposals?employeeId=${employeeId}`);
+                  if (response.ok) {
+                    const data = await response.json();
+                    setProposals(data);
+                  }
+                } catch (error) {
+                  console.error('제안제도 데이터 로드 오류:', error);
+                }
+              };
+              loadProposals();
             } else {
-              console.error('제안제도 저장 실패');
+              const errorData = await response.json();
+              console.error('❌ 제안제도 저장 실패:', response.status, errorData);
+              throw new Error(`제안제도 저장 실패: ${response.status}`);
             }
           } catch (error) {
-            console.error('제안제도 저장 오류:', error);
+            console.error('❌ 제안제도 저장 오류:', error);
+            throw error;
           }
         }}
       />

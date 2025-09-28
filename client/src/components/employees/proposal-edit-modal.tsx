@@ -88,11 +88,14 @@ export default function ProposalEditModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto" aria-describedby="proposal-edit-description">
         <DialogHeader>
           <DialogTitle>
             {proposal ? "제안제도 수정" : "제안제도 추가"}
           </DialogTitle>
+          <p id="proposal-edit-description" className="text-sm text-muted-foreground">
+            {proposal ? "제안제도 정보를 수정하세요." : "새로운 제안제도를 추가하세요."}
+          </p>
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="space-y-4">

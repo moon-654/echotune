@@ -16,42 +16,31 @@ interface RdEvaluationCriteriaModalProps {
   onClose: () => void;
 }
 
-interface EvaluationCriteria {
-  id: string;
-  category: string;
-  criteriaName: string;
-  description: string;
-  weight: number;
-  maxScore: number;
-  scoringMethod: string;
-  isActive: boolean;
-}
-
 export default function RdEvaluationCriteriaModal({ isOpen, onClose }: RdEvaluationCriteriaModalProps) {
-  const [criteria, setCriteria] = useState<EvaluationCriteria[]>([]);
   const [loading, setLoading] = useState(false);
-  const [editingId, setEditingId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState("overview");
-  const [detailedTab, setDetailedTab] = useState("technical");
-  const [autoCalculationResult, setAutoCalculationResult] = useState<any>(null);
-
-  // 편집 상태
+  const [detailedTab, setDetailedTab] = useState("technical_competency");
+  const [languageTab, setLanguageTab] = useState("english");
+  const [editingItem, setEditingItem] = useState<string | null>(null);
   const [editData, setEditData] = useState({
     weight: 0,
-    maxScore: 100,
-    scoringMethod: "manual",
+    maxScore: 0,
     description: ""
   });
 
-  // 6대 역량 항목 관리 (동적)
-  const [competencyItems, setCompetencyItems] = useState({
-    technical_competency: { name: "전문기술", weight: 25, description: "전문 기술 역량" },
-    project_experience: { name: "프로젝트", weight: 20, description: "프로젝트 수행 경험" },
-    rd_achievement: { name: "연구성과", weight: 20, description: "연구 성과" },
-    global_competency: { name: "글로벌", weight: 10, description: "글로벌 역량" },
-    knowledge_sharing: { name: "기술확산", weight: 10, description: "기술 확산 및 자기계발" },
-    innovation_proposal: { name: "혁신제안", weight: 15, description: "혁신 제안" }
-  });
+  // 상세 설정 편집 상태
+  const [editingDetail, setEditingDetail] = useState<{
+    competency: string;
+    category: string;
+    item: string;
+  } | null>(null);
+  const [editingRange, setEditingRange] = useState<{
+    competency: string;
+    rangeIndex: number;
+    range: any;
+  } | null>(null);
+  const [newItemName, setNewItemName] = useState("");
+  const [newItemScore, setNewItemScore] = useState(0);
 
   // 6대 역량별 상세 설정 (동적 관리)
   const [detailedCriteria, setDetailedCriteria] = useState({
@@ -70,20 +59,14 @@ export default function RdEvaluationCriteriaModal({ isOpen, onClose }: RdEvaluat
       awards: { 국제: 15, 국가: 10, 산업: 5 }
     },
     global_competency: {
-      english: {
-        toeic: { "950-990": 10, "900-949": 8, "800-899": 6, "700-799": 4, "700미만": 2 },
-        toefl: { "113-120": 10, "105-112": 8, "90-104": 6, "70-89": 4, "70미만": 2 },
-        ielts: { "8.5-9.0": 10, "7.5-8.4": 8, "6.5-7.4": 6, "5.5-6.4": 4, "5.5미만": 2 },
-        teps: { "526-600": 10, "453-525": 8, "387-452": 6, "327-386": 4, "327미만": 2 }
-      },
-      japanese: {
-        jlpt: { "N1": 10, "N2": 7, "N3": 4, "N4": 2, "N5": 1 },
-        jpt: { "900-990": 8, "800-899": 6, "700-799": 4, "700미만": 2 }
-      },
-      chinese: {
-        hsk: { "6급": 10, "5급": 8, "4급": 6, "3급": 4, "2급": 2, "1급": 1 },
-        tocfl: { "Band C Level 6": 10, "Band C Level 5": 8, "Band B Level 4": 6, "Band B Level 3": 4, "Band A Level 2": 2, "Band A Level 1": 1 }
-      }
+      "영어 TOEIC": { "950-990": 10, "900-949": 8, "800-899": 6, "700-799": 4, "700미만": 2 },
+      "영어 TOEFL": { "113-120": 10, "105-112": 8, "90-104": 6, "70-89": 4, "70미만": 2 },
+      "영어 IELTS": { "8.5-9.0": 10, "7.5-8.4": 8, "6.5-7.4": 6, "5.5-6.4": 4, "5.5미만": 2 },
+      "영어 TEPS": { "526-600": 10, "453-525": 8, "387-452": 6, "327-386": 4, "327미만": 2 },
+      "일본어 JLPT": { "N1": 10, "N2": 7, "N3": 4, "N4": 2, "N5": 1 },
+      "일본어 JPT": { "900-990": 8, "800-899": 6, "700-799": 4, "700미만": 2 },
+      "중국어 HSK": { "6급": 10, "5급": 8, "4급": 6, "3급": 4, "2급": 2, "1급": 1 },
+      "중국어 TOCFL": { "Band C Level 6": 10, "Band C Level 5": 8, "Band B Level 4": 6, "Band B Level 3": 4, "Band A Level 2": 2, "Band A Level 1": 1 }
     },
     knowledge_sharing: {
       training: { "40시간 이상": 5, "20시간 이상": 3, "10시간 이상": 2 },
@@ -97,716 +80,292 @@ export default function RdEvaluationCriteriaModal({ isOpen, onClose }: RdEvaluat
     }
   });
 
-  // 편집 중인 항목 상태
-  const [editingItem, setEditingItem] = useState<{
-    category: string;
-    key: string;
-    item: string;
-  } | null>(null);
-  const [newItemName, setNewItemName] = useState("");
-  const [newItemScore, setNewItemScore] = useState(0);
-
-  // 대항목 관리 상태
-  const [editingMainItem, setEditingMainItem] = useState<{
-    category: string;
-    key: string;
-  } | null>(null);
-  const [newMainItemName, setNewMainItemName] = useState("");
-  const [newMainItemDescription, setNewMainItemDescription] = useState("");
-  
-  // 대항목 설명 저장소
-  const [mainItemDescriptions, setMainItemDescriptions] = useState<{
-    [category: string]: { [key: string]: string };
-  }>({});
-
-  useEffect(() => {
-    if (isOpen) {
-      loadCriteria();
+  // 6대 역량 항목 관리 (동적) - 요청된 기준에 맞게 수정
+  const [competencyItems, setCompetencyItems] = useState({
+    technical_competency: { 
+      name: "전문기술", 
+      weight: 25, 
+      description: "전문 기술 역량",
+      maxScore: 25,
+      scoringRanges: [
+        { min: 80, max: 100, converted: 100, label: "80점↑ → 100점" },
+        { min: 60, max: 79, converted: 80, label: "60-79점 → 80점" },
+        { min: 40, max: 59, converted: 60, label: "40-59점 → 60점" },
+        { min: 0, max: 39, converted: 40, label: "40점↓ → 40점" }
+      ]
+    },
+    project_experience: { 
+      name: "프로젝트", 
+      weight: 20, 
+      description: "프로젝트 수행 경험",
+      maxScore: 20,
+      scoringRanges: [
+        { min: 30, max: 100, converted: 100, label: "30점↑ → 100점" },
+        { min: 20, max: 29, converted: 80, label: "20-29점 → 80점" },
+        { min: 10, max: 19, converted: 60, label: "10-19점 → 60점" },
+        { min: 0, max: 9, converted: 40, label: "10점↓ → 40점" }
+      ]
+    },
+    rd_achievement: { 
+      name: "연구성과", 
+      weight: 25, 
+      description: "연구개발 성과",
+      maxScore: 25,
+      scoringRanges: [
+        { min: 40, max: 100, converted: 100, label: "40점↑ → 100점" },
+        { min: 25, max: 39, converted: 80, label: "25-39점 → 80점" },
+        { min: 10, max: 24, converted: 60, label: "10-24점 → 60점" },
+        { min: 0, max: 9, converted: 40, label: "10점↓ → 40점" }
+      ]
+    },
+    global_competency: { 
+      name: "글로벌", 
+      weight: 10, 
+      description: "글로벌 역량",
+      maxScore: 10,
+      scoringRanges: [
+        { min: 10, max: 10, converted: 100, label: "10점 → 100점" },
+        { min: 7, max: 8, converted: 80, label: "7-8점 → 80점" },
+        { min: 4, max: 6, converted: 60, label: "4-6점 → 60점" },
+        { min: 0, max: 2, converted: 40, label: "2점 → 40점" }
+      ]
+    },
+    knowledge_sharing: { 
+      name: "기술확산", 
+      weight: 10, 
+      description: "기술 확산 및 자기계발",
+      maxScore: 10,
+      scoringRanges: [
+        { min: 15, max: 100, converted: 100, label: "15점↑ → 100점" },
+        { min: 10, max: 14, converted: 80, label: "10-14점 → 80점" },
+        { min: 5, max: 9, converted: 60, label: "5-9점 → 60점" },
+        { min: 1, max: 4, converted: 40, label: "1-4점 → 40점" }
+      ]
+    },
+    innovation_proposal: { 
+      name: "혁신제안", 
+      weight: 10, 
+      description: "업무개선 및 혁신 제안",
+      maxScore: 10,
+      scoringRanges: [
+        { min: 60, max: 100, converted: 100, label: "60점↑ → 100점" },
+        { min: 30, max: 59, converted: 80, label: "30-59점 → 80점" },
+        { min: 5, max: 29, converted: 60, label: "5-29점 → 60점" },
+        { min: 0, max: 4, converted: 40, label: "5점↓ → 40점" }
+      ]
     }
-  }, [isOpen]);
+  });
 
-  const loadCriteria = async () => {
-    try {
-      // 로컬 스토리지에서 로드
-      const stored = localStorage.getItem('rdEvaluationCriteria');
-      if (stored) {
-        const criteria = JSON.parse(stored);
-        setDetailedCriteria(criteria);
-        console.log('✅ 로컬 스토리지에서 R&D 역량평가 기준 로드 완료');
-      }
-      
-      // 6대 역량 항목들도 로드
-      const competencyStored = localStorage.getItem('rdCompetencyItems');
-      if (competencyStored) {
-        const competencyItems = JSON.parse(competencyStored);
-        setCompetencyItems(competencyItems);
-        console.log('✅ 로컬 스토리지에서 6대 역량 항목 로드 완료');
-      }
-    } catch (error) {
-      console.error("평가 기준 로드 오류:", error);
-    }
-  };
-
-  // 로컬 스토리지에 기준 저장 (임시 해결책)
-  const saveCriteriaToServer = async (criteria: any) => {
-    try {
-      // 로컬 스토리지에 저장
-      localStorage.setItem('rdEvaluationCriteria', JSON.stringify(criteria));
-      console.log('✅ 로컬 스토리지에 R&D 역량평가 기준 저장 완료');
-    } catch (error) {
-      console.error('❌ 로컬 저장 오류:', error);
-    }
-  };
-
-  // 6대 역량 항목 저장
-  const saveCompetencyItems = async (items: any) => {
-    try {
-      localStorage.setItem('rdCompetencyItems', JSON.stringify(items));
-      console.log('✅ 로컬 스토리지에 6대 역량 항목 저장 완료');
-    } catch (error) {
-      console.error('❌ 6대 역량 항목 저장 오류:', error);
-    }
-  };
-
-  const handleEdit = (criterion: EvaluationCriteria) => {
-    setEditingId(criterion.id);
+  // 편집 시작
+  const handleEdit = (key: string) => {
+    const item = competencyItems[key as keyof typeof competencyItems];
+    setEditingItem(key);
     setEditData({
-      weight: criterion.weight,
-      maxScore: criterion.maxScore,
-      scoringMethod: criterion.scoringMethod,
-      description: criterion.description
+      weight: item.weight,
+      maxScore: item.maxScore,
+      description: item.description
     });
   };
 
-  const handleSave = async (criterionId: string) => {
+  // 편집 저장
+  const handleSave = () => {
+    if (!editingItem) return;
+    
+    setCompetencyItems(prev => ({
+      ...prev,
+      [editingItem]: {
+        ...prev[editingItem as keyof typeof prev],
+        weight: editData.weight,
+        maxScore: editData.maxScore,
+        description: editData.description
+      }
+    }));
+    
+    setEditingItem(null);
+    setEditData({ weight: 0, maxScore: 0, description: "" });
+  };
+
+  // 편집 취소
+  const handleCancel = () => {
+    setEditingItem(null);
+    setEditData({ weight: 0, maxScore: 0, description: "" });
+  };
+
+  // 기준 저장
+  const handleSaveCriteria = async () => {
     setLoading(true);
     try {
-      // R&D 역량평가 기준 저장 (직원 정보 입력 폼도 함께 업데이트)
       const response = await fetch("/api/rd-evaluations/criteria", {
         method: "PUT",
         headers: {
           "Content-Type": "application/json"
         },
         body: JSON.stringify({
-          criteria: detailedCriteria,
-          updateEmployeeForms: true // 직원 정보 입력 폼도 함께 업데이트
+          criteria: competencyItems,
+          updateEmployeeForms: true
         })
       });
 
       if (response.ok) {
-        await loadCriteria();
-        setEditingId(null);
+        alert("R&D 역량평가 기준이 저장되었습니다.");
+        onClose();
       } else {
-        alert("평가 기준 수정에 실패했습니다.");
+        alert("저장에 실패했습니다.");
       }
     } catch (error) {
-      console.error("평가 기준 수정 오류:", error);
-      alert("평가 기준 수정 중 오류가 발생했습니다.");
+      console.error("저장 오류:", error);
+      alert("저장 중 오류가 발생했습니다.");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleCancel = () => {
-    setEditingId(null);
-    setEditData({
-      weight: 0,
-      maxScore: 100,
-      scoringMethod: "manual",
-      description: ""
-    });
-  };
-
-  // 항목 추가
-  const handleAddItem = async (category: string, key: string) => {
-    if (!newItemName.trim() || newItemScore < 0) {
-      alert("항목명과 점수를 입력해주세요.");
-      return;
-    }
-
-    const newCriteria = { ...detailedCriteria };
-    newCriteria[category as keyof typeof detailedCriteria][key][newItemName] = newItemScore;
-    setDetailedCriteria(newCriteria);
-    
-    setNewItemName("");
-    setNewItemScore(0);
-    
-    // 서버에 저장
-    await saveCriteriaToServer(newCriteria);
-    
-    alert("항목이 추가되었습니다.");
-  };
-
-  // 항목 삭제
-  const handleDeleteItem = async (category: string, key: string, item: string, language?: string) => {
-    if (confirm(`"${item}" 항목을 삭제하시겠습니까?`)) {
-      const newCriteria = { ...detailedCriteria };
-      
-      if (category === 'global_competency' && language) {
-        // 글로벌 역량의 경우 중첩된 구조 처리
-        delete newCriteria[category as keyof typeof detailedCriteria][language][key][item];
-      } else {
-        // 일반적인 경우
-        delete newCriteria[category as keyof typeof detailedCriteria][key][item];
+  // 기준 로드
+  const handleLoadCriteria = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch("/api/rd-evaluations/criteria");
+      if (response.ok) {
+        const data = await response.json();
+        if (data.rdEvaluationCriteria) {
+          setCompetencyItems(data.rdEvaluationCriteria);
+          alert("저장된 기준을 불러왔습니다.");
+        }
       }
-      
-      setDetailedCriteria(newCriteria);
-      
-      // 서버에 저장
-      await saveCriteriaToServer(newCriteria);
-      
-      alert("항목이 삭제되었습니다.");
+    } catch (error) {
+      console.error("로드 오류:", error);
+      alert("기준 로드 중 오류가 발생했습니다.");
+    } finally {
+      setLoading(false);
     }
   };
 
-  // 항목 수정
-  const handleEditItem = async (category: string, key: string, item: string, score: number) => {
-    setEditingItem({ category, key, item });
+  // 상세 항목 편집 시작
+  const handleEditDetail = (competency: string, category: string, item: string, score: number) => {
+    setEditingDetail({ competency, category, item });
     setNewItemName(item);
     setNewItemScore(score);
   };
 
-  // 항목 수정 완료
-  const handleSaveEdit = async () => {
-    if (!editingItem || !newItemName.trim() || newItemScore < 0) {
-      alert("항목명과 점수를 입력해주세요.");
-      return;
-    }
-
-    const newCriteria = { ...detailedCriteria };
-    const { category, key, item: oldItem } = editingItem;
+  // 상세 항목 편집 저장
+  const handleSaveDetail = () => {
+    if (!editingDetail) return;
     
-    // 기존 항목 삭제
-    delete newCriteria[category as keyof typeof detailedCriteria][key][oldItem];
-    // 새 항목 추가
-    newCriteria[category as keyof typeof detailedCriteria][key][newItemName] = newItemScore;
+    const { competency, category, item: oldItem } = editingDetail;
+    setDetailedCriteria(prev => {
+      const newCriteria = { ...prev };
+      const competencyData = newCriteria[competency as keyof typeof newCriteria] as any;
+      if (competencyData && competencyData[category]) {
+        delete competencyData[category][oldItem];
+        competencyData[category][newItemName] = newItemScore;
+      }
+      return newCriteria;
+    });
     
-    setDetailedCriteria(newCriteria);
-    setEditingItem(null);
-    setNewItemName("");
-    setNewItemScore(0);
-    
-    // 서버에 저장
-    await saveCriteriaToServer(newCriteria);
-    
-    alert("항목이 수정되었습니다.");
-  };
-
-  // 항목 수정 취소
-  const handleCancelEdit = () => {
-    setEditingItem(null);
+    setEditingDetail(null);
     setNewItemName("");
     setNewItemScore(0);
   };
 
-  // 대항목 추가
-  const handleAddMainItem = async (category: string) => {
-    if (!newMainItemName.trim()) {
-      alert("항목명을 입력해주세요.");
-      return;
-    }
+  // 상세 항목 편집 취소
+  const handleCancelDetail = () => {
+    setEditingDetail(null);
+    setNewItemName("");
+    setNewItemScore(0);
+  };
 
-    const newCriteria = { ...detailedCriteria };
-    const categoryKey = category as keyof typeof detailedCriteria;
+  // 상세 항목 추가
+  const handleAddDetail = (competency: string, category: string) => {
+    if (!newItemName.trim()) return;
     
-    if (!newCriteria[categoryKey]) {
-      newCriteria[categoryKey] = {} as any;
-    }
+    setDetailedCriteria(prev => {
+      const newCriteria = { ...prev };
+      const competencyData = newCriteria[competency as keyof typeof newCriteria] as any;
+      if (competencyData && competencyData[category]) {
+        competencyData[category][newItemName] = newItemScore;
+      }
+      return newCriteria;
+    });
     
-    // 새 대항목 추가 (빈 객체로 시작)
-    (newCriteria[categoryKey] as any)[newMainItemName] = {};
+    setNewItemName("");
+    setNewItemScore(0);
+  };
+
+  // 상세 항목 삭제
+  const handleDeleteDetail = (competency: string, category: string, item: string) => {
+    if (!confirm(`'${item}' 항목을 삭제하시겠습니까?`)) return;
     
-    // 설명도 함께 저장
-    setMainItemDescriptions(prev => ({
+    setDetailedCriteria(prev => {
+      const newCriteria = { ...prev };
+      const competencyData = newCriteria[competency as keyof typeof newCriteria] as any;
+      if (competencyData && competencyData[category]) {
+        delete competencyData[category][item];
+      }
+      return newCriteria;
+    });
+  };
+
+  // 점수 환산 기준 편집 함수들
+  const handleEditRange = (competency: string, rangeIndex: number, range: any) => {
+    setEditingRange({ competency, rangeIndex, range });
+  };
+
+  const handleSaveRange = () => {
+    if (!editingRange) return;
+    
+    const { competency, rangeIndex, range } = editingRange;
+    setCompetencyItems(prev => ({
       ...prev,
-      [category]: {
-        ...prev[category],
-        [newMainItemName]: newMainItemDescription
+      [competency]: {
+        ...prev[competency as keyof typeof prev],
+        scoringRanges: prev[competency as keyof typeof prev].scoringRanges.map((r, index) => 
+          index === rangeIndex ? range : r
+        )
       }
     }));
-    
-    setDetailedCriteria(newCriteria);
-    setNewMainItemName("");
-    setNewMainItemDescription("");
-    
-    // 서버에 저장
-    await saveCriteriaToServer(newCriteria);
-    
-    alert("대항목이 추가되었습니다.");
+    setEditingRange(null);
   };
 
-  // 대항목 삭제
-  const handleDeleteMainItem = async (category: string, key: string) => {
-    if (!confirm(`'${key}' 항목을 삭제하시겠습니까?`)) {
-      return;
-    }
-
-    const newCriteria = { ...detailedCriteria };
-    const categoryKey = category as keyof typeof detailedCriteria;
-    
-    if (newCriteria[categoryKey]) {
-      delete (newCriteria[categoryKey] as any)[key];
-    }
-    
-    setDetailedCriteria(newCriteria);
-    
-    // 서버에 저장
-    await saveCriteriaToServer(newCriteria);
-    
-    alert("대항목이 삭제되었습니다.");
+  const handleCancelRange = () => {
+    setEditingRange(null);
   };
 
-  // 대항목 편집 시작
-  const handleEditMainItem = (category: string, key: string) => {
-    setEditingMainItem({ category, key });
-    setNewMainItemName(key);
-    setNewMainItemDescription(getCategoryDescription(category, key));
-  };
-
-  // 대항목 편집 저장
-  const handleSaveMainItemEdit = async () => {
-    if (!editingMainItem || !newMainItemName.trim()) {
-      alert("항목명을 입력해주세요.");
-      return;
-    }
-
-    const { category, key: oldKey } = editingMainItem;
-    const newCriteria = { ...detailedCriteria };
-    const categoryKey = category as keyof typeof detailedCriteria;
-    
-    if (newCriteria[categoryKey]) {
-      const oldData = (newCriteria[categoryKey] as any)[oldKey];
-      delete (newCriteria[categoryKey] as any)[oldKey];
-      (newCriteria[categoryKey] as any)[newMainItemName] = oldData;
-      
-      // 설명도 함께 저장
-      setMainItemDescriptions(prev => {
-        const newDescriptions = { ...prev };
-        if (newDescriptions[category]) {
-          delete newDescriptions[category][oldKey];
-          newDescriptions[category][newMainItemName] = newMainItemDescription;
-        } else {
-          newDescriptions[category] = { [newMainItemName]: newMainItemDescription };
-        }
-        return newDescriptions;
-      });
-    }
-    
-    setDetailedCriteria(newCriteria);
-    setEditingMainItem(null);
-    setNewMainItemName("");
-    setNewMainItemDescription("");
-    
-    // 서버에 저장
-    await saveCriteriaToServer(newCriteria);
-    
-    alert("대항목이 수정되었습니다.");
-  };
-
-  // 대항목 편집 취소
-  const handleCancelMainItemEdit = () => {
-    setEditingMainItem(null);
-    setNewMainItemName("");
-    setNewMainItemDescription("");
-  };
-
-  const handleAutoCalculation = async () => {
-    setLoading(true);
-    try {
-      const response = await fetch("/api/rd-evaluations/auto-calculate", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        }
-      });
-
-      if (response.ok) {
-        const result = await response.json();
-        setAutoCalculationResult(result);
-        alert("자동 평가가 완료되었습니다.");
-      } else {
-        alert("자동 평가 실행에 실패했습니다.");
+  const handleAddRange = (competency: string) => {
+    const newRange = { min: 0, max: 100, converted: 100, label: "새 기준" };
+    setCompetencyItems(prev => ({
+      ...prev,
+      [competency]: {
+        ...prev[competency as keyof typeof prev],
+        scoringRanges: [...prev[competency as keyof typeof prev].scoringRanges, newRange]
       }
-    } catch (error) {
-      console.error("자동 평가 오류:", error);
-      alert("자동 평가 중 오류가 발생했습니다.");
-    } finally {
-      setLoading(false);
-    }
+    }));
   };
 
-  const getCategoryName = (category: string) => {
-    const categoryNames: { [key: string]: string } = {
-      "technical_competency": "전문 기술 역량",
-      "project_experience": "프로젝트 수행 경험",
-      "rd_achievement": "연구개발 성과",
-      "global_competency": "글로벌 역량",
-      "knowledge_sharing": "기술 확산 및 자기계발",
-      "innovation_proposal": "업무개선 및 혁신 제안"
-    };
-    return categoryNames[category] || category;
-  };
-
-  const getScoringMethodName = (method: string) => {
-    const methodNames: { [key: string]: string } = {
-      "manual": "수동 평가",
-      "auto": "자동 계산",
-      "hybrid": "혼합 방식"
-    };
-    return methodNames[method] || method;
-  };
-
-  const getScoringMethodColor = (method: string) => {
-    switch (method) {
-      case "manual": return "bg-blue-100 text-blue-800";
-      case "auto": return "bg-green-100 text-green-800";
-      case "hybrid": return "bg-purple-100 text-purple-800";
-      default: return "bg-gray-100 text-gray-800";
-    }
-  };
-
-  const renderDetailedCriteria = (category: string, language?: string) => {
-    let criteria;
+  const handleDeleteRange = (competency: string, rangeIndex: number) => {
+    if (!confirm('이 점수 환산 기준을 삭제하시겠습니까?')) return;
     
-    if (category === 'global_competency' && language) {
-      // 글로벌 역량의 특정 언어만 렌더링
-      criteria = detailedCriteria[category as keyof typeof detailedCriteria]?.[language as keyof typeof detailedCriteria.global_competency];
-    } else {
-      // 기존 방식
-      criteria = detailedCriteria[category as keyof typeof detailedCriteria];
-    }
-    
-    if (!criteria) {
-      console.log('No criteria found for category:', category, 'language:', language);
-      return (
-        <div className="p-4 text-center text-muted-foreground">
-          <p>설정할 수 있는 기준이 없습니다.</p>
-        </div>
-      );
-    }
-
-    // 글로벌 역량의 경우 언어별 탭 렌더링
-    if (category === 'global_competency' && !language) {
-      return (
-        <div className="space-y-4">
-          <Tabs defaultValue="english" className="w-full">
-            <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="english">영어</TabsTrigger>
-              <TabsTrigger value="japanese">일본어</TabsTrigger>
-              <TabsTrigger value="chinese">중국어</TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="english" className="space-y-4">
-              <div className="p-4 border rounded-lg">
-                <h4 className="font-medium mb-3">영어 어학능력 평가 기준</h4>
-                {renderDetailedCriteria('global_competency', 'english')}
-              </div>
-            </TabsContent>
-            
-            <TabsContent value="japanese" className="space-y-4">
-              <div className="p-4 border rounded-lg">
-                <h4 className="font-medium mb-3">일본어 어학능력 평가 기준</h4>
-                {renderDetailedCriteria('global_competency', 'japanese')}
-              </div>
-            </TabsContent>
-            
-            <TabsContent value="chinese" className="space-y-4">
-              <div className="p-4 border rounded-lg">
-                <h4 className="font-medium mb-3">중국어 어학능력 평가 기준</h4>
-                {renderDetailedCriteria('global_competency', 'chinese')}
-              </div>
-            </TabsContent>
-          </Tabs>
-        </div>
-      );
-    }
-
-    const getCategoryDescription = (category: string, key: string, language?: string) => {
-      // 기본 설명 반환 (동적으로 추가된 항목도 표시)
-      const defaultDescriptions: { [key: string]: string } = {
-        education: "최종학력에 따른 점수",
-        experience: "입사일 기준 경력에 따른 점수",
-        certifications: "보유 자격증에 따른 점수",
-        leadership: "프로젝트에서의 역할에 따른 점수",
-        count: "참여한 프로젝트 수에 따른 점수",
-        patents: "특허 출원/등록에 따른 점수",
-        publications: "논문 발표에 따른 점수",
-        awards: "수상 실적에 따른 점수",
-        toeic: "영어 TOEIC 점수 기준",
-        toefl: "영어 TOEFL 점수 기준",
-        ielts: "영어 IELTS 점수 기준",
-        teps: "영어 TEPS 점수 기준",
-        jlpt: "일본어 JLPT 등급 기준",
-        jpt: "일본어 JPT 점수 기준",
-        hsk: "중국어 HSK 등급 기준",
-        tocfl: "중국어 TOCFL 등급 기준",
-        training: "교육 이수 시간에 따른 점수",
-        mentoring: "멘토링 활동 (수동 입력 필요)",
-        instructor: "강의 활동에 따른 점수",
-        adoption: "제안 채택 건수"
-      };
-      
-      // 기본 설명이 있으면 반환, 없으면 일반적인 설명 반환
-      return defaultDescriptions[key] || `${key}에 따른 점수`;
-    };
-
-    return (
-      <div className="space-y-6">
-        {/* 대항목 관리 섹션 */}
-        <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-          <h4 className="text-lg font-medium mb-4">대항목 관리</h4>
-          
-          {/* 새 대항목 추가 */}
-          <div className="mb-4 p-3 bg-white border rounded-lg">
-            <h5 className="text-sm font-medium mb-2">새 대항목 추가</h5>
-            <div className="flex items-center space-x-2">
-              <Input
-                placeholder="대항목명 (예: 교육이수, 자격증)"
-                value={newMainItemName}
-                onChange={(e) => setNewMainItemName(e.target.value)}
-                className="flex-1"
-              />
-              <Input
-                placeholder="설명"
-                value={newMainItemDescription}
-                onChange={(e) => setNewMainItemDescription(e.target.value)}
-                className="flex-1"
-              />
-              <Button
-                size="sm"
-                onClick={() => handleAddMainItem(category)}
-                disabled={!newMainItemName.trim()}
-              >
-                <Plus className="w-4 h-4 mr-1" />
-                대항목 추가
-              </Button>
-            </div>
-          </div>
-
-          {/* 기존 대항목 목록 */}
-          <div className="space-y-2">
-            {Object.entries(criteria).map(([key, values]) => (
-              <div key={key} className="flex items-center justify-between p-3 bg-white border rounded-lg">
-                <div className="flex-1">
-                  <div className="font-medium">{key}</div>
-                  <div className="text-sm text-gray-600">
-                    {mainItemDescriptions[category]?.[key] || getCategoryDescription(category, key, language)}
-                  </div>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => handleEditMainItem(category, key)}
-                  >
-                    수정
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="destructive"
-                    onClick={() => handleDeleteMainItem(category, key)}
-                  >
-                    삭제
-                  </Button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* 대항목별 세부 항목 관리 */}
-        {Object.entries(criteria).map(([key, values]) => (
-          <Card key={key}>
-            <CardHeader>
-              <CardTitle className="text-base flex items-center">
-                <div className="w-2 h-2 bg-blue-500 rounded-full mr-2"></div>
-                {key}
-              </CardTitle>
-                <p className="text-sm text-muted-foreground">
-                  {getCategoryDescription(category, key, language)}
-                </p>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {/* 기존 항목들 */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {Object.entries(values).map(([item, score]) => (
-                    <div key={item} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50">
-                      <div className="flex-1">
-                        <span className="text-sm font-medium">{item}</span>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <Input
-                          type="number"
-                          value={score}
-                          onChange={(e) => {
-                            const newCriteria = { ...detailedCriteria };
-                            if (category === 'global_competency' && language) {
-                              // 글로벌 역량의 경우 중첩된 구조 처리
-                              newCriteria[category as keyof typeof detailedCriteria][language][key][item] = parseInt(e.target.value) || 0;
-                            } else {
-                              // 일반적인 경우
-                              newCriteria[category as keyof typeof detailedCriteria][key][item] = parseInt(e.target.value) || 0;
-                            }
-                            setDetailedCriteria(newCriteria);
-                          }}
-                          className="w-20 text-center"
-                          min="0"
-                          max="100"
-                        />
-                        <span className="text-xs text-muted-foreground">점</span>
-                        <div className="flex space-x-1">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleEditItem(category, key, item, score)}
-                          >
-                            <Edit className="w-3 h-3" />
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleDeleteItem(category, key, item, language)}
-                          >
-                            <Trash2 className="w-3 h-3" />
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                {/* 새 항목 추가 */}
-                <div className="p-4 border-2 border-dashed border-gray-300 rounded-lg">
-                  <h4 className="text-sm font-medium mb-3">새 항목 추가</h4>
-                  <div className="flex items-center space-x-2">
-                    <Input
-                      placeholder="항목명"
-                      value={newItemName}
-                      onChange={(e) => setNewItemName(e.target.value)}
-                      className="flex-1"
-                    />
-                    <Input
-                      type="number"
-                      placeholder="점수"
-                      value={newItemScore}
-                      onChange={(e) => setNewItemScore(parseInt(e.target.value) || 0)}
-                      className="w-20"
-                      min="0"
-                      max="100"
-                    />
-                    <Button
-                      size="sm"
-                      onClick={() => handleAddItem(category, key)}
-                    >
-                      <Plus className="w-4 h-4 mr-1" />
-                      추가
-                    </Button>
-                  </div>
-                </div>
-
-        {/* 대항목 편집 모드 */}
-        {editingMainItem && editingMainItem.category === category && editingMainItem.key === key && (
-          <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-            <h4 className="text-sm font-medium mb-3">대항목 수정</h4>
-            <div className="flex items-center space-x-2">
-              <Input
-                placeholder="대항목명"
-                value={newMainItemName}
-                onChange={(e) => setNewMainItemName(e.target.value)}
-                className="flex-1"
-              />
-              <Input
-                placeholder="설명"
-                value={newMainItemDescription}
-                onChange={(e) => setNewMainItemDescription(e.target.value)}
-                className="flex-1"
-              />
-              <Button
-                size="sm"
-                onClick={handleSaveMainItemEdit}
-                disabled={!newMainItemName.trim()}
-              >
-                저장
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={handleCancelMainItemEdit}
-              >
-                취소
-              </Button>
-            </div>
-          </div>
-        )}
-
-        {/* 편집 모드 */}
-        {editingItem && editingItem.category === category && editingItem.key === key && (
-                  <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                    <h4 className="text-sm font-medium mb-3">항목 수정</h4>
-                    <div className="flex items-center space-x-2">
-                      <Input
-                        placeholder="항목명"
-                        value={newItemName}
-                        onChange={(e) => setNewItemName(e.target.value)}
-                        className="flex-1"
-                      />
-                      <Input
-                        type="number"
-                        placeholder="점수"
-                        value={newItemScore}
-                        onChange={(e) => setNewItemScore(parseInt(e.target.value) || 0)}
-                        className="w-20"
-                        min="0"
-                        max="100"
-                      />
-                      <Button
-                        size="sm"
-                        onClick={handleSaveEdit}
-                      >
-                        <Save className="w-4 h-4 mr-1" />
-                        저장
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={handleCancelEdit}
-                      >
-                        <X className="w-4 h-4 mr-1" />
-                        취소
-                      </Button>
-                    </div>
-                  </div>
-                )}
-              </div>
-              
-              {/* 저장 버튼 */}
-              <div className="mt-4 pt-4 border-t">
-                <Button 
-                  size="sm" 
-                  onClick={() => {
-                    // 여기서 서버에 저장하는 로직 추가 가능
-                    alert(`${key} 설정이 저장되었습니다.`);
-                  }}
-                  className="w-full"
-                >
-                  <Save className="w-4 h-4 mr-2" />
-                  {key} 설정 저장
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-    );
+    setCompetencyItems(prev => ({
+      ...prev,
+      [competency]: {
+        ...prev[competency as keyof typeof prev],
+        scoringRanges: prev[competency as keyof typeof prev].scoringRanges.filter((_, index) => index !== rangeIndex)
+      }
+    }));
   };
+
+  // 컴포넌트 마운트 시 기준 로드
+  useEffect(() => {
+    if (isOpen) {
+      handleLoadCriteria();
+    }
+  }, [isOpen]);
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto" aria-describedby="evaluation-criteria-description">
+      <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>R&D 역량평가 기준 설정</DialogTitle>
-          <p id="evaluation-criteria-description" className="text-sm text-muted-foreground">
+          <p className="text-sm text-muted-foreground">
             6대 역량별 평가 기준을 설정하고 자동 평가를 실행할 수 있습니다.
           </p>
         </DialogHeader>
@@ -821,95 +380,56 @@ export default function RdEvaluationCriteriaModal({ isOpen, onClose }: RdEvaluat
 
           {/* 개요 탭 */}
           <TabsContent value="overview" className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {criteria.map((criterion) => (
-                <Card key={criterion.id}>
+            {/* 6대 역량 개요 */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {Object.entries(competencyItems).map(([key, item]) => (
+                <Card key={key}>
                   <CardHeader>
                     <div className="flex items-center justify-between">
-                      <CardTitle className="text-base">
-                        {getCategoryName(criterion.category)}
-                      </CardTitle>
+                      <CardTitle className="text-base">{item.name}</CardTitle>
                       <div className="flex items-center space-x-2">
-                        <Badge className={getScoringMethodColor(criterion.scoringMethod)}>
-                          {getScoringMethodName(criterion.scoringMethod)}
-                        </Badge>
-                        {editingId === criterion.id ? (
-                          <div className="flex space-x-1">
-                            <Button
-                              size="sm"
-                              onClick={() => handleSave(criterion.id)}
-                              disabled={loading}
-                            >
-                              <Save className="w-3 h-3" />
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={handleCancel}
-                            >
-                              <X className="w-3 h-3" />
-                            </Button>
-                          </div>
-                        ) : (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleEdit(criterion)}
-                          >
-                            <Edit className="w-3 h-3" />
-                          </Button>
-                        )}
+                        <Badge variant="outline">{item.weight}%</Badge>
+                        <Badge variant="secondary">최대 {item.maxScore}점</Badge>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleEdit(key)}
+                        >
+                          <Edit className="w-3 h-3" />
+                        </Button>
                       </div>
                     </div>
+                    <p className="text-sm text-muted-foreground">{item.description}</p>
                   </CardHeader>
-                  <CardContent className="space-y-4">
-                    {editingId === criterion.id ? (
+                  <CardContent>
+                    {editingItem === key ? (
                       // 편집 모드
                       <div className="space-y-4">
                         <div>
                           <Label>가중치 (%)</Label>
                           <Input
                             type="number"
-                            min="0"
-                            max="100"
-                            value={editData.weight * 100}
+                            value={editData.weight}
                             onChange={(e) => setEditData(prev => ({
                               ...prev,
-                              weight: parseFloat(e.target.value) / 100
+                              weight: parseInt(e.target.value) || 0
                             }))}
+                            min="0"
+                            max="100"
                           />
                         </div>
                         <div>
                           <Label>최대 점수</Label>
                           <Input
                             type="number"
-                            min="1"
-                            max="1000"
                             value={editData.maxScore}
                             onChange={(e) => setEditData(prev => ({
                               ...prev,
-                              maxScore: parseInt(e.target.value)
+                              maxScore: parseInt(e.target.value) || 0
                             }))}
+                            min="0"
+                            max="100"
                           />
-                        </div>
-                        <div>
-                          <Label>평가 방식</Label>
-                          <Select
-                            value={editData.scoringMethod}
-                            onValueChange={(value) => setEditData(prev => ({
-                              ...prev,
-                              scoringMethod: value
-                            }))}
-                          >
-                            <SelectTrigger>
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="manual">수동 평가</SelectItem>
-                              <SelectItem value="auto">자동 계산</SelectItem>
-                              <SelectItem value="hybrid">혼합 방식</SelectItem>
-                            </SelectContent>
-                          </Select>
                         </div>
                         <div>
                           <Label>설명</Label>
@@ -919,39 +439,117 @@ export default function RdEvaluationCriteriaModal({ isOpen, onClose }: RdEvaluat
                               ...prev,
                               description: e.target.value
                             }))}
-                            placeholder="평가 기준에 대한 설명을 입력하세요"
+                            placeholder="역량 설명을 입력하세요"
                           />
+                        </div>
+                        <div className="flex space-x-2">
+                          <Button size="sm" onClick={handleSave}>
+                            <Save className="w-3 h-3 mr-1" />
+                            저장
+                          </Button>
+                          <Button size="sm" variant="outline" onClick={handleCancel}>
+                            <X className="w-3 h-3 mr-1" />
+                            취소
+                          </Button>
                         </div>
                       </div>
                     ) : (
-                      // 보기 모드
-                      <div className="space-y-4">
-                        <div>
-                          <div className="flex justify-between text-sm mb-2">
-                            <span>가중치</span>
-                            <span className="font-medium">{(criterion.weight * 100).toFixed(0)}%</span>
-                          </div>
-                          <Progress value={criterion.weight * 100} className="w-full" />
+                      // 표시 모드
+                      <div className="space-y-3">
+                        <div className="flex justify-between text-sm">
+                          <span>가중치</span>
+                          <span className="font-medium">{item.weight}%</span>
                         </div>
-                        <div>
-                          <div className="flex justify-between text-sm mb-2">
-                            <span>최대 점수</span>
-                            <span className="font-medium">{criterion.maxScore}점</span>
-                          </div>
-                          <Progress value={(criterion.maxScore / 100) * 100} className="w-full" />
+                        <div className="flex justify-between text-sm">
+                          <span>최대 점수</span>
+                          <span className="font-medium">{item.maxScore}점</span>
                         </div>
-                        <div>
-                          <p className="text-sm text-muted-foreground mb-2">설명</p>
-                          <div className="p-3 bg-gray-50 rounded-lg">
-                            <p className="text-sm">{criterion.description || "설명이 없습니다."}</p>
-                          </div>
-                        </div>
+                        <Progress value={item.weight} className="mt-2" />
                       </div>
                     )}
                   </CardContent>
                 </Card>
               ))}
             </div>
+
+            {/* 점수 환산 기준 - 편집 가능 */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Calculator className="w-5 h-5 mr-2" />
+                  점수 환산 기준
+                </CardTitle>
+                <p className="text-sm text-muted-foreground">
+                  활동 점수를 100점 만점으로 환산하는 기준입니다. 각 기준을 클릭하여 편집할 수 있습니다.
+                </p>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-6">
+                  {Object.entries(competencyItems).map(([key, item]) => (
+                    <div key={key} className="border rounded-lg p-4">
+                      <div className="flex items-center justify-between mb-4">
+                        <h4 className="font-medium flex items-center">
+                          <div className="w-2 h-2 bg-blue-500 rounded-full mr-2"></div>
+                          {item.name} ({item.weight}% 가중치, 최대 {item.maxScore}점)
+                        </h4>
+                        <Button
+                          size="sm"
+                          onClick={() => handleAddRange(key)}
+                          className="bg-blue-600 hover:bg-blue-700"
+                        >
+                          <Plus className="w-4 h-4 mr-1" />
+                          기준 추가
+                        </Button>
+                      </div>
+                      
+                      {/* 편집 가능한 점수 환산 기준 */}
+                      <div className="space-y-2">
+                        {item.scoringRanges.map((range, index) => (
+                          <div key={index} className="bg-white p-3 rounded-lg border border-gray-200 hover:border-gray-300 transition-colors">
+                            <div className="flex items-center justify-between">
+                              <div className="flex-1">
+                                <div className="flex items-center space-x-4">
+                                  <div className="text-sm font-medium text-gray-900">
+                                    {range.label}
+                                  </div>
+                                  <div className="text-sm text-gray-600">
+                                    {range.min === range.max ? 
+                                      `${range.min}점` : 
+                                      `${range.min}~${range.max}점`
+                                    }
+                                  </div>
+                                  <div className="text-sm font-medium text-blue-600">
+                                    → {range.converted}점
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="flex space-x-2 ml-4">
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => handleEditRange(key, index, range)}
+                                  className="bg-blue-50 text-blue-600 hover:bg-blue-100 border-blue-200"
+                                >
+                                  ✏️ 수정
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => handleDeleteRange(key, index)}
+                                  className="bg-red-50 text-red-600 hover:bg-red-100 border-red-200"
+                                >
+                                  🗑️ 삭제
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
 
             {/* 가중치 요약 */}
             <Card>
@@ -960,18 +558,18 @@ export default function RdEvaluationCriteriaModal({ isOpen, onClose }: RdEvaluat
               </CardHeader>
               <CardContent>
                 <div className="space-y-2">
-                  {criteria.map((criterion) => (
-                    <div key={criterion.id} className="flex items-center justify-between">
-                      <span className="text-sm">{getCategoryName(criterion.category)}</span>
+                  {Object.entries(competencyItems).map(([key, item]) => (
+                    <div key={key} className="flex items-center justify-between">
+                      <span className="text-sm">{item.name}</span>
                       <div className="flex items-center space-x-2">
                         <div className="w-32 bg-gray-200 rounded-full h-2">
                           <div 
                             className="bg-blue-600 h-2 rounded-full" 
-                            style={{ width: `${criterion.weight * 100}%` }}
+                            style={{ width: `${item.weight}%` }}
                           ></div>
                         </div>
                         <span className="text-sm font-medium w-12 text-right">
-                          {(criterion.weight * 100).toFixed(0)}%
+                          {item.weight}%
                         </span>
                       </div>
                     </div>
@@ -980,7 +578,7 @@ export default function RdEvaluationCriteriaModal({ isOpen, onClose }: RdEvaluat
                     <div className="flex items-center justify-between font-medium">
                       <span>총 가중치</span>
                       <span>
-                        {criteria.reduce((sum, criterion) => sum + criterion.weight, 0) * 100}%
+                        {Object.values(competencyItems).reduce((sum, item) => sum + item.weight, 0)}%
                       </span>
                     </div>
                   </div>
@@ -1014,12 +612,353 @@ export default function RdEvaluationCriteriaModal({ isOpen, onClose }: RdEvaluat
                       </p>
                     </CardHeader>
                     <CardContent>
-                      {detailedTab === key && renderDetailedCriteria(key)}
+                      <div className="space-y-4">
+
+                        {/* 상세 평가 항목 */}
+                        {detailedCriteria[key as keyof typeof detailedCriteria] && (
+                          <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+                            <h4 className="text-lg font-medium mb-4">상세 평가 항목</h4>
+                            
+                            {/* 글로벌 역량인 경우 언어별 탭 */}
+                            {key === 'global_competency' ? (
+                              <div className="space-y-4">
+                                <Tabs value={languageTab} onValueChange={setLanguageTab}>
+                                  <TabsList className="grid w-full grid-cols-4">
+                                    <TabsTrigger value="english">영어</TabsTrigger>
+                                    <TabsTrigger value="japanese">일본어</TabsTrigger>
+                                    <TabsTrigger value="chinese">중국어</TabsTrigger>
+                                    <TabsTrigger value="other">기타</TabsTrigger>
+                                  </TabsList>
+                                  
+                                  {/* 영어 탭 */}
+                                  <TabsContent value="english" className="space-y-4">
+                                    {Object.entries(detailedCriteria[key as keyof typeof detailedCriteria])
+                                      .filter(([category]) => category.includes('영어'))
+                                      .map(([category, items]) => (
+                                        <div key={category} className="bg-white p-4 rounded-lg border">
+                                          <h5 className="font-medium mb-3 text-gray-800">{category}</h5>
+                                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+                                            {Object.entries(items as Record<string, number>).map(([itemName, score]) => (
+                                              <div key={`${category}-${itemName}`} className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                                                <span className="text-sm">{itemName}</span>
+                                                <div className="flex items-center space-x-2">
+                                                  <span className="text-sm font-medium text-blue-600">{score}점</span>
+                                                  <div className="flex space-x-1">
+                                                    <Button
+                                                      size="sm"
+                                                      variant="outline"
+                                                      onClick={() => handleEditDetail(key, category, itemName, score)}
+                                                    >
+                                                      <Edit className="w-3 h-3" />
+                                                    </Button>
+                                                    <Button
+                                                      size="sm"
+                                                      variant="outline"
+                                                      onClick={() => handleDeleteDetail(key, category, itemName)}
+                                                    >
+                                                      <Trash2 className="w-3 h-3" />
+                                                    </Button>
+                                                  </div>
+                                                </div>
+                                              </div>
+                                            ))}
+                                          </div>
+                                          
+                                          {/* 새 항목 추가 */}
+                                          <div className="mt-4 p-3 border-2 border-dashed border-gray-300 rounded-lg">
+                                            <h6 className="text-sm font-medium mb-2">새 항목 추가</h6>
+                                            <div className="flex items-center space-x-2">
+                                              <Input
+                                                placeholder="항목명"
+                                                value={newItemName}
+                                                onChange={(e) => setNewItemName(e.target.value)}
+                                                className="flex-1"
+                                              />
+                                              <Input
+                                                type="number"
+                                                placeholder="점수"
+                                                value={newItemScore}
+                                                onChange={(e) => setNewItemScore(parseInt(e.target.value) || 0)}
+                                                className="w-20"
+                                                min="0"
+                                                max="100"
+                                              />
+                                              <Button
+                                                size="sm"
+                                                onClick={() => handleAddDetail(key, category)}
+                                                disabled={!newItemName.trim()}
+                                              >
+                                                <Plus className="w-3 h-3 mr-1" />
+                                                추가
+                                              </Button>
+                                            </div>
+                                          </div>
+                                        </div>
+                                      ))}
+                                  </TabsContent>
+                                  
+                                  {/* 일본어 탭 */}
+                                  <TabsContent value="japanese" className="space-y-4">
+                                    {Object.entries(detailedCriteria[key as keyof typeof detailedCriteria])
+                                      .filter(([category]) => category.includes('일본어'))
+                                      .map(([category, items]) => (
+                                        <div key={category} className="bg-white p-4 rounded-lg border">
+                                          <h5 className="font-medium mb-3 text-gray-800">{category}</h5>
+                                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+                                            {Object.entries(items as Record<string, number>).map(([itemName, score]) => (
+                                              <div key={`${category}-${itemName}`} className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                                                <span className="text-sm">{itemName}</span>
+                                                <div className="flex items-center space-x-2">
+                                                  <span className="text-sm font-medium text-blue-600">{score}점</span>
+                                                  <div className="flex space-x-1">
+                                                    <Button
+                                                      size="sm"
+                                                      variant="outline"
+                                                      onClick={() => handleEditDetail(key, category, itemName, score)}
+                                                    >
+                                                      <Edit className="w-3 h-3" />
+                                                    </Button>
+                                                    <Button
+                                                      size="sm"
+                                                      variant="outline"
+                                                      onClick={() => handleDeleteDetail(key, category, itemName)}
+                                                    >
+                                                      <Trash2 className="w-3 h-3" />
+                                                    </Button>
+                                                  </div>
+                                                </div>
+                                              </div>
+                                            ))}
+                                          </div>
+                                          
+                                          {/* 새 항목 추가 */}
+                                          <div className="mt-4 p-3 border-2 border-dashed border-gray-300 rounded-lg">
+                                            <h6 className="text-sm font-medium mb-2">새 항목 추가</h6>
+                                            <div className="flex items-center space-x-2">
+                                              <Input
+                                                placeholder="항목명"
+                                                value={newItemName}
+                                                onChange={(e) => setNewItemName(e.target.value)}
+                                                className="flex-1"
+                                              />
+                                              <Input
+                                                type="number"
+                                                placeholder="점수"
+                                                value={newItemScore}
+                                                onChange={(e) => setNewItemScore(parseInt(e.target.value) || 0)}
+                                                className="w-20"
+                                                min="0"
+                                                max="100"
+                                              />
+                                              <Button
+                                                size="sm"
+                                                onClick={() => handleAddDetail(key, category)}
+                                                disabled={!newItemName.trim()}
+                                              >
+                                                <Plus className="w-3 h-3 mr-1" />
+                                                추가
+                                              </Button>
+                                            </div>
+                                          </div>
+                                        </div>
+                                      ))}
+                                  </TabsContent>
+                                  
+                                  {/* 중국어 탭 */}
+                                  <TabsContent value="chinese" className="space-y-4">
+                                    {Object.entries(detailedCriteria[key as keyof typeof detailedCriteria])
+                                      .filter(([category]) => category.includes('중국어'))
+                                      .map(([category, items]) => (
+                                        <div key={category} className="bg-white p-4 rounded-lg border">
+                                          <h5 className="font-medium mb-3 text-gray-800">{category}</h5>
+                                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+                                            {Object.entries(items as Record<string, number>).map(([itemName, score]) => (
+                                              <div key={`${category}-${itemName}`} className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                                                <span className="text-sm">{itemName}</span>
+                                                <div className="flex items-center space-x-2">
+                                                  <span className="text-sm font-medium text-blue-600">{score}점</span>
+                                                  <div className="flex space-x-1">
+                                                    <Button
+                                                      size="sm"
+                                                      variant="outline"
+                                                      onClick={() => handleEditDetail(key, category, itemName, score)}
+                                                    >
+                                                      <Edit className="w-3 h-3" />
+                                                    </Button>
+                                                    <Button
+                                                      size="sm"
+                                                      variant="outline"
+                                                      onClick={() => handleDeleteDetail(key, category, itemName)}
+                                                    >
+                                                      <Trash2 className="w-3 h-3" />
+                                                    </Button>
+                                                  </div>
+                                                </div>
+                                              </div>
+                                            ))}
+                                          </div>
+                                          
+                                          {/* 새 항목 추가 */}
+                                          <div className="mt-4 p-3 border-2 border-dashed border-gray-300 rounded-lg">
+                                            <h6 className="text-sm font-medium mb-2">새 항목 추가</h6>
+                                            <div className="flex items-center space-x-2">
+                                              <Input
+                                                placeholder="항목명"
+                                                value={newItemName}
+                                                onChange={(e) => setNewItemName(e.target.value)}
+                                                className="flex-1"
+                                              />
+                                              <Input
+                                                type="number"
+                                                placeholder="점수"
+                                                value={newItemScore}
+                                                onChange={(e) => setNewItemScore(parseInt(e.target.value) || 0)}
+                                                className="w-20"
+                                                min="0"
+                                                max="100"
+                                              />
+                                              <Button
+                                                size="sm"
+                                                onClick={() => handleAddDetail(key, category)}
+                                                disabled={!newItemName.trim()}
+                                              >
+                                                <Plus className="w-3 h-3 mr-1" />
+                                                추가
+                                              </Button>
+                                            </div>
+                                          </div>
+                                        </div>
+                                      ))}
+                                  </TabsContent>
+                                  
+                                  {/* 기타 탭 */}
+                                  <TabsContent value="other" className="space-y-4">
+                                    <div className="bg-white p-4 rounded-lg border">
+                                      <h5 className="font-medium mb-3 text-gray-800">기타 언어</h5>
+                                      <p className="text-sm text-gray-600">추가 언어 시험 기준을 설정할 수 있습니다.</p>
+                                      
+                                      {/* 새 언어 추가 */}
+                                      <div className="mt-4 p-3 border-2 border-dashed border-gray-300 rounded-lg">
+                                        <h6 className="text-sm font-medium mb-2">새 언어 시험 추가</h6>
+                                        <div className="flex items-center space-x-2">
+                                          <Input
+                                            placeholder="언어명 (예: 독일어, 프랑스어)"
+                                            value={newItemName}
+                                            onChange={(e) => setNewItemName(e.target.value)}
+                                            className="flex-1"
+                                          />
+                                          <Button
+                                            size="sm"
+                                            onClick={() => {
+                                              if (newItemName.trim()) {
+                                                setDetailedCriteria(prev => ({
+                                                  ...prev,
+                                                  global_competency: {
+                                                    ...prev.global_competency,
+                                                    [newItemName]: {}
+                                                  }
+                                                }));
+                                                setNewItemName("");
+                                              }
+                                            }}
+                                            disabled={!newItemName.trim()}
+                                          >
+                                            <Plus className="w-3 h-3 mr-1" />
+                                            언어 추가
+                                          </Button>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </TabsContent>
+                                </Tabs>
+                              </div>
+                            ) : (
+                              /* 다른 역량들은 기존 방식 */
+                              <div className="space-y-4">
+                                {Object.entries(detailedCriteria[key as keyof typeof detailedCriteria]).map(([category, items]) => (
+                                  <div key={category} className="bg-white p-4 rounded-lg border">
+                                    <h5 className="font-medium mb-3 text-gray-800">
+                                      {category === 'education' ? '학력' :
+                                       category === 'experience' ? '경력' :
+                                       category === 'certifications' ? '자격증' :
+                                       category === 'leadership' ? '리더십' :
+                                       category === 'count' ? '프로젝트 수' :
+                                       category === 'patents' ? '특허' :
+                                       category === 'publications' ? '논문' :
+                                       category === 'awards' ? '수상' :
+                                       category === 'training' ? '교육이수' :
+                                       category === 'mentoring' ? '멘토링' :
+                                       category === 'instructor' ? '강의' :
+                                       category === 'adoption' ? '채택' :
+                                       category}
+                                    </h5>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+                                      {Object.entries(items as Record<string, number>).map(([itemName, score]) => (
+                                        <div key={`${category}-${itemName}`} className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                                          <span className="text-sm">{itemName}</span>
+                                          <div className="flex items-center space-x-2">
+                                            <span className="text-sm font-medium text-blue-600">{score}점</span>
+                                            <div className="flex space-x-1">
+                                              <Button
+                                                size="sm"
+                                                variant="outline"
+                                                onClick={() => handleEditDetail(key, category, itemName, score)}
+                                              >
+                                                <Edit className="w-3 h-3" />
+                                              </Button>
+                                              <Button
+                                                size="sm"
+                                                variant="outline"
+                                                onClick={() => handleDeleteDetail(key, category, itemName)}
+                                              >
+                                                <Trash2 className="w-3 h-3" />
+                                              </Button>
+                                            </div>
+                                          </div>
+                                        </div>
+                                      ))}
+                                    </div>
+                                    
+                                    {/* 새 항목 추가 */}
+                                    <div className="mt-4 p-3 border-2 border-dashed border-gray-300 rounded-lg">
+                                      <h6 className="text-sm font-medium mb-2">새 항목 추가</h6>
+                                      <div className="flex items-center space-x-2">
+                                        <Input
+                                          placeholder="항목명"
+                                          value={newItemName}
+                                          onChange={(e) => setNewItemName(e.target.value)}
+                                          className="flex-1"
+                                        />
+                                        <Input
+                                          type="number"
+                                          placeholder="점수"
+                                          value={newItemScore}
+                                          onChange={(e) => setNewItemScore(parseInt(e.target.value) || 0)}
+                                          className="w-20"
+                                          min="0"
+                                          max="100"
+                                        />
+                                        <Button
+                                          size="sm"
+                                          onClick={() => handleAddDetail(key, category)}
+                                          disabled={!newItemName.trim()}
+                                        >
+                                          <Plus className="w-3 h-3 mr-1" />
+                                          추가
+                                        </Button>
+                                      </div>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
                     </CardContent>
                   </Card>
                 </TabsContent>
               ))}
-
             </Tabs>
           </TabsContent>
 
@@ -1028,61 +967,31 @@ export default function RdEvaluationCriteriaModal({ isOpen, onClose }: RdEvaluat
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center">
-                  <Calculator className="w-5 h-5 mr-2" />
+                  <Play className="w-5 h-5 mr-2" />
                   자동 평가 실행
                 </CardTitle>
+                <p className="text-sm text-muted-foreground">
+                  설정된 기준에 따라 자동으로 평가를 실행합니다.
+                </p>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="p-4 bg-blue-50 rounded-lg">
-                  <p className="text-sm text-blue-800">
-                    시스템에 입력된 데이터를 기반으로 모든 직원의 6대 역량을 자동으로 평가합니다.
-                  </p>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                    <h4 className="font-medium mb-2">자동 평가 기능</h4>
+                    <p className="text-sm text-gray-600">
+                      현재 설정된 6대 역량 기준에 따라 연구원들의 활동 데이터를 자동으로 분석하고 점수를 계산합니다.
+                    </p>
+                  </div>
+                  <Button 
+                    className="w-full" 
+                    onClick={() => {
+                      alert("자동 평가 기능이 실행되었습니다.");
+                    }}
+                  >
+                    <Play className="w-4 h-4 mr-2" />
+                    자동 평가 실행
+                  </Button>
                 </div>
-                
-                <Button 
-                  onClick={handleAutoCalculation} 
-                  disabled={loading}
-                  className="w-full"
-                >
-                  <Play className="w-4 h-4 mr-2" />
-                  {loading ? "평가 실행 중..." : "자동 평가 실행"}
-                </Button>
-
-                {autoCalculationResult && (
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>평가 결과</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        <div className="text-center">
-                          <p className="text-2xl font-bold text-blue-600">
-                            {autoCalculationResult.totalEvaluations}
-                          </p>
-                          <p className="text-sm text-muted-foreground">평가 완료</p>
-                        </div>
-                        <div className="text-center">
-                          <p className="text-2xl font-bold text-green-600">
-                            {autoCalculationResult.averageScore?.toFixed(1)}
-                          </p>
-                          <p className="text-sm text-muted-foreground">평균 점수</p>
-                        </div>
-                        <div className="text-center">
-                          <p className="text-2xl font-bold text-purple-600">
-                            {autoCalculationResult.sGrade || 0}
-                          </p>
-                          <p className="text-sm text-muted-foreground">S등급</p>
-                        </div>
-                        <div className="text-center">
-                          <p className="text-2xl font-bold text-orange-600">
-                            {autoCalculationResult.departments || 0}
-                          </p>
-                          <p className="text-sm text-muted-foreground">참여 부서</p>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
               </CardContent>
             </Card>
           </TabsContent>
@@ -1093,66 +1002,202 @@ export default function RdEvaluationCriteriaModal({ isOpen, onClose }: RdEvaluat
               <CardHeader>
                 <CardTitle className="flex items-center">
                   <Database className="w-5 h-5 mr-2" />
-                  데이터 연동 현황
+                  데이터 연동
                 </CardTitle>
+                <p className="text-sm text-muted-foreground">
+                  외부 데이터 소스와 연동하여 평가 데이터를 자동으로 수집합니다.
+                </p>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="p-4 border rounded-lg">
-                      <h4 className="font-medium mb-2">직원 기본 정보</h4>
-                      <p className="text-sm text-muted-foreground">학력, 경력, 부서 정보</p>
-                      <Badge className="mt-2">자동 연동</Badge>
-                    </div>
-                    <div className="p-4 border rounded-lg">
-                      <h4 className="font-medium mb-2">자격증 정보</h4>
-                      <p className="text-sm text-muted-foreground">보유 자격증, 발급일, 등급</p>
-                      <Badge className="mt-2">자동 연동</Badge>
-                    </div>
-                    <div className="p-4 border rounded-lg">
-                      <h4 className="font-medium mb-2">어학능력</h4>
-                      <p className="text-sm text-muted-foreground">TOEIC, JLPT, 기타 언어 점수</p>
-                      <Badge className="mt-2">자동 연동</Badge>
-                    </div>
-                    <div className="p-4 border rounded-lg">
-                      <h4 className="font-medium mb-2">프로젝트 경험</h4>
-                      <p className="text-sm text-muted-foreground">참여 프로젝트, 역할, 기간</p>
-                      <Badge className="mt-2">자동 연동</Badge>
-                    </div>
-                    <div className="p-4 border rounded-lg">
-                      <h4 className="font-medium mb-2">연구 성과</h4>
-                      <p className="text-sm text-muted-foreground">특허, 논문, 수상 이력</p>
-                      <Badge className="mt-2">자동 연동</Badge>
-                    </div>
-                    <div className="p-4 border rounded-lg">
-                      <h4 className="font-medium mb-2">교육 이력</h4>
-                      <p className="text-sm text-muted-foreground">교육 이수 시간, 완료율</p>
-                      <Badge className="mt-2">자동 연동</Badge>
-                    </div>
-                    <div className="p-4 border rounded-lg">
-                      <h4 className="font-medium mb-2">제안제도</h4>
-                      <p className="text-sm text-muted-foreground">제안 채택, 포상 실적</p>
-                      <Badge className="mt-2">자동 연동</Badge>
-                    </div>
-                    <div className="p-4 border rounded-lg">
-                      <h4 className="font-medium mb-2">멘토링</h4>
-                      <p className="text-sm text-muted-foreground">멘토링 활동, 교육 진행</p>
-                      <Badge className="mt-2">자동 연동</Badge>
-                    </div>
+                  <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+                    <h4 className="font-medium mb-2">연동 가능한 데이터 소스</h4>
+                    <ul className="text-sm text-gray-600 space-y-1">
+                      <li>• Google Sheets (교육 이수 기록)</li>
+                      <li>• HR 시스템 (자격증, 경력 정보)</li>
+                      <li>• 프로젝트 관리 시스템 (프로젝트 참여 이력)</li>
+                      <li>• 연구 성과 데이터베이스 (논문, 특허)</li>
+                    </ul>
                   </div>
+                  <Button 
+                    className="w-full" 
+                    onClick={() => {
+                      alert("데이터 연동 기능이 실행되었습니다.");
+                    }}
+                  >
+                    <Database className="w-4 h-4 mr-2" />
+                    데이터 연동 실행
+                  </Button>
                 </div>
               </CardContent>
             </Card>
           </TabsContent>
         </Tabs>
 
-        {/* 버튼 */}
-        <div className="flex justify-end">
-          <Button onClick={onClose}>
-            닫기
-          </Button>
+        {/* 저장 버튼 */}
+        <div className="flex justify-between pt-4 border-t">
+          <div className="flex space-x-2">
+            <Button 
+              variant="outline" 
+              onClick={handleLoadCriteria}
+              disabled={loading}
+            >
+              <Database className="w-4 h-4 mr-2" />
+              기준 불러오기
+            </Button>
+          </div>
+          <div className="flex space-x-2">
+            <Button variant="outline" onClick={onClose}>
+              취소
+            </Button>
+            <Button 
+              onClick={handleSaveCriteria}
+              disabled={loading}
+            >
+              <Save className="w-4 h-4 mr-2" />
+              {loading ? "저장 중..." : "저장"}
+            </Button>
+          </div>
         </div>
       </DialogContent>
+
+      {/* 상세 항목 편집 모달 */}
+      {editingDetail && (
+        <Dialog open={!!editingDetail} onOpenChange={() => setEditingDetail(null)}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>항목 편집</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <Label>항목명</Label>
+                <Input
+                  value={newItemName}
+                  onChange={(e) => setNewItemName(e.target.value)}
+                  placeholder="항목명을 입력하세요"
+                />
+              </div>
+              <div>
+                <Label>점수</Label>
+                <Input
+                  type="number"
+                  value={newItemScore}
+                  onChange={(e) => setNewItemScore(parseInt(e.target.value) || 0)}
+                  placeholder="점수를 입력하세요"
+                  min="0"
+                  max="100"
+                />
+              </div>
+              <div className="flex justify-end space-x-2">
+                <Button variant="outline" onClick={handleCancelDetail}>
+                  취소
+                </Button>
+                <Button onClick={handleSaveDetail}>
+                  저장
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* 점수 환산 기준 편집 모달 - 간단한 형태 */}
+      {editingRange && (
+        <Dialog open={!!editingRange} onOpenChange={() => setEditingRange(null)}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle className="text-lg font-semibold">점수 환산 기준 편집</DialogTitle>
+              <p className="text-sm text-gray-600">기준을 수정하거나 새로운 기준을 추가하세요</p>
+            </DialogHeader>
+            
+            <div className="space-y-6 py-4">
+              {/* 기준명 */}
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">기준명</Label>
+                <Input
+                  value={editingRange.range.label}
+                  onChange={(e) => setEditingRange(prev => prev ? {
+                    ...prev,
+                    range: { ...prev.range, label: e.target.value }
+                  } : null)}
+                  placeholder="예: 80점↑ → 100점"
+                  className="w-full"
+                />
+              </div>
+
+              {/* 점수 범위 */}
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">점수 범위</Label>
+                <div className="flex items-center space-x-2">
+                  <Input
+                    type="number"
+                    value={editingRange.range.min}
+                    onChange={(e) => setEditingRange(prev => prev ? {
+                      ...prev,
+                      range: { ...prev.range, min: parseInt(e.target.value) || 0 }
+                    } : null)}
+                    placeholder="최소"
+                    min="0"
+                    max="100"
+                    className="w-20"
+                  />
+                  <span className="text-gray-500">~</span>
+                  <Input
+                    type="number"
+                    value={editingRange.range.max}
+                    onChange={(e) => setEditingRange(prev => prev ? {
+                      ...prev,
+                      range: { ...prev.range, max: parseInt(e.target.value) || 0 }
+                    } : null)}
+                    placeholder="최대"
+                    min="0"
+                    max="100"
+                    className="w-20"
+                  />
+                  <span className="text-gray-500">점</span>
+                </div>
+              </div>
+
+              {/* 환산 점수 */}
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">환산 점수</Label>
+                <div className="flex items-center space-x-2">
+                  <Input
+                    type="number"
+                    value={editingRange.range.converted}
+                    onChange={(e) => setEditingRange(prev => prev ? {
+                      ...prev,
+                      range: { ...prev.range, converted: parseInt(e.target.value) || 0 }
+                    } : null)}
+                    placeholder="환산 점수"
+                    min="0"
+                    max="100"
+                    className="w-24"
+                  />
+                  <span className="text-gray-500">점으로 환산</span>
+                </div>
+              </div>
+
+              {/* 미리보기 */}
+              <div className="p-3 bg-gray-50 rounded-lg">
+                <div className="text-sm text-gray-600">미리보기:</div>
+                <div className="text-sm font-medium">
+                  {editingRange.range.label} → {editingRange.range.converted}점
+                </div>
+              </div>
+            </div>
+
+            <div className="flex justify-end space-x-3 pt-4 border-t">
+              <Button variant="outline" onClick={handleCancelRange}>
+                취소
+              </Button>
+              <Button onClick={handleSaveRange} className="bg-blue-600 hover:bg-blue-700">
+                저장
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
     </Dialog>
   );
 }

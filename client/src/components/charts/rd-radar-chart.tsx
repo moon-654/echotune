@@ -33,15 +33,68 @@ const RdRadarChart: React.FC<RdRadarChartProps> = ({
   showLegend = true,
   showTooltip = true
 }) => {
-  // 데이터 변환
+  // 6대 역량 점수 환산 기준
+  const scoringRanges = {
+    technical_competency: [
+      { min: 80, max: 100, converted: 100 },
+      { min: 60, max: 79, converted: 80 },
+      { min: 40, max: 59, converted: 60 },
+      { min: 0, max: 39, converted: 40 }
+    ],
+    project_experience: [
+      { min: 30, max: 100, converted: 100 },
+      { min: 20, max: 29, converted: 80 },
+      { min: 10, max: 19, converted: 60 },
+      { min: 0, max: 9, converted: 40 }
+    ],
+    rd_achievement: [
+      { min: 40, max: 100, converted: 100 },
+      { min: 25, max: 39, converted: 80 },
+      { min: 10, max: 24, converted: 60 },
+      { min: 0, max: 9, converted: 40 }
+    ],
+    global_competency: [
+      { min: 10, max: 10, converted: 100 },
+      { min: 7, max: 8, converted: 80 },
+      { min: 4, max: 6, converted: 60 },
+      { min: 0, max: 2, converted: 40 }
+    ],
+    knowledge_sharing: [
+      { min: 15, max: 100, converted: 100 },
+      { min: 10, max: 14, converted: 80 },
+      { min: 5, max: 9, converted: 60 },
+      { min: 1, max: 4, converted: 40 }
+    ],
+    innovation_proposal: [
+      { min: 60, max: 100, converted: 100 },
+      { min: 30, max: 59, converted: 80 },
+      { min: 5, max: 29, converted: 60 },
+      { min: 0, max: 4, converted: 40 }
+    ]
+  };
+
+  // 점수 환산 함수
+  const convertScore = (category: string, rawScore: number): number => {
+    const ranges = scoringRanges[category as keyof typeof scoringRanges];
+    if (!ranges) return rawScore;
+    
+    for (const range of ranges) {
+      if (rawScore >= range.min && rawScore <= range.max) {
+        return range.converted;
+      }
+    }
+    return rawScore;
+  };
+
+  // 데이터 변환 (점수 환산 적용)
   const chartData = data.map(item => ({
     name: item.employee.name,
-    '전문 기술 역량': item.scores.technicalCompetency,
-    '프로젝트 수행 경험': item.scores.projectExperience,
-    '연구개발 성과': item.scores.rdAchievement,
-    '글로벌 역량': item.scores.globalCompetency,
-    '기술 확산 및 자기계발': item.scores.knowledgeSharing,
-    '업무개선 및 혁신 제안': item.scores.innovationProposal,
+    '전문 기술 역량': convertScore('technical_competency', item.scores.technicalCompetency),
+    '프로젝트 수행 경험': convertScore('project_experience', item.scores.projectExperience),
+    '연구개발 성과': convertScore('rd_achievement', item.scores.rdAchievement),
+    '글로벌 역량': convertScore('global_competency', item.scores.globalCompetency),
+    '기술 확산 및 자기계발': convertScore('knowledge_sharing', item.scores.knowledgeSharing),
+    '업무개선 및 혁신 제안': convertScore('innovation_proposal', item.scores.innovationProposal),
     totalScore: item.totalScore
   }));
 

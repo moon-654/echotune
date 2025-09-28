@@ -177,7 +177,8 @@ export class DepartmentTeamManager {
       
       const data = await response.json();
       console.log('✅ 부서 목록 데이터:', data);
-      return data;
+      // 배열이 아닌 경우 빈 배열 반환
+      return Array.isArray(data) ? data : [];
     } catch (error) {
       console.error('❌ 부서 목록 조회 실패:', error);
       console.log('🔄 기본 부서 데이터 사용');
@@ -200,7 +201,8 @@ export class DepartmentTeamManager {
       
       const data = await response.json();
       console.log('✅ 팀 목록 데이터:', data);
-      return data;
+      // 배열이 아닌 경우 빈 배열 반환
+      return Array.isArray(data) ? data : [];
     } catch (error) {
       console.error('❌ 팀 목록 조회 실패:', error);
       console.log('🔄 기본 팀 데이터 사용');

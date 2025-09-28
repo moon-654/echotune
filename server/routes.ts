@@ -3,6 +3,8 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import multer from "multer";
 import * as XLSX from "xlsx";
+import fs from "fs";
+import path from "path";
 import { 
   insertEmployeeSchema, 
   insertTrainingHistorySchema,
@@ -991,8 +993,6 @@ app.put("/api/employees/:id", async (req, res) => {
       console.log('🔍 R&D 역량평가 기준 조회 요청');
       
       // 파일에서 기준 조회
-      const fs = require('fs');
-      const path = require('path');
       const criteriaPath = path.join(__dirname, '..', 'data', 'rd-evaluation-criteria.json');
       
       let criteria;
@@ -1143,8 +1143,6 @@ app.put("/api/employees/:id", async (req, res) => {
       console.log('🔧 R&D 역량평가 기준 저장 요청:', { criteria, updateEmployeeForms });
       
       // 1. R&D 역량평가 기준을 파일에 저장
-      const fs = require('fs');
-      const path = require('path');
       const criteriaPath = path.join(__dirname, '..', 'data', 'rd-evaluation-criteria.json');
       
       // 디렉토리가 없으면 생성
@@ -1291,8 +1289,6 @@ app.put("/api/employees/:id", async (req, res) => {
       console.log('🔍 부서 목록 조회 요청');
       
       // data.json에서 부서 데이터 로드
-      const fs = require('fs');
-      const path = require('path');
       const dataPath = path.join(process.cwd(), 'data.json');
       
       let departments = [];
@@ -1315,8 +1311,6 @@ app.put("/api/employees/:id", async (req, res) => {
       const { code, name } = req.body;
       console.log('🔧 부서 추가 요청:', { code, name });
       
-      const fs = require('fs');
-      const path = require('path');
       const dataPath = path.join(process.cwd(), 'data.json');
       
       let data = {};
@@ -1361,8 +1355,6 @@ app.put("/api/employees/:id", async (req, res) => {
       const { name } = req.body;
       console.log('🔧 부서 수정 요청:', { code, name });
       
-      const fs = require('fs');
-      const path = require('path');
       const dataPath = path.join(process.cwd(), 'data.json');
       
       let data = {};
@@ -1402,8 +1394,6 @@ app.put("/api/employees/:id", async (req, res) => {
       const { code } = req.params;
       console.log('🔧 부서 삭제 요청:', code);
       
-      const fs = require('fs');
-      const path = require('path');
       const dataPath = path.join(process.cwd(), 'data.json');
       
       let data = {};
@@ -1445,8 +1435,6 @@ app.put("/api/employees/:id", async (req, res) => {
       console.log('🔍 팀 목록 조회 요청:', { departmentCode });
       
       // data.json에서 팀 데이터 로드
-      const fs = require('fs');
-      const path = require('path');
       const dataPath = path.join(process.cwd(), 'data.json');
       
       let teams = [];
@@ -1474,8 +1462,6 @@ app.put("/api/employees/:id", async (req, res) => {
       const { code, name, departmentCode } = req.body;
       console.log('🔧 팀 추가 요청:', { code, name, departmentCode });
       
-      const fs = require('fs');
-      const path = require('path');
       const dataPath = path.join(process.cwd(), 'data.json');
       
       let data = {};
@@ -1521,8 +1507,6 @@ app.put("/api/employees/:id", async (req, res) => {
       const { name, departmentCode } = req.body;
       console.log('🔧 팀 수정 요청:', { code, name, departmentCode });
       
-      const fs = require('fs');
-      const path = require('path');
       const dataPath = path.join(process.cwd(), 'data.json');
       
       let data = {};
@@ -1563,8 +1547,6 @@ app.put("/api/employees/:id", async (req, res) => {
       const { code } = req.params;
       console.log('🔧 팀 삭제 요청:', code);
       
-      const fs = require('fs');
-      const path = require('path');
       const dataPath = path.join(process.cwd(), 'data.json');
       
       let data = {};
@@ -1602,15 +1584,22 @@ app.put("/api/employees/:id", async (req, res) => {
       console.log('🔍 제안제도 조회 요청:', { employeeId });
       
       // data.json에서 제안제도 데이터 로드
-      const fs = require('fs');
-      const path = require('path');
       const dataPath = path.join(process.cwd(), 'data.json');
       
       let proposals = [];
       if (fs.existsSync(dataPath)) {
         const fileContent = fs.readFileSync(dataPath, 'utf8');
         const data = JSON.parse(fileContent);
-        proposals = data.proposals || [];
+        
+        // proposals가 객체인 경우 배열로 변환
+        if (data.proposals) {
+          if (Array.isArray(data.proposals)) {
+            proposals = data.proposals;
+          } else {
+            // 객체인 경우 배열로 변환
+            proposals = Object.values(data.proposals);
+          }
+        }
         
         // employeeId가 있으면 필터링
         if (employeeId) {
@@ -1629,10 +1618,10 @@ app.put("/api/employees/:id", async (req, res) => {
   app.post("/api/proposals", async (req, res) => {
     try {
       const proposalData = req.body;
-      console.log('🔧 제안제도 저장 요청:', proposalData);
+      console.log('🔧 제안제도 저장 요청:', JSON.stringify(proposalData, null, 2));
+      console.log('🔧 요청 헤더:', req.headers);
+      console.log('🔧 Content-Type:', req.headers['content-type']);
       
-      const fs = require('fs');
-      const path = require('path');
       const dataPath = path.join(process.cwd(), 'data.json');
       
       let data = {};
@@ -1643,7 +1632,7 @@ app.put("/api/employees/:id", async (req, res) => {
       
       // 제안제도 데이터 추가
       if (!data.proposals) {
-        data.proposals = [];
+        data.proposals = {};
       }
       
       // ID 생성
@@ -1655,16 +1644,22 @@ app.put("/api/employees/:id", async (req, res) => {
         updatedAt: new Date().toISOString()
       };
       
-      data.proposals.push(newProposal);
+      data.proposals[newId] = newProposal;
       
       // 파일 저장
       fs.writeFileSync(dataPath, JSON.stringify(data, null, 2));
       console.log('✅ 제안제도 저장 완료:', newId);
+      console.log('✅ 저장된 제안제도 데이터:', JSON.stringify(newProposal, null, 2));
       
       res.json({ success: true, id: newId, data: newProposal });
     } catch (error) {
-      console.error("제안제도 저장 오류:", error);
-      res.status(500).json({ error: "제안제도를 저장할 수 없습니다." });
+      console.error("❌ 제안제도 저장 오류:", error);
+      console.error("❌ 오류 스택:", error.stack);
+      console.error("❌ 오류 메시지:", error.message);
+      res.status(500).json({ 
+        error: "제안제도를 저장할 수 없습니다.", 
+        details: error.message 
+      });
     }
   });
 
@@ -2628,8 +2623,6 @@ app.put("/api/employees/:id", async (req, res) => {
       console.log('🔍 R&D 역량평가 기준 조회 요청 (routes.ts)');
       
       // data.json에서 기준 조회
-      const fs = require('fs');
-      const path = require('path');
       
       // 프로젝트 루트 기준으로 경로 설정
       const dataPath = path.join(process.cwd(), 'data.json');
@@ -2716,6 +2709,29 @@ app.put("/api/employees/:id", async (req, res) => {
     }
   });
 
+  // R&D 역량평가 기준 조회
+  app.get("/api/rd-evaluations/criteria", async (req, res) => {
+    try {
+      // 프로젝트 루트 기준으로 경로 설정
+      const dataPath = path.join(process.cwd(), 'data.json');
+      
+      // 기존 data.json 로드
+      let data = {};
+      if (fs.existsSync(dataPath)) {
+        const fileContent = fs.readFileSync(dataPath, 'utf8');
+        data = JSON.parse(fileContent);
+      }
+      
+      res.json({
+        success: true,
+        rdEvaluationCriteria: data.rdEvaluationCriteria || null
+      });
+    } catch (error) {
+      console.error("평가 기준 조회 오류:", error);
+      res.status(500).json({ error: "평가 기준을 불러올 수 없습니다." });
+    }
+  });
+
   // R&D 역량평가 기준 저장
   app.put("/api/rd-evaluations/criteria", async (req, res) => {
     try {
@@ -2724,8 +2740,6 @@ app.put("/api/employees/:id", async (req, res) => {
       console.log('🔧 R&D 역량평가 기준 저장 요청 (routes.ts):', { criteria, updateEmployeeForms });
       
       // data.json에 기준 저장
-      const fs = require('fs');
-      const path = require('path');
       
       // 프로젝트 루트 기준으로 경로 설정
       const dataPath = path.join(process.cwd(), 'data.json');
@@ -2761,6 +2775,24 @@ app.put("/api/employees/:id", async (req, res) => {
 
   // R&D 역량평가 라우트 설정
   setupRdEvaluationRoutes(app);
+
+  // R&D 역량평가 테스트 API
+  app.get("/api/rd-evaluations/test/:employeeId", async (req, res) => {
+    try {
+      const { employeeId } = req.params;
+      console.log(`🔍 R&D 역량평가 테스트 시작: ${employeeId}`);
+      
+      // 자동 평가 계산
+      const { calculateAutoRdEvaluation } = await import("./rd-evaluation-auto");
+      const result = await calculateAutoRdEvaluation(employeeId);
+      
+      console.log(`✅ R&D 역량평가 결과:`, result);
+      res.json(result);
+    } catch (error) {
+      console.error("❌ R&D 역량평가 테스트 오류:", error);
+      res.status(500).json({ error: "R&D 역량평가 테스트 실패", details: error.message });
+    }
+  });
 
   const httpServer = createServer(app);
   return httpServer;
