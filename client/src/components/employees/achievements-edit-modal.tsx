@@ -1,17 +1,14 @@
-import { useState, useEffect } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
+import React, { useState, useEffect } from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { DatePicker } from "@/components/ui/date-picker";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, Plus, Trash2 } from "lucide-react";
-import { format } from "date-fns";
-import { cn } from "@/lib/utils";
+import { Badge } from "@/components/ui/badge";
+import { Loader2, Plus, Trash2, Edit, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import type { Patent, Publication, InsertPatent, InsertPublication } from "@shared/schema";
 
 interface AchievementsEditModalProps {
   employeeId: string;
@@ -19,284 +16,215 @@ interface AchievementsEditModalProps {
   onClose: () => void;
 }
 
-interface PatentFormData {
-  title: string;
-  status: 'pending' | 'granted' | 'rejected';
-  applicationDate?: Date;
-  grantDate?: Date;
-  applicationNumber?: string;
-  patentNumber?: string;
-  inventors?: string;
-  description?: string;
-}
-
-interface PublicationFormData {
-  title: string;
-  authors: string;
-  type: 'journal' | 'conference' | 'book' | 'other';
-  journal?: string;
-  conference?: string;
-  publicationDate?: Date;
-  volume?: string;
-  issue?: string;
-  pages?: string;
-  doi?: string;
-  impactFactor?: number;
-  description?: string;
-}
-
 export default function AchievementsEditModal({ employeeId, isOpen, onClose }: AchievementsEditModalProps) {
   const { toast } = useToast();
   
-  const [patents, setPatents] = useState<PatentFormData[]>([]);
-  const [publications, setPublications] = useState<PublicationFormData[]>([]);
-  const [newPatent, setNewPatent] = useState<PatentFormData>({
-    title: '',
-    status: 'pending'
-  });
-  const [newPublication, setNewPublication] = useState<PublicationFormData>({
-    title: '',
-    authors: '',
-    type: 'journal'
-  });
+  const [patents, setPatents] = useState<any[]>([]);
+  const [publications, setPublications] = useState<any[]>([]);
+  const [awards, setAwards] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [rdEvaluationCriteria, setRdEvaluationCriteria] = useState<any>(null);
-  const [patentStatusOptions, setPatentStatusOptions] = useState<Array<{ value: string; label: string; points?: number }>>([
-    { value: 'granted', label: '등록', points: 20 },
-    { value: 'pending', label: '출원', points: 5 }
-  ]);
-  const [publicationTypeOptions, setPublicationTypeOptions] = useState<Array<{ value: string; label: string; points?: number }>>([
-    { value: 'sci', label: 'SCI(E)급', points: 25 },
-    { value: 'domestic', label: '국내 학술지', points: 10 }
-  ]);
+  const [categories, setCategories] = useState<any>({});
+  const [employeeInfo, setEmployeeInfo] = useState<any>(null);
+  
+  // 검색 관련 상태
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [showSearchResults, setShowSearchResults] = useState(false);
+  
+  // 폼 데이터
+  const [formData, setFormData] = useState({
+    patent: {
+    title: '',
+      patentNumber: '',
+      applicationDate: '',
+      registrationDate: '',
+      status: 'pending',
+      inventors: [] as string[],
+      description: '',
+      category: ''
+    },
+    publication: {
+    title: '',
+      authors: [] as string[],
+      journal: '',
+      publicationDate: '',
+      doi: '',
+      impactFactor: '',
+      level: 'sci',
+      description: '',
+      category: ''
+    },
+    award: {
+      title: '',
+      organization: '',
+      awardDate: '',
+      level: '사내',
+      certificateUrl: '',
+      teamMembers: [] as string[],
+      description: '',
+      category: ''
+    }
+  });
 
-  // R&D 평가 기준 로드
+  // 카테고리 로드
   useEffect(() => {
-    if (!isOpen) return;
-    const loadRdCriteria = async () => {
-      try {
-        const res = await fetch('/api/rd-evaluations/criteria');
-        if (!res.ok) return;
-        const json = await res.json();
-        const criteria = json.criteria || json.rdEvaluationCriteria || {};
-        const items = criteria.competencyItems || criteria;
-        const rdAchievementBlock = items.rd_achievement || items.rdAchievement || {};
-        
-        // 특허 상태 옵션 설정
-        const patentStatuses = rdAchievementBlock.patents || {};
-        const patentOptions = Object.keys(patentStatuses).map(key => ({
-          value: key === '등록' ? 'granted' : 'pending',
-          label: key,
-          points: patentStatuses[key]
-        }));
-        if (patentOptions.length > 0) {
-          setPatentStatusOptions(patentOptions);
-        }
-        
-        // 논문 유형 옵션 설정
-        const publicationTypes = rdAchievementBlock.publications || {};
-        const publicationOptions = Object.keys(publicationTypes).map(key => ({
-          value: key.includes('SCI') ? 'sci' : 'domestic',
-          label: key,
-          points: publicationTypes[key]
-        }));
-        if (publicationOptions.length > 0) {
-          setPublicationTypeOptions(publicationOptions);
-        }
-        
-        setRdEvaluationCriteria(criteria);
-      } catch (e) {
-        // 무시: 폴백 옵션 사용
+    if (isOpen) {
+      loadCategories();
+      loadEmployeeInfo();
+      loadAchievements();
+    }
+  }, [isOpen, employeeId]);
+
+  // 직원 정보 로드
+  const loadEmployeeInfo = async () => {
+    try {
+      const response = await fetch(`/api/employees/${employeeId}`);
+      if (response.ok) {
+        const data = await response.json();
+        setEmployeeInfo(data);
       }
-    };
-    loadRdCriteria();
-  }, [isOpen]);
+    } catch (error) {
+      console.error('직원 정보 로드 오류:', error);
+    }
+  };
 
-  // 기존 성과 데이터 로드
-  useEffect(() => {
-    if (!isOpen || !employeeId) return;
+  // 직원 검색 함수
+  const searchEmployees = async (query: string) => {
+    if (!query.trim()) {
+      setSearchResults([]);
+      setShowSearchResults(false);
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/employees/search?q=${encodeURIComponent(query)}`);
+      if (response.ok) {
+        const data = await response.json();
+        setSearchResults(data);
+        setShowSearchResults(true);
+      }
+    } catch (error) {
+      console.error('직원 검색 오류:', error);
+    }
+  };
+
+  const loadCategories = async () => {
+    try {
+      const response = await fetch('/api/achievements/categories');
+      if (response.ok) {
+        const data = await response.json();
+        setCategories(data);
+      }
+    } catch (error) {
+      console.error('카테고리 로드 오류:', error);
+    }
+  };
 
     const loadAchievements = async () => {
       setIsLoading(true);
       try {
-        
-        const [patentsResponse, publicationsResponse] = await Promise.all([
+      const [patentsResponse, publicationsResponse, awardsResponse] = await Promise.all([
           fetch(`/api/patents?employeeId=${employeeId}`),
-          fetch(`/api/publications?employeeId=${employeeId}`)
+        fetch(`/api/publications?employeeId=${employeeId}`),
+        fetch(`/api/awards?employeeId=${employeeId}`)
         ]);
 
         if (patentsResponse.ok) {
           const patentsData = await patentsResponse.json();
-          const formattedPatents = patentsData.map((patent: Patent) => ({
-            title: patent.title,
-            status: patent.status as 'pending' | 'granted' | 'rejected',
-            applicationDate: patent.applicationDate ? new Date(patent.applicationDate) : undefined,
-            grantDate: patent.grantDate ? new Date(patent.grantDate) : undefined,
-            applicationNumber: patent.applicationNumber || '',
-            patentNumber: patent.patentNumber || '',
-            inventors: patent.inventors || '',
-            description: patent.description || ''
-          }));
-          setPatents(formattedPatents);
-        } else {
-          setPatents([]);
+        setPatents(patentsData);
         }
 
         if (publicationsResponse.ok) {
           const publicationsData = await publicationsResponse.json();
-          const formattedPublications = publicationsData.map((publication: Publication) => ({
-            title: publication.title,
-            authors: publication.authors,
-            type: publication.type as 'journal' | 'conference' | 'book' | 'other',
-            journal: publication.journal || '',
-            conference: publication.conference || '',
-            publicationDate: publication.publicationDate ? new Date(publication.publicationDate) : undefined,
-            volume: publication.volume || '',
-            issue: publication.issue || '',
-            pages: publication.pages || '',
-            doi: publication.doi || '',
-            impactFactor: publication.impactFactor || 0,
-            description: publication.description || ''
-          }));
-          setPublications(formattedPublications);
-        } else {
-          setPublications([]);
+        setPublications(publicationsData);
+      }
+
+      if (awardsResponse.ok) {
+        const awardsData = await awardsResponse.json();
+        setAwards(awardsData);
         }
       } catch (error) {
-        console.error('🔍 성과 수정 모달 - 성과 데이터 로드 오류:', error);
-        setPatents([]);
-        setPublications([]);
+      console.error('성과 데이터 로드 오류:', error);
       } finally {
         setIsLoading(false);
       }
     };
 
-    loadAchievements();
-  }, [isOpen, employeeId]);
-
-  const addNewPatent = () => {
-    if (newPatent.title.trim()) {
-      setPatents([...patents, { ...newPatent }]);
-      setNewPatent({
-        title: '',
-        status: 'pending'
-      });
-    }
-  };
-
-  const addNewPublication = () => {
-    if (newPublication.title.trim()) {
-      setPublications([...publications, { ...newPublication }]);
-      setNewPublication({
-        title: '',
-        authors: '',
-        type: 'journal'
-      });
-    }
-  };
-
-  const removePatent = (index: number) => {
-    setPatents(patents.filter((_, i) => i !== index));
-  };
-
-  const removePublication = (index: number) => {
-    setPublications(publications.filter((_, i) => i !== index));
-  };
-
-  const updatePatent = (index: number, field: keyof PatentFormData, value: any) => {
-    const updatedPatents = [...patents];
-    updatedPatents[index] = { ...updatedPatents[index], [field]: value };
-    setPatents(updatedPatents);
-  };
-
-  const updatePublication = (index: number, field: keyof PublicationFormData, value: any) => {
-    const updatedPublications = [...publications];
-    updatedPublications[index] = { ...updatedPublications[index], [field]: value };
-    setPublications(updatedPublications);
-  };
-
-  const handleSave = async () => {
-    setIsSaving(true);
+  const handleDelete = async (type: string, id: string) => {
     try {
-      
-      // 기존 특허 삭제
-      const deletePatentsResponse = await fetch(`/api/patents?employeeId=${employeeId}`, {
+      const response = await fetch(`/api/${type}s/${id}`, {
         method: 'DELETE'
       });
 
-      // 기존 논문 삭제
-      const deletePublicationsResponse = await fetch(`/api/publications?employeeId=${employeeId}`, {
-        method: 'DELETE'
-      });
-
-      // 새 특허들 저장
-      for (const patent of patents) {
-        const patentData: InsertPatent = {
-          employeeId,
-          title: patent.title,
-          status: patent.status,
-          applicationDate: patent.applicationDate?.toISOString(),
-          grantDate: patent.grantDate?.toISOString(),
-          applicationNumber: patent.applicationNumber,
-          patentNumber: patent.patentNumber,
-          inventors: patent.inventors,
-          description: patent.description
-        };
-
-        
-        const response = await fetch('/api/patents', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(patentData)
+      if (response.ok) {
+        toast({
+          title: "성공",
+          description: "삭제되었습니다.",
         });
-
-        if (!response.ok) {
-          throw new Error(`Failed to save patent: ${patent.title}`);
-        }
+        loadAchievements();
+      } else {
+        throw new Error('삭제 실패');
       }
-
-      // 새 논문들 저장
-      for (const publication of publications) {
-        const publicationData: InsertPublication = {
-          employeeId,
-          title: publication.title,
-          authors: publication.authors,
-          type: publication.type,
-          journal: publication.journal,
-          conference: publication.conference,
-          publicationDate: publication.publicationDate?.toISOString(),
-          volume: publication.volume,
-          issue: publication.issue,
-          pages: publication.pages,
-          doi: publication.doi,
-          impactFactor: publication.impactFactor,
-          description: publication.description
-        };
-
-        
-        const response = await fetch('/api/publications', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(publicationData)
-        });
-
-        if (!response.ok) {
-          throw new Error(`Failed to save publication: ${publication.title}`);
-        }
-      }
-
-      toast({
-        title: "성공",
-        description: "성과 정보가 저장되었습니다.",
-      });
-      
-      onClose();
     } catch (error) {
-      console.error('🔍 성과 저장 오류:', error);
+      console.error('삭제 오류:', error);
       toast({
         title: "오류",
-        description: "성과 정보 저장에 실패했습니다.",
+        description: "삭제에 실패했습니다.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleSave = async (type: string) => {
+    setIsSaving(true);
+    try {
+      const data = { ...formData[type as keyof typeof formData], employeeId };
+      const response = await fetch(`/api/${type}s`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
+
+      if (response.ok) {
+        toast({
+          title: "성공",
+          description: `${type === 'patent' ? '특허' : type === 'publication' ? '논문' : '수상'}이 등록되었습니다.`,
+        });
+        loadAchievements();
+        // 폼 초기화
+        setFormData(prev => ({
+          ...prev,
+          [type]: {
+            title: '',
+            patentNumber: '',
+            applicationDate: '',
+            registrationDate: '',
+            status: 'pending',
+            inventors: [],
+            description: '',
+            category: '',
+            authors: [],
+            journal: '',
+            doi: '',
+            impactFactor: '',
+            level: type === 'publication' ? 'sci' : '사내',
+            organization: '',
+            awardDate: '',
+            certificateUrl: '',
+            teamMembers: []
+          }
+        }));
+      } else {
+        throw new Error('저장 실패');
+      }
+    } catch (error) {
+      console.error('저장 오류:', error);
+      toast({
+        title: "오류",
+        description: "저장에 실패했습니다.",
         variant: "destructive",
       });
     } finally {
@@ -304,15 +232,87 @@ export default function AchievementsEditModal({ employeeId, isOpen, onClose }: A
     }
   };
 
+  const addInventor = (employee: any) => {
+    if (!formData.patent.inventors.includes(employee.name)) {
+      setFormData(prev => ({
+        ...prev,
+        patent: {
+          ...prev.patent,
+          inventors: [...prev.patent.inventors, employee.name]
+        }
+      }));
+    }
+    setSearchQuery('');
+    setShowSearchResults(false);
+  };
+
+  const removeInventor = (index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      patent: {
+        ...prev.patent,
+        inventors: prev.patent.inventors.filter((_, i) => i !== index)
+      }
+    }));
+  };
+
+  const addAuthor = (employee: any) => {
+    if (!formData.publication.authors.includes(employee.name)) {
+      setFormData(prev => ({
+        ...prev,
+        publication: {
+          ...prev.publication,
+          authors: [...prev.publication.authors, employee.name]
+        }
+      }));
+    }
+    setSearchQuery('');
+    setShowSearchResults(false);
+  };
+
+  const removeAuthor = (index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      publication: {
+        ...prev.publication,
+        authors: prev.publication.authors.filter((_, i) => i !== index)
+      }
+    }));
+  };
+
+  const addTeamMember = (employee: any) => {
+    if (!formData.award.teamMembers.includes(employee.name)) {
+      setFormData(prev => ({
+        ...prev,
+        award: {
+          ...prev.award,
+          teamMembers: [...prev.award.teamMembers, employee.name]
+        }
+      }));
+    }
+    setSearchQuery('');
+    setShowSearchResults(false);
+  };
+
+  const removeTeamMember = (index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      award: {
+        ...prev.award,
+        teamMembers: prev.award.teamMembers.filter((_, i) => i !== index)
+      }
+    }));
+  };
+
   if (!isOpen) return null;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-6xl max-h-[80vh] overflow-y-auto">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>성과 정보 수정</DialogTitle>
           <DialogDescription>
-            직원의 특허와 논문 정보를 추가, 수정 또는 삭제할 수 있습니다.
+            직원의 특허, 논문, 수상 정보를 추가, 수정 또는 삭제할 수 있습니다.
           </DialogDescription>
         </DialogHeader>
 
@@ -323,198 +323,226 @@ export default function AchievementsEditModal({ employeeId, isOpen, onClose }: A
           </div>
         ) : (
           <Tabs defaultValue="patents" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
+            <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="patents">특허</TabsTrigger>
               <TabsTrigger value="publications">논문</TabsTrigger>
+              <TabsTrigger value="awards">수상</TabsTrigger>
             </TabsList>
 
             {/* 특허 탭 */}
             <TabsContent value="patents" className="space-y-6">
-              {/* 새 특허 추가 */}
-              <div className="border rounded-lg p-4 space-y-4">
-                <h3 className="text-lg font-semibold">새 특허 추가</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="patentTitle">특허명</Label>
+              <div className="space-y-4">
+                <h3 className="text-lg font-medium">기본 정보</h3>
+                
+                <div className="space-y-2">
+                  <Label>직원 선택</Label>
                     <Input
-                      id="patentTitle"
-                      value={newPatent.title}
-                      onChange={(e) => setNewPatent({ ...newPatent, title: e.target.value })}
-                      placeholder="예: AI 기반 음성 인식 시스템"
+                    value={employeeInfo ? `${employeeInfo.name} (${employeeInfo.department})` : '직원 정보 로딩 중...'}
+                    disabled
+                    className="bg-gray-50"
                     />
                   </div>
-                  <div>
-                    <Label htmlFor="patentStatus">상태</Label>
+
+                <div className="space-y-2">
+                  <Label>특허명</Label>
+                  <Input
+                    value={formData.patent.title}
+                    onChange={(e) => setFormData(prev => ({
+                      ...prev,
+                      patent: { ...prev.patent, title: e.target.value }
+                    }))}
+                    placeholder="특허명을 입력하세요"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>특허번호</Label>
+                    <Input
+                      value={formData.patent.patentNumber}
+                      onChange={(e) => setFormData(prev => ({
+                        ...prev,
+                        patent: { ...prev.patent, patentNumber: e.target.value }
+                      }))}
+                      placeholder="예: 10-2023-0012345"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>상태</Label>
                     <Select
-                      value={newPatent.status}
-                      onValueChange={(value) => setNewPatent({ ...newPatent, status: value as any })}
+                      value={formData.patent.status} 
+                      onValueChange={(value) => setFormData(prev => ({
+                        ...prev,
+                        patent: { ...prev.patent, status: value }
+                      }))}
                     >
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        {patentStatusOptions.map((option) => (
-                          <SelectItem key={option.value} value={option.value}>
-                            {option.label} {option.points && `(${option.points}점`}
-                          </SelectItem>
-                        ))}
+                        <SelectItem value="pending">출원</SelectItem>
+                        <SelectItem value="registered">등록</SelectItem>
+                        <SelectItem value="rejected">반려</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
-                  <div>
-                    <Label htmlFor="applicationNumber">출원번호</Label>
-                    <Input
-                      id="applicationNumber"
-                      value={newPatent.applicationNumber}
-                      onChange={(e) => setNewPatent({ ...newPatent, applicationNumber: e.target.value })}
-                      placeholder="예: 10-2024-0001234"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="patentNumber">특허번호</Label>
-                    <Input
-                      id="patentNumber"
-                      value={newPatent.patentNumber}
-                      onChange={(e) => setNewPatent({ ...newPatent, patentNumber: e.target.value })}
-                      placeholder="예: 10-2024-0012345"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="applicationDate">출원일</Label>
-                    <DatePicker
-                      date={newPatent.applicationDate}
-                      onDateChange={(date) => setNewPatent({ ...newPatent, applicationDate: date })}
-                      placeholder="출원일 선택"
-                      className="w-full"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="grantDate">등록일</Label>
-                    <DatePicker
-                      date={newPatent.grantDate}
-                      onDateChange={(date) => setNewPatent({ ...newPatent, grantDate: date })}
-                      placeholder="등록일 선택"
-                      className="w-full"
-                    />
-                  </div>
                 </div>
-                <div>
-                  <Label htmlFor="inventors">발명자</Label>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>출원일</Label>
+                    <Input
+                      type="date"
+                      value={formData.patent.applicationDate}
+                      onChange={(e) => setFormData(prev => ({
+                        ...prev,
+                        patent: { ...prev.patent, applicationDate: e.target.value }
+                      }))}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>등록일</Label>
+                    <Input
+                      type="date"
+                      value={formData.patent.registrationDate}
+                      onChange={(e) => setFormData(prev => ({
+                        ...prev,
+                        patent: { ...prev.patent, registrationDate: e.target.value }
+                      }))}
+                    />
+                  </div>
+                  </div>
+                  </div>
+
+              {/* 발명자 정보 */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-medium">발명자 정보</h3>
+                
+                <div className="space-y-2">
+                  <Label>발명자 목록</Label>
+                  <div className="space-y-2">
+                    <div className="flex space-x-2">
                   <Input
-                    id="inventors"
-                    value={newPatent.inventors}
-                    onChange={(e) => setNewPatent({ ...newPatent, inventors: e.target.value })}
-                    placeholder="예: 김철수, 박영희"
-                  />
+                        value={searchQuery}
+                        onChange={(e) => {
+                          setSearchQuery(e.target.value);
+                          searchEmployees(e.target.value);
+                        }}
+                        placeholder="직원 이름 또는 사번으로 검색하세요"
+                        onFocus={() => {
+                          if (searchQuery.length >= 2) {
+                            setShowSearchResults(true);
+                          }
+                        }}
+                      />
+                      <Button 
+                        type="button" 
+                        size="sm"
+                        onClick={() => searchEmployees(searchQuery)}
+                      >
+                        <Plus className="w-4 h-4" />
+                      </Button>
                 </div>
-                <div>
-                  <Label htmlFor="patentDescription">설명</Label>
+                    
+                    {/* 검색 결과 */}
+                    {showSearchResults && searchResults.length > 0 && (
+                      <div className="border rounded-md bg-white shadow-lg max-h-40 overflow-y-auto z-10">
+                        {searchResults.map((employee) => (
+                          <div
+                            key={employee.id}
+                            className="p-2 hover:bg-gray-100 cursor-pointer border-b last:border-b-0"
+                            onClick={() => addInventor(employee)}
+                          >
+                            <div className="font-medium">{employee.name}</div>
+                            <div className="text-sm text-gray-500">
+                              {employee.department} • {employee.employeeNumber}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* 선택된 발명자 목록 */}
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {formData.patent.inventors.map((inventor, index) => (
+                      <Badge key={index} variant="secondary" className="flex items-center space-x-1">
+                        <span>{inventor}</span>
+                        <button
+                          type="button"
+                          onClick={() => removeInventor(index)}
+                          className="ml-1 hover:text-red-500"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* 상세 정보 */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-medium">상세 정보</h3>
+                
+                <div className="space-y-2">
+                  <Label>특허 설명</Label>
                   <Textarea
-                    id="patentDescription"
-                    value={newPatent.description}
-                    onChange={(e) => setNewPatent({ ...newPatent, description: e.target.value })}
-                    placeholder="특허에 대한 상세 설명"
-                    rows={3}
+                    value={formData.patent.description}
+                    onChange={(e) => setFormData(prev => ({
+                      ...prev,
+                      patent: { ...prev.patent, description: e.target.value }
+                    }))}
+                    placeholder="특허의 기술적 내용과 특징을 설명하세요"
+                    rows={4}
                   />
                 </div>
-                <Button onClick={addNewPatent} className="w-full">
-                  <Plus className="w-4 h-4 mr-2" />
-                  특허 추가
+              </div>
+
+              {/* 버튼 */}
+              <div className="flex justify-end space-x-2">
+                <Button variant="outline" onClick={onClose}>
+                  취소
+                </Button>
+                <Button 
+                  onClick={() => handleSave('patent')}
+                  disabled={isSaving}
+                >
+                  {isSaving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                  등록
                 </Button>
               </div>
 
               {/* 기존 특허 목록 */}
               <div className="space-y-4">
-                <h3 className="text-lg font-semibold">등록된 특허 ({patents.length}건)</h3>
+                <h3 className="text-lg font-medium">등록된 특허 ({patents.length}건)</h3>
                 {patents.length === 0 ? (
-                  <p className="text-muted-foreground text-center py-8">등록된 특허가 없습니다.</p>
+                  <p className="text-muted-foreground text-center py-4">등록된 특허가 없습니다.</p>
                 ) : (
-                  <div className="space-y-4">
+                  <div className="space-y-2">
                     {patents.map((patent, index) => (
-                      <div key={index} className="border rounded-lg p-4 space-y-4">
-                        <div className="flex justify-between items-start">
-                          <h4 className="font-medium">{patent.title}</h4>
+                      <div key={index} className="p-4 border rounded-lg">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="font-medium">{patent.title}</div>
+                            <div className="text-sm text-muted-foreground mt-1">
+                              {patent.patentNumber && `특허번호: ${patent.patentNumber}`}
+                            </div>
+                            <div className="text-sm text-muted-foreground">
+                              {patent.applicationDate && `출원일: ${patent.applicationDate}`}
+                            </div>
+                          </div>
+                          <div className="flex space-x-2">
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => removePatent(index)}
+                              onClick={() => handleDelete('patent', patent.id)}
                           >
                             <Trash2 className="w-4 h-4" />
                           </Button>
                         </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div>
-                            <Label>특허명</Label>
-                            <Input
-                              value={patent.title}
-                              onChange={(e) => updatePatent(index, 'title', e.target.value)}
-                            />
-                          </div>
-                          <div>
-                            <Label>상태</Label>
-                            <Select
-                              value={patent.status}
-                              onValueChange={(value) => updatePatent(index, 'status', value)}
-                            >
-                              <SelectTrigger>
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {patentStatusOptions.map((option) => (
-                                  <SelectItem key={option.value} value={option.value}>
-                                    {option.label} {option.points && `(${option.points}점`}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </div>
-                          <div>
-                            <Label>출원번호</Label>
-                            <Input
-                              value={patent.applicationNumber}
-                              onChange={(e) => updatePatent(index, 'applicationNumber', e.target.value)}
-                            />
-                          </div>
-                          <div>
-                            <Label>특허번호</Label>
-                            <Input
-                              value={patent.patentNumber}
-                              onChange={(e) => updatePatent(index, 'patentNumber', e.target.value)}
-                            />
-                          </div>
-                          <div>
-                            <Label>출원일</Label>
-                            <DatePicker
-                              date={patent.applicationDate}
-                              onDateChange={(date) => updatePatent(index, 'applicationDate', date)}
-                              placeholder="출원일 선택"
-                              className="w-full"
-                            />
-                          </div>
-                          <div>
-                            <Label>등록일</Label>
-                            <DatePicker
-                              date={patent.grantDate}
-                              onDateChange={(date) => updatePatent(index, 'grantDate', date)}
-                              placeholder="등록일 선택"
-                              className="w-full"
-                            />
-                          </div>
-                          <div className="md:col-span-2">
-                            <Label>발명자</Label>
-                            <Input
-                              value={patent.inventors}
-                              onChange={(e) => updatePatent(index, 'inventors', e.target.value)}
-                            />
-                          </div>
-                          <div className="md:col-span-2">
-                            <Label>설명</Label>
-                            <Textarea
-                              value={patent.description}
-                              onChange={(e) => updatePatent(index, 'description', e.target.value)}
-                              rows={3}
-                            />
-                          </div>
                         </div>
                       </div>
                     ))}
@@ -525,256 +553,451 @@ export default function AchievementsEditModal({ employeeId, isOpen, onClose }: A
 
             {/* 논문 탭 */}
             <TabsContent value="publications" className="space-y-6">
-              {/* 새 논문 추가 */}
-              <div className="border rounded-lg p-4 space-y-4">
-                <h3 className="text-lg font-semibold">새 논문 추가</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="publicationTitle">논문명</Label>
+              <div className="space-y-4">
+                <h3 className="text-lg font-medium">기본 정보</h3>
+                
+                <div className="space-y-2">
+                  <Label>직원 선택</Label>
                     <Input
-                      id="publicationTitle"
-                      value={newPublication.title}
-                      onChange={(e) => setNewPublication({ ...newPublication, title: e.target.value })}
-                      placeholder="예: Deep Learning을 활용한 음성 인식 정확도 향상"
+                    value={employeeInfo ? `${employeeInfo.name} (${employeeInfo.department})` : '직원 정보 로딩 중...'}
+                    disabled
+                    className="bg-gray-50"
                     />
                   </div>
-                  <div>
-                    <Label htmlFor="authors">저자</Label>
+
+                <div className="space-y-2">
+                  <Label>논문 제목</Label>
                     <Input
-                      id="authors"
-                      value={newPublication.authors}
-                      onChange={(e) => setNewPublication({ ...newPublication, authors: e.target.value })}
-                      placeholder="예: 김철수, 박영희"
+                    value={formData.publication.title}
+                    onChange={(e) => setFormData(prev => ({
+                      ...prev,
+                      publication: { ...prev.publication, title: e.target.value }
+                    }))}
+                    placeholder="논문 제목을 입력하세요"
                     />
                   </div>
-                  <div>
-                    <Label htmlFor="publicationType">유형</Label>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>학술지/학회명</Label>
+                    <Input
+                      value={formData.publication.journal}
+                      onChange={(e) => setFormData(prev => ({
+                        ...prev,
+                        publication: { ...prev.publication, journal: e.target.value }
+                      }))}
+                      placeholder="예: Nature, IEEE Transactions"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>논문 등급</Label>
                     <Select
-                      value={newPublication.type}
-                      onValueChange={(value) => setNewPublication({ ...newPublication, type: value as any })}
+                      value={formData.publication.level} 
+                      onValueChange={(value) => setFormData(prev => ({
+                        ...prev,
+                        publication: { ...prev.publication, level: value }
+                      }))}
                     >
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        {publicationTypeOptions.map((option) => (
-                          <SelectItem key={option.value} value={option.value}>
-                            {option.label} {option.points && `(${option.points}점`}
-                          </SelectItem>
-                        ))}
+                        <SelectItem value="sci">SCI(E)급</SelectItem>
+                        <SelectItem value="domestic">국내 학술지</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
-                  <div>
-                    <Label htmlFor="journal">저널명</Label>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>발표일</Label>
                     <Input
-                      id="journal"
-                      value={newPublication.journal}
-                      onChange={(e) => setNewPublication({ ...newPublication, journal: e.target.value })}
-                      placeholder="예: 한국정보과학회논문지"
+                      type="date"
+                      value={formData.publication.publicationDate}
+                      onChange={(e) => setFormData(prev => ({
+                        ...prev,
+                        publication: { ...prev.publication, publicationDate: e.target.value }
+                      }))}
                     />
                   </div>
-                  <div>
-                    <Label htmlFor="conference">학회명</Label>
+
+                  <div className="space-y-2">
+                    <Label>DOI</Label>
                     <Input
-                      id="conference"
-                      value={newPublication.conference}
-                      onChange={(e) => setNewPublication({ ...newPublication, conference: e.target.value })}
-                      placeholder="예: IEEE International Conference"
+                      value={formData.publication.doi}
+                      onChange={(e) => setFormData(prev => ({
+                        ...prev,
+                        publication: { ...prev.publication, doi: e.target.value }
+                      }))}
+                      placeholder="예: 10.1038/nature12345"
                     />
                   </div>
-                  <div>
-                    <Label htmlFor="publicationDate">발행일</Label>
-                    <DatePicker
-                      date={newPublication.publicationDate}
-                      onDateChange={(date) => setNewPublication({ ...newPublication, publicationDate: date })}
-                      placeholder="발행일 선택"
-                      className="w-full"
+                  </div>
+
+                <div className="space-y-2">
+                  <Label>Impact Factor</Label>
+                    <Input
+                    type="number"
+                    step="0.1"
+                    value={formData.publication.impactFactor}
+                    onChange={(e) => setFormData(prev => ({
+                      ...prev,
+                      publication: { ...prev.publication, impactFactor: e.target.value }
+                    }))}
+                    placeholder="예: 42.778"
                     />
                   </div>
-                  <div>
-                    <Label htmlFor="volume">권</Label>
-                    <Input
-                      id="volume"
-                      value={newPublication.volume}
-                      onChange={(e) => setNewPublication({ ...newPublication, volume: e.target.value })}
-                      placeholder="예: 51"
-                    />
                   </div>
-                  <div>
-                    <Label htmlFor="issue">호</Label>
+
+              {/* 저자 정보 */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-medium">저자 정보</h3>
+                
+                <div className="space-y-2">
+                  <Label>저자 목록</Label>
+                  <div className="space-y-2">
+                    <div className="flex space-x-2">
                     <Input
-                      id="issue"
-                      value={newPublication.issue}
-                      onChange={(e) => setNewPublication({ ...newPublication, issue: e.target.value })}
-                      placeholder="예: 3"
-                    />
+                        value={searchQuery}
+                        onChange={(e) => {
+                          setSearchQuery(e.target.value);
+                          searchEmployees(e.target.value);
+                        }}
+                        placeholder="직원 이름 또는 사번으로 검색하세요"
+                        onFocus={() => {
+                          if (searchQuery.length >= 2) {
+                            setShowSearchResults(true);
+                          }
+                        }}
+                      />
+                      <Button 
+                        type="button" 
+                        size="sm"
+                        onClick={() => searchEmployees(searchQuery)}
+                      >
+                        <Plus className="w-4 h-4" />
+                      </Button>
                   </div>
-                  <div>
-                    <Label htmlFor="pages">페이지</Label>
-                    <Input
-                      id="pages"
-                      value={newPublication.pages}
-                      onChange={(e) => setNewPublication({ ...newPublication, pages: e.target.value })}
-                      placeholder="예: 123-130"
-                    />
+                    
+                    {/* 검색 결과 */}
+                    {showSearchResults && searchResults.length > 0 && (
+                      <div className="border rounded-md bg-white shadow-lg max-h-40 overflow-y-auto z-10">
+                        {searchResults.map((employee) => (
+                          <div
+                            key={employee.id}
+                            className="p-2 hover:bg-gray-100 cursor-pointer border-b last:border-b-0"
+                            onClick={() => addAuthor(employee)}
+                          >
+                            <div className="font-medium">{employee.name}</div>
+                            <div className="text-sm text-gray-500">
+                              {employee.department} • {employee.employeeNumber}
                   </div>
-                  <div>
-                    <Label htmlFor="doi">DOI</Label>
-                    <Input
-                      id="doi"
-                      value={newPublication.doi}
-                      onChange={(e) => setNewPublication({ ...newPublication, doi: e.target.value })}
-                      placeholder="예: 10.1234/example"
-                    />
                   </div>
-                  <div>
-                    <Label htmlFor="impactFactor">임팩트 팩터</Label>
-                    <Input
-                      id="impactFactor"
-                      type="number"
-                      step="0.1"
-                      value={newPublication.impactFactor || ''}
-                      onChange={(e) => setNewPublication({ ...newPublication, impactFactor: parseFloat(e.target.value) || 0 })}
-                      placeholder="예: 2.5"
-                    />
+                        ))}
+                </div>
+                    )}
+                  </div>
+                  
+                  {/* 선택된 저자 목록 */}
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {formData.publication.authors.map((author, index) => (
+                      <Badge key={index} variant="secondary" className="flex items-center space-x-1">
+                        <span>{author}</span>
+                        <button
+                          type="button"
+                          onClick={() => removeAuthor(index)}
+                          className="ml-1 hover:text-red-500"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </Badge>
+                    ))}
                   </div>
                 </div>
-                <div>
-                  <Label htmlFor="publicationDescription">설명</Label>
+              </div>
+
+              {/* 상세 정보 */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-medium">상세 정보</h3>
+                
+                <div className="space-y-2">
+                  <Label>논문 요약</Label>
                   <Textarea
-                    id="publicationDescription"
-                    value={newPublication.description}
-                    onChange={(e) => setNewPublication({ ...newPublication, description: e.target.value })}
-                    placeholder="논문에 대한 상세 설명"
-                    rows={3}
+                    value={formData.publication.description}
+                    onChange={(e) => setFormData(prev => ({
+                      ...prev,
+                      publication: { ...prev.publication, description: e.target.value }
+                    }))}
+                    placeholder="논문의 주요 내용과 기여도를 설명하세요"
+                    rows={4}
                   />
                 </div>
-                <Button onClick={addNewPublication} className="w-full">
-                  <Plus className="w-4 h-4 mr-2" />
-                  논문 추가
+              </div>
+
+              {/* 버튼 */}
+              <div className="flex justify-end space-x-2">
+                <Button variant="outline" onClick={onClose}>
+                  취소
+                </Button>
+                <Button 
+                  onClick={() => handleSave('publication')}
+                  disabled={isSaving}
+                >
+                  {isSaving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                  등록
                 </Button>
               </div>
 
               {/* 기존 논문 목록 */}
               <div className="space-y-4">
-                <h3 className="text-lg font-semibold">등록된 논문 ({publications.length}편)</h3>
+                <h3 className="text-lg font-medium">등록된 논문 ({publications.length}편)</h3>
                 {publications.length === 0 ? (
-                  <p className="text-muted-foreground text-center py-8">등록된 논문이 없습니다.</p>
+                  <p className="text-muted-foreground text-center py-4">등록된 논문이 없습니다.</p>
                 ) : (
-                  <div className="space-y-4">
+                  <div className="space-y-2">
                     {publications.map((publication, index) => (
-                      <div key={index} className="border rounded-lg p-4 space-y-4">
-                        <div className="flex justify-between items-start">
-                          <h4 className="font-medium">{publication.title}</h4>
+                      <div key={index} className="p-4 border rounded-lg">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="font-medium">{publication.title}</div>
+                            <div className="text-sm text-muted-foreground mt-1">
+                              {publication.journal && `학술지: ${publication.journal}`}
+                            </div>
+                            <div className="text-sm text-muted-foreground">
+                              {publication.publicationDate && `발표일: ${publication.publicationDate}`}
+                            </div>
+                          </div>
+                          <div className="flex space-x-2">
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => removePublication(index)}
+                              onClick={() => handleDelete('publication', publication.id)}
                           >
                             <Trash2 className="w-4 h-4" />
                           </Button>
                         </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div>
-                            <Label>논문명</Label>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </TabsContent>
+
+            {/* 수상 탭 */}
+            <TabsContent value="awards" className="space-y-6">
+              <div className="space-y-4">
+                <h3 className="text-lg font-medium">기본 정보</h3>
+                
+                <div className="space-y-2">
+                  <Label>직원 선택</Label>
                             <Input
-                              value={publication.title}
-                              onChange={(e) => updatePublication(index, 'title', e.target.value)}
+                    value={employeeInfo ? `${employeeInfo.name} (${employeeInfo.department})` : '직원 정보 로딩 중...'}
+                    disabled
+                    className="bg-gray-50"
                             />
                           </div>
-                          <div>
-                            <Label>저자</Label>
+
+                <div className="space-y-2">
+                  <Label>수상명</Label>
                             <Input
-                              value={publication.authors}
-                              onChange={(e) => updatePublication(index, 'authors', e.target.value)}
+                    value={formData.award.title}
+                    onChange={(e) => setFormData(prev => ({
+                      ...prev,
+                      award: { ...prev.award, title: e.target.value }
+                    }))}
+                    placeholder="수상명을 입력하세요"
                             />
                           </div>
-                          <div>
-                            <Label>유형</Label>
+
+                <div className="space-y-2">
+                  <Label>수여 기관</Label>
+                  <Input
+                    value={formData.award.organization}
+                    onChange={(e) => setFormData(prev => ({
+                      ...prev,
+                      award: { ...prev.award, organization: e.target.value }
+                    }))}
+                    placeholder="예: 한국과학기술원, IEEE"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>수상일</Label>
+                    <Input 
+                      type="date"
+                      value={formData.award.awardDate}
+                      onChange={(e) => setFormData(prev => ({
+                        ...prev,
+                        award: { ...prev.award, awardDate: e.target.value }
+                      }))}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>수상 등급</Label>
                             <Select
-                              value={publication.type}
-                              onValueChange={(value) => updatePublication(index, 'type', value)}
+                      value={formData.award.level} 
+                      onValueChange={(value) => setFormData(prev => ({
+                        ...prev,
+                        award: { ...prev.award, level: value }
+                      }))}
                             >
                               <SelectTrigger>
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent>
-                                {publicationTypeOptions.map((option) => (
-                                  <SelectItem key={option.value} value={option.value}>
-                                    {option.label} {option.points && `(${option.points}점`}
-                                  </SelectItem>
-                                ))}
+                        <SelectItem value="국제">국제</SelectItem>
+                        <SelectItem value="국가">국가</SelectItem>
+                        <SelectItem value="산업">산업</SelectItem>
+                        <SelectItem value="사내">사내</SelectItem>
                               </SelectContent>
                             </Select>
                           </div>
-                          <div>
-                            <Label>저널명</Label>
+                          </div>
+
+                <div className="space-y-2">
+                  <Label>수상증 URL</Label>
                             <Input
-                              value={publication.journal}
-                              onChange={(e) => updatePublication(index, 'journal', e.target.value)}
+                    value={formData.award.certificateUrl}
+                    onChange={(e) => setFormData(prev => ({
+                      ...prev,
+                      award: { ...prev.award, certificateUrl: e.target.value }
+                    }))}
+                    placeholder="수상증 이미지 또는 문서 URL"
                             />
                           </div>
-                          <div>
-                            <Label>학회명</Label>
+                          </div>
+
+              {/* 팀 멤버 정보 */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-medium">팀 멤버 정보</h3>
+                
+                <div className="space-y-2">
+                  <Label>팀 멤버 목록</Label>
+                  <div className="space-y-2">
+                    <div className="flex space-x-2">
                             <Input
-                              value={publication.conference}
-                              onChange={(e) => updatePublication(index, 'conference', e.target.value)}
-                            />
+                        value={searchQuery}
+                        onChange={(e) => {
+                          setSearchQuery(e.target.value);
+                          searchEmployees(e.target.value);
+                        }}
+                        placeholder="직원 이름 또는 사번으로 검색하세요"
+                        onFocus={() => {
+                          if (searchQuery.length >= 2) {
+                            setShowSearchResults(true);
+                          }
+                        }}
+                      />
+                      <Button 
+                        type="button" 
+                        size="sm"
+                        onClick={() => searchEmployees(searchQuery)}
+                      >
+                        <Plus className="w-4 h-4" />
+                      </Button>
                           </div>
-                          <div>
-                            <Label>발행일</Label>
-                            <DatePicker
-                              date={publication.publicationDate}
-                              onDateChange={(date) => updatePublication(index, 'publicationDate', date)}
-                              placeholder="발행일 선택"
-                              className="w-full"
-                            />
+                    
+                    {/* 검색 결과 */}
+                    {showSearchResults && searchResults.length > 0 && (
+                      <div className="border rounded-md bg-white shadow-lg max-h-40 overflow-y-auto z-10">
+                        {searchResults.map((employee) => (
+                          <div
+                            key={employee.id}
+                            className="p-2 hover:bg-gray-100 cursor-pointer border-b last:border-b-0"
+                            onClick={() => addTeamMember(employee)}
+                          >
+                            <div className="font-medium">{employee.name}</div>
+                            <div className="text-sm text-gray-500">
+                              {employee.department} • {employee.employeeNumber}
                           </div>
-                          <div>
-                            <Label>권</Label>
-                            <Input
-                              value={publication.volume}
-                              onChange={(e) => updatePublication(index, 'volume', e.target.value)}
-                            />
                           </div>
-                          <div>
-                            <Label>호</Label>
-                            <Input
-                              value={publication.issue}
-                              onChange={(e) => updatePublication(index, 'issue', e.target.value)}
-                            />
+                        ))}
                           </div>
-                          <div>
-                            <Label>페이지</Label>
-                            <Input
-                              value={publication.pages}
-                              onChange={(e) => updatePublication(index, 'pages', e.target.value)}
-                            />
+                    )}
                           </div>
-                          <div>
-                            <Label>DOI</Label>
-                            <Input
-                              value={publication.doi}
-                              onChange={(e) => updatePublication(index, 'doi', e.target.value)}
-                            />
-                          </div>
-                          <div>
-                            <Label>임팩트 팩터</Label>
-                            <Input
-                              type="number"
-                              step="0.1"
-                              value={publication.impactFactor || ''}
-                              onChange={(e) => updatePublication(index, 'impactFactor', parseFloat(e.target.value) || 0)}
-                            />
-                          </div>
-                          <div className="md:col-span-2">
-                            <Label>설명</Label>
+                  
+                  {/* 선택된 팀 멤버 목록 */}
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {formData.award.teamMembers.map((member, index) => (
+                      <Badge key={index} variant="secondary" className="flex items-center space-x-1">
+                        <span>{member}</span>
+                        <button
+                          type="button"
+                          onClick={() => removeTeamMember(index)}
+                          className="ml-1 hover:text-red-500"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* 상세 정보 */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-medium">상세 정보</h3>
+                
+                <div className="space-y-2">
+                  <Label>수상 내용</Label>
                             <Textarea
-                              value={publication.description}
-                              onChange={(e) => updatePublication(index, 'description', e.target.value)}
-                              rows={3}
-                            />
+                    value={formData.award.description}
+                    onChange={(e) => setFormData(prev => ({
+                      ...prev,
+                      award: { ...prev.award, description: e.target.value }
+                    }))}
+                    placeholder="수상 배경, 수상 이유, 기여도 등을 설명하세요"
+                    rows={4}
+                  />
+                </div>
+              </div>
+
+              {/* 버튼 */}
+              <div className="flex justify-end space-x-2">
+                <Button variant="outline" onClick={onClose}>
+                  취소
+                </Button>
+                <Button 
+                  onClick={() => handleSave('award')}
+                  disabled={isSaving}
+                >
+                  {isSaving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                  등록
+                </Button>
+              </div>
+
+              {/* 기존 수상 목록 */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-medium">등록된 수상 ({awards.length}건)</h3>
+                {awards.length === 0 ? (
+                  <p className="text-muted-foreground text-center py-4">등록된 수상이 없습니다.</p>
+                ) : (
+                  <div className="space-y-2">
+                    {awards.map((award, index) => (
+                      <div key={index} className="p-4 border rounded-lg">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="font-medium">{award.title}</div>
+                            <div className="text-sm text-muted-foreground mt-1">
+                              {award.organization && `수여기관: ${award.organization}`}
+                            </div>
+                            <div className="text-sm text-muted-foreground">
+                              {award.awardDate && `수상일: ${award.awardDate}`}
+                            </div>
+                          </div>
+                          <div className="flex space-x-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleDelete('award', award.id)}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
                           </div>
                         </div>
                       </div>
@@ -785,22 +1008,6 @@ export default function AchievementsEditModal({ employeeId, isOpen, onClose }: A
             </TabsContent>
           </Tabs>
         )}
-
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose}>
-            취소
-          </Button>
-          <Button onClick={handleSave} disabled={isSaving}>
-            {isSaving ? (
-              <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                저장 중...
-              </>
-            ) : (
-              '저장'
-            )}
-          </Button>
-        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

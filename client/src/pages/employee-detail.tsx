@@ -806,13 +806,12 @@ export default function EmployeeDetail({ employeeId: propEmployeeId }: EmployeeD
 
       {/* Tabs */}
       <Tabs key={employeeId} value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="grid w-full grid-cols-9">
+        <TabsList className="grid w-full grid-cols-8">
           <TabsTrigger value="overview">개요</TabsTrigger>
           <TabsTrigger value="skills">스킬</TabsTrigger>
           <TabsTrigger value="training">교육</TabsTrigger>
           <TabsTrigger value="projects">프로젝트</TabsTrigger>
           <TabsTrigger value="achievements">성과</TabsTrigger>
-          <TabsTrigger value="awards">수상</TabsTrigger>
           <TabsTrigger value="certifications">자격증</TabsTrigger>
           <TabsTrigger value="languages">어학능력</TabsTrigger>
           <TabsTrigger value="proposals">제안제도</TabsTrigger>
@@ -1229,58 +1228,57 @@ export default function EmployeeDetail({ employeeId: propEmployeeId }: EmployeeD
                 </div>
               </CardContent>
             </Card>
+
+            {/* 수상이력 */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Trophy className="w-5 h-5 mr-2" />
+                  수상이력
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {achievementsLoading ? (
+                    <p className="text-muted-foreground text-center py-4">수상 데이터 로딩 중...</p>
+                  ) : awards.length === 0 ? (
+                    <p className="text-muted-foreground text-center py-4">등록된 수상이 없습니다.</p>
+                  ) : (
+                    awards.map((award, index) => (
+                    <div key={index} className="p-4 border rounded-lg">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="font-medium">{award.title}</div>
+                          <div className="text-sm text-muted-foreground mt-1">
+                              {award.organization && `수여기관: ${award.organization}`}
+                          </div>
+                          <div className="text-sm text-muted-foreground">
+                              {award.awardDate && `수상일: ${award.awardDate}`}
+                          </div>
+                          {award.description && (
+                            <div className="text-sm text-muted-foreground mt-1">
+                              {award.description}
+                            </div>
+                          )}
+                        </div>
+                        <Badge 
+                          variant={award.level === 'international' ? 'default' : 
+                                  award.level === 'national' ? 'secondary' : 'outline'}
+                        >
+                          {award.level === 'international' ? '국제' : 
+                           award.level === 'national' ? '국가' : 
+                           award.level === 'company' ? '회사' : '부서'}
+                        </Badge>
+                      </div>
+                    </div>
+                    ))
+                  )}
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </TabsContent>
 
-        {/* Awards Tab */}
-        <TabsContent value="awards" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center">
-                <Trophy className="w-5 h-5 mr-2" />
-                수상이력
-              </CardTitle>
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={() => setIsAwardsModalOpen(true)}
-                >
-                  <Edit className="w-4 h-4 mr-2" />
-                  수상 이력 수정
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {awardsLoading ? (
-                  <p className="text-muted-foreground text-center py-8">수상 데이터 로딩 중...</p>
-                ) : awards.length === 0 ? (
-                  <p className="text-muted-foreground text-center py-8">등록된 수상이 없습니다.</p>
-                ) : (
-                  awards.map((award, index) => (
-                  <div key={index} className="p-4 border rounded-lg">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                          <div className="font-medium">{award.name}</div>
-                        <div className="text-sm text-muted-foreground mt-1">
-                            수여기관: {award.issuer}
-                        </div>
-                          <div className="text-sm text-muted-foreground">
-                            수상일: {award.awardDate}
-                          </div>
-                      </div>
-                      <div className="flex flex-col items-end space-y-2">
-                        <Badge variant="outline">{award.category}</Badge>
-                        </div>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
 
         {/* Certifications Tab */}
         <TabsContent value="certifications" className="space-y-4">

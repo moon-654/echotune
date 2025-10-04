@@ -98,15 +98,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // 직원 검색 API (이름으로 검색)
   app.get("/api/employees/search", async (req, res) => {
     try {
-      const { query } = req.query;
-      if (!query || typeof query !== 'string') {
+      const { q, query } = req.query;
+      const searchTerm = q || query;
+      if (!searchTerm || typeof searchTerm !== 'string') {
         return res.status(400).json({ error: "검색어가 필요합니다." });
       }
 
       const employees = await storage.getAllEmployees();
       const filteredEmployees = employees.filter(employee => 
-        employee.name.toLowerCase().includes(query.toLowerCase()) ||
-        employee.employeeNumber.includes(query)
+        employee.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        employee.employeeNumber.includes(searchTerm)
       );
 
       res.json(filteredEmployees);
