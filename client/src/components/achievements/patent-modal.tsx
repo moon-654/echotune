@@ -27,13 +27,18 @@ export default function PatentModal({ isOpen, onClose, onSuccess, patent }: Pate
     description: '',
     category: ''
   });
+  const [selectedEmployee, setSelectedEmployee] = useState<any>(null);
   const [employees, setEmployees] = useState<any[]>([]);
-  const [newInventor, setNewInventor] = useState('');
   const [loading, setLoading] = useState(false);
+  const [categories, setCategories] = useState<any>({});
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [showSearchResults, setShowSearchResults] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
       loadEmployees();
+      loadCategories();
       if (patent) {
         setFormData({
           employeeId: patent.employeeId || '',
@@ -74,6 +79,49 @@ export default function PatentModal({ isOpen, onClose, onSuccess, patent }: Pate
     }
   };
 
+  const loadCategories = async () => {
+    try {
+      const response = await fetch('/api/achievements/categories');
+      if (response.ok) {
+        const data = await response.json();
+        setCategories(data.categories);
+      }
+    } catch (error) {
+      console.error('카테고리 로드 오류:', error);
+    }
+  };
+
+  const searchEmployees = async (query: string) => {
+    if (query.length < 2) {
+      setSearchResults([]);
+      setShowSearchResults(false);
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/employees/search?query=${encodeURIComponent(query)}`);
+      if (response.ok) {
+        const data = await response.json();
+        setSearchResults(data);
+        setShowSearchResults(true);
+      }
+    } catch (error) {
+      console.error('직원 검색 오류:', error);
+    }
+  };
+
+  const addInventor = (employee: any) => {
+    const inventorName = `${employee.name} (${employee.department})`;
+    if (!formData.inventors.includes(inventorName)) {
+      setFormData(prev => ({
+        ...prev,
+        inventors: [...prev.inventors, inventorName]
+      }));
+    }
+    setSearchQuery('');
+    setShowSearchResults(false);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -103,15 +151,6 @@ export default function PatentModal({ isOpen, onClose, onSuccess, patent }: Pate
     }
   };
 
-  const addInventor = () => {
-    if (newInventor.trim() && !formData.inventors.includes(newInventor.trim())) {
-      setFormData(prev => ({
-        ...prev,
-        inventors: [...prev.inventors, newInventor.trim()]
-      }));
-      setNewInventor('');
-    }
-  };
 
   const removeInventor = (index: number) => {
     setFormData(prev => ({
@@ -132,31 +171,45 @@ export default function PatentModal({ isOpen, onClose, onSuccess, patent }: Pate
           <div className="space-y-4">
             <h3 className="text-lg font-medium">기본 정보</h3>
             
-            <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="employeeId">직원 선택</Label>
               <div className="space-y-2">
-                <Label htmlFor="employeeId">직원 선택</Label>
-                <Select value={formData.employeeId} onValueChange={(value) => setFormData(prev => ({ ...prev, employeeId: value }))}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="직원을 선택하세요" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {employees.map((employee) => (
-                      <SelectItem key={employee.id} value={employee.id}>
-                        {employee.name} ({employee.department})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="category">분야</Label>
                 <Input
-                  id="category"
-                  value={formData.category}
-                  onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value }))}
-                  placeholder="예: AI, 바이오, 반도체"
+                  value={selectedEmployee ? `${selectedEmployee.name} (${selectedEmployee.department})` : searchQuery}
+                  onChange={(e) => {
+                    setSearchQuery(e.target.value);
+                    searchEmployees(e.target.value);
+                  }}
+                  placeholder="직원 이름 또는 사번으로 검색하세요"
+                  onFocus={() => {
+                    if (searchQuery.length >= 2) {
+                      setShowSearchResults(true);
+                    }
+                  }}
                 />
+                
+                {/* 검색 결과 드롭다운 */}
+                {showSearchResults && searchResults.length > 0 && (
+                  <div className="border rounded-md bg-white shadow-lg max-h-40 overflow-y-auto z-10">
+                    {searchResults.map((employee) => (
+                      <div
+                        key={employee.id}
+                        className="p-2 hover:bg-gray-100 cursor-pointer border-b last:border-b-0"
+                        onClick={() => {
+                          setFormData(prev => ({ ...prev, employeeId: employee.id }));
+                          setSelectedEmployee(employee);
+                          setSearchQuery('');
+                          setShowSearchResults(false);
+                        }}
+                      >
+                        <div className="font-medium">{employee.name}</div>
+                        <div className="text-sm text-gray-500">
+                          {employee.department} • {employee.employeeNumber}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
 
@@ -189,8 +242,11 @@ export default function PatentModal({ isOpen, onClose, onSuccess, patent }: Pate
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="pending">출원</SelectItem>
-                    <SelectItem value="registered">등록</SelectItem>
+                    {categories.patentStatus?.map((status: string) => (
+                      <SelectItem key={status} value={status}>
+                        {status}
+                      </SelectItem>
+                    ))}
                     <SelectItem value="rejected">반려</SelectItem>
                   </SelectContent>
                 </Select>
@@ -227,16 +283,44 @@ export default function PatentModal({ isOpen, onClose, onSuccess, patent }: Pate
             
             <div className="space-y-2">
               <Label>발명자 목록</Label>
-              <div className="flex space-x-2">
-                <Input
-                  value={newInventor}
-                  onChange={(e) => setNewInventor(e.target.value)}
-                  placeholder="발명자 이름을 입력하세요"
-                  onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addInventor())}
-                />
-                <Button type="button" onClick={addInventor} size="sm">
-                  <Plus className="w-4 h-4" />
-                </Button>
+              <div className="space-y-2">
+                <div className="flex space-x-2">
+                  <Input
+                    value={searchQuery}
+                    onChange={(e) => {
+                      setSearchQuery(e.target.value);
+                      searchEmployees(e.target.value);
+                    }}
+                    placeholder="직원 이름 또는 사번으로 검색하세요"
+                    onFocus={() => {
+                      if (searchQuery.length >= 2) {
+                        setShowSearchResults(true);
+                      }
+                    }}
+                  />
+                  <Button type="button" onClick={() => searchEmployees(searchQuery)} size="sm">
+                    <Plus className="w-4 h-4" />
+                  </Button>
+                </div>
+                
+                {/* 검색 결과 드롭다운 */}
+                {showSearchResults && searchResults.length > 0 && (
+                  <div className="border rounded-md bg-white shadow-lg max-h-40 overflow-y-auto z-10">
+                    {searchResults.map((employee) => (
+                      <div
+                        key={employee.id}
+                        className="p-2 hover:bg-gray-100 cursor-pointer border-b last:border-b-0"
+                        onClick={() => addInventor(employee)}
+                      >
+                        <div className="font-medium">{employee.name}</div>
+                        <div className="text-sm text-gray-500">
+                          {employee.department} • {employee.employeeNumber}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                
               </div>
               
               <div className="flex flex-wrap gap-2 mt-2">

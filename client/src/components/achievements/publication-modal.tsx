@@ -25,15 +25,21 @@ export default function PublicationModal({ isOpen, onClose, onSuccess, publicati
     doi: '',
     impactFactor: '',
     category: 'journal',
+    level: '',
     description: ''
   });
+  const [selectedEmployee, setSelectedEmployee] = useState<any>(null);
   const [employees, setEmployees] = useState<any[]>([]);
-  const [newAuthor, setNewAuthor] = useState('');
   const [loading, setLoading] = useState(false);
+  const [categories, setCategories] = useState<any>({});
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [showSearchResults, setShowSearchResults] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
       loadEmployees();
+      loadCategories();
       if (publication) {
         setFormData({
           employeeId: publication.employeeId || '',
@@ -44,6 +50,7 @@ export default function PublicationModal({ isOpen, onClose, onSuccess, publicati
           doi: publication.doi || '',
           impactFactor: publication.impactFactor?.toString() || '',
           category: publication.category || 'journal',
+          level: publication.level || '',
           description: publication.description || ''
         });
       } else {
@@ -56,6 +63,7 @@ export default function PublicationModal({ isOpen, onClose, onSuccess, publicati
           doi: '',
           impactFactor: '',
           category: 'journal',
+          level: '',
           description: ''
         });
       }
@@ -72,6 +80,49 @@ export default function PublicationModal({ isOpen, onClose, onSuccess, publicati
     } catch (error) {
       console.error('직원 목록 로드 오류:', error);
     }
+  };
+
+  const loadCategories = async () => {
+    try {
+      const response = await fetch('/api/achievements/categories');
+      if (response.ok) {
+        const data = await response.json();
+        setCategories(data.categories);
+      }
+    } catch (error) {
+      console.error('카테고리 로드 오류:', error);
+    }
+  };
+
+  const searchEmployees = async (query: string) => {
+    if (query.length < 2) {
+      setSearchResults([]);
+      setShowSearchResults(false);
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/employees/search?query=${encodeURIComponent(query)}`);
+      if (response.ok) {
+        const data = await response.json();
+        setSearchResults(data);
+        setShowSearchResults(true);
+      }
+    } catch (error) {
+      console.error('직원 검색 오류:', error);
+    }
+  };
+
+  const addAuthor = (employee: any) => {
+    const authorName = `${employee.name} (${employee.department})`;
+    if (!formData.authors.includes(authorName)) {
+      setFormData(prev => ({
+        ...prev,
+        authors: [...prev.authors, authorName]
+      }));
+    }
+    setSearchQuery('');
+    setShowSearchResults(false);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -106,15 +157,6 @@ export default function PublicationModal({ isOpen, onClose, onSuccess, publicati
     }
   };
 
-  const addAuthor = () => {
-    if (newAuthor.trim() && !formData.authors.includes(newAuthor.trim())) {
-      setFormData(prev => ({
-        ...prev,
-        authors: [...prev.authors, newAuthor.trim()]
-      }));
-      setNewAuthor('');
-    }
-  };
 
   const removeAuthor = (index: number) => {
     setFormData(prev => ({
@@ -137,18 +179,44 @@ export default function PublicationModal({ isOpen, onClose, onSuccess, publicati
             
             <div className="space-y-2">
               <Label htmlFor="employeeId">직원 선택</Label>
-              <Select value={formData.employeeId} onValueChange={(value) => setFormData(prev => ({ ...prev, employeeId: value }))}>
-                <SelectTrigger>
-                  <SelectValue placeholder="직원을 선택하세요" />
-                </SelectTrigger>
-                <SelectContent>
-                  {employees.map((employee) => (
-                    <SelectItem key={employee.id} value={employee.id}>
-                      {employee.name} ({employee.department})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="space-y-2">
+                <Input
+                  value={selectedEmployee ? `${selectedEmployee.name} (${selectedEmployee.department})` : searchQuery}
+                  onChange={(e) => {
+                    setSearchQuery(e.target.value);
+                    searchEmployees(e.target.value);
+                  }}
+                  placeholder="직원 이름 또는 사번으로 검색하세요"
+                  onFocus={() => {
+                    if (searchQuery.length >= 2) {
+                      setShowSearchResults(true);
+                    }
+                  }}
+                />
+                
+                {/* 검색 결과 드롭다운 */}
+                {showSearchResults && searchResults.length > 0 && (
+                  <div className="border rounded-md bg-white shadow-lg max-h-40 overflow-y-auto z-10">
+                    {searchResults.map((employee) => (
+                      <div
+                        key={employee.id}
+                        className="p-2 hover:bg-gray-100 cursor-pointer border-b last:border-b-0"
+                        onClick={() => {
+                          setFormData(prev => ({ ...prev, employeeId: employee.id }));
+                          setSelectedEmployee(employee);
+                          setSearchQuery('');
+                          setShowSearchResults(false);
+                        }}
+                      >
+                        <div className="font-medium">{employee.name}</div>
+                        <div className="text-sm text-gray-500">
+                          {employee.department} • {employee.employeeNumber}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
 
             <div className="space-y-2">
@@ -213,16 +281,34 @@ export default function PublicationModal({ isOpen, onClose, onSuccess, publicati
               </div>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="impactFactor">Impact Factor</Label>
-              <Input
-                id="impactFactor"
-                type="number"
-                step="0.1"
-                value={formData.impactFactor}
-                onChange={(e) => setFormData(prev => ({ ...prev, impactFactor: e.target.value }))}
-                placeholder="예: 42.778"
-              />
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="impactFactor">Impact Factor</Label>
+                <Input
+                  id="impactFactor"
+                  type="number"
+                  step="0.1"
+                  value={formData.impactFactor}
+                  onChange={(e) => setFormData(prev => ({ ...prev, impactFactor: e.target.value }))}
+                  placeholder="예: 42.778"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="level">논문 등급</Label>
+                <Select value={formData.level} onValueChange={(value) => setFormData(prev => ({ ...prev, level: value }))}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="논문 등급을 선택하세요" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {categories.publicationLevels?.map((level: string) => (
+                      <SelectItem key={level} value={level}>
+                        {level}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </div>
 
@@ -232,16 +318,44 @@ export default function PublicationModal({ isOpen, onClose, onSuccess, publicati
             
             <div className="space-y-2">
               <Label>저자 목록</Label>
-              <div className="flex space-x-2">
-                <Input
-                  value={newAuthor}
-                  onChange={(e) => setNewAuthor(e.target.value)}
-                  placeholder="저자 이름을 입력하세요"
-                  onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addAuthor())}
-                />
-                <Button type="button" onClick={addAuthor} size="sm">
-                  <Plus className="w-4 h-4" />
-                </Button>
+              <div className="space-y-2">
+                <div className="flex space-x-2">
+                  <Input
+                    value={searchQuery}
+                    onChange={(e) => {
+                      setSearchQuery(e.target.value);
+                      searchEmployees(e.target.value);
+                    }}
+                    placeholder="직원 이름 또는 사번으로 검색하세요"
+                    onFocus={() => {
+                      if (searchQuery.length >= 2) {
+                        setShowSearchResults(true);
+                      }
+                    }}
+                  />
+                  <Button type="button" onClick={() => searchEmployees(searchQuery)} size="sm">
+                    <Plus className="w-4 h-4" />
+                  </Button>
+                </div>
+                
+                {/* 검색 결과 드롭다운 */}
+                {showSearchResults && searchResults.length > 0 && (
+                  <div className="border rounded-md bg-white shadow-lg max-h-40 overflow-y-auto z-10">
+                    {searchResults.map((employee) => (
+                      <div
+                        key={employee.id}
+                        className="p-2 hover:bg-gray-100 cursor-pointer border-b last:border-b-0"
+                        onClick={() => addAuthor(employee)}
+                      >
+                        <div className="font-medium">{employee.name}</div>
+                        <div className="text-sm text-gray-500">
+                          {employee.department} • {employee.employeeNumber}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                
               </div>
               
               <div className="flex flex-wrap gap-2 mt-2">

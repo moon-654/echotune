@@ -95,6 +95,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // 직원 검색 API (이름으로 검색)
+  app.get("/api/employees/search", async (req, res) => {
+    try {
+      const { query } = req.query;
+      if (!query || typeof query !== 'string') {
+        return res.status(400).json({ error: "검색어가 필요합니다." });
+      }
+
+      const employees = await storage.getAllEmployees();
+      const filteredEmployees = employees.filter(employee => 
+        employee.name.toLowerCase().includes(query.toLowerCase()) ||
+        employee.employeeNumber.includes(query)
+      );
+
+      res.json(filteredEmployees);
+    } catch (error) {
+      console.error('직원 검색 오류:', error);
+      res.status(500).json({ error: "직원 검색에 실패했습니다." });
+    }
+  });
+
   app.get("/api/employees/:id", async (req, res) => {
     try {
       const employee = await storage.getEmployee(req.params.id);
@@ -2904,6 +2925,75 @@ app.put("/api/employees/:id", async (req, res) => {
     } catch (error) {
       console.error("평가 기준 저장 오류:", error);
       res.status(500).json({ error: "평가 기준을 저장할 수 없습니다." });
+    }
+  });
+
+  // 성과관리 등록용 분야/카테고리 조회 API
+  app.get("/api/achievements/categories", async (req, res) => {
+    try {
+      console.log('🔍 성과관리 분야/카테고리 조회 요청');
+      
+      // data.json에서 상세 기준 조회
+      const dataPath = path.join(process.cwd(), 'data.json');
+      let data: any = {};
+      
+      if (fs.existsSync(dataPath)) {
+        const fileContent = fs.readFileSync(dataPath, 'utf8');
+        data = JSON.parse(fileContent);
+      }
+      
+      // 기본 상세 기준 (data.json에 저장된 것이 없을 경우)
+      const defaultDetailedCriteria = {
+        technical_competency: {
+          education: { 박사: 30, 석사: 20, 학사: 10, 전문대: 5 },
+          experience: { "15년 이상": 50, "10년 이상": 40, "5년 이상": 30, "5년 미만": 20 },
+          certifications: { 기술사: 20, 기사: 10, 산업기사: 5, 기타: 3 }
+        },
+        project_experience: {
+          leadership: { "Project Leader": 15, "핵심 멤버": 10, "일반 멤버": 5 },
+          count: { "3개 이상": 30, "2개": 20, "1개": 10 }
+        },
+        rd_achievement: {
+          patents: { 등록: 20, 출원: 5 },
+          publications: { "SCI(E)급": 25, "국내 학술지": 10 },
+          awards: { 국제: 15, 국가: 10, 산업: 5 }
+        },
+        global_competency: {
+          "영어 TOEIC": { "950-990": 10, "900-949": 8, "800-899": 6, "700-799": 4, "700미만": 2 },
+          "영어 TOEFL": { "110-120": 10, "100-109": 8, "90-99": 6, "80-89": 4, "80미만": 2 },
+          "영어 IELTS": { "8.0-9.0": 10, "7.0-7.5": 8, "6.0-6.5": 6, "5.0-5.5": 4, "5.0미만": 2 }
+        },
+        knowledge_sharing: {
+          training: { "20시간 이상": 15, "15-19시간": 12, "10-14시간": 8, "5-9시간": 5, "5시간 미만": 2 },
+          mentoring: { "5명 이상": 10, "3-4명": 7, "1-2명": 4, "0명": 0 }
+        },
+        innovation_proposal: {
+          proposals: { "5건 이상": 20, "3-4건": 15, "1-2건": 10, "0건": 0 },
+          implementation: { "3건 이상": 15, "2건": 10, "1건": 5, "0건": 0 }
+        }
+      };
+      
+      const detailedCriteria = data.detailedCriteria || defaultDetailedCriteria;
+      
+      // 성과관리 등록용 카테고리 추출 (각 메뉴에 맞는 항목만)
+      const categories = {
+        // 특허 등록용: 특허 상태만 (등록/출원)
+        patentStatus: Object.keys(detailedCriteria.rd_achievement?.patents || {}),
+        
+        // 논문 등록용: 논문 등급만 (SCI(E)급, 국내 학술지)
+        publicationLevels: Object.keys(detailedCriteria.rd_achievement?.publications || {}),
+        
+        // 수상 등록용: 실제 사용하는 수상 등급 (국제, 국가, 산업, 사내)
+        awardLevels: ["국제", "국가", "산업", "사내"]
+      };
+      
+      res.json({
+        success: true,
+        categories: categories
+      });
+    } catch (error) {
+      console.error("성과관리 카테고리 조회 오류:", error);
+      res.status(500).json({ error: "카테고리를 불러올 수 없습니다." });
     }
   });
 
