@@ -86,3 +86,4 @@ INSERT INTO evaluation_criteria (category, criteria_name, description, weight, m
 ('global_competency', '글로벌 역량', '글로벌 R&D 환경에서의 소통 및 정보 습득 능력', 0.10, 100, 'auto'),
 ('knowledge_sharing', '기술 확산 및 자기계발', '조직 내 기술 전파 노력과 지속적인 학습 활동', 0.10, 100, 'hybrid'),
 ('innovation_proposal', '업무개선 및 혁신 제안', '사내 제안제도를 통한 업무 개선 및 혁신 기여도', 0.10, 100, 'auto');
+

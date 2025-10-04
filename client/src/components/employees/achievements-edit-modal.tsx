@@ -61,6 +61,57 @@ export default function AchievementsEditModal({ employeeId, isOpen, onClose }: A
   });
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [rdEvaluationCriteria, setRdEvaluationCriteria] = useState<any>(null);
+  const [patentStatusOptions, setPatentStatusOptions] = useState<Array<{ value: string; label: string; points?: number }>>([
+    { value: 'granted', label: '등록', points: 20 },
+    { value: 'pending', label: '출원', points: 5 }
+  ]);
+  const [publicationTypeOptions, setPublicationTypeOptions] = useState<Array<{ value: string; label: string; points?: number }>>([
+    { value: 'sci', label: 'SCI(E)급', points: 25 },
+    { value: 'domestic', label: '국내 학술지', points: 10 }
+  ]);
+
+  // R&D 평가 기준 로드
+  useEffect(() => {
+    if (!isOpen) return;
+    const loadRdCriteria = async () => {
+      try {
+        const res = await fetch('/api/rd-evaluations/criteria');
+        if (!res.ok) return;
+        const json = await res.json();
+        const criteria = json.criteria || json.rdEvaluationCriteria || {};
+        const items = criteria.competencyItems || criteria;
+        const rdAchievementBlock = items.rd_achievement || items.rdAchievement || {};
+        
+        // 특허 상태 옵션 설정
+        const patentStatuses = rdAchievementBlock.patents || {};
+        const patentOptions = Object.keys(patentStatuses).map(key => ({
+          value: key === '등록' ? 'granted' : 'pending',
+          label: key,
+          points: patentStatuses[key]
+        }));
+        if (patentOptions.length > 0) {
+          setPatentStatusOptions(patentOptions);
+        }
+        
+        // 논문 유형 옵션 설정
+        const publicationTypes = rdAchievementBlock.publications || {};
+        const publicationOptions = Object.keys(publicationTypes).map(key => ({
+          value: key.includes('SCI') ? 'sci' : 'domestic',
+          label: key,
+          points: publicationTypes[key]
+        }));
+        if (publicationOptions.length > 0) {
+          setPublicationTypeOptions(publicationOptions);
+        }
+        
+        setRdEvaluationCriteria(criteria);
+      } catch (e) {
+        // 무시: 폴백 옵션 사용
+      }
+    };
+    loadRdCriteria();
+  }, [isOpen]);
 
   // 기존 성과 데이터 로드
   useEffect(() => {
@@ -302,9 +353,11 @@ export default function AchievementsEditModal({ employeeId, isOpen, onClose }: A
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="pending">출원</SelectItem>
-                        <SelectItem value="granted">등록</SelectItem>
-                        <SelectItem value="rejected">거절</SelectItem>
+                        {patentStatusOptions.map((option) => (
+                          <SelectItem key={option.value} value={option.value}>
+                            {option.label} {option.points && `(${option.points}점`}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>
@@ -407,9 +460,11 @@ export default function AchievementsEditModal({ employeeId, isOpen, onClose }: A
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="pending">출원</SelectItem>
-                                <SelectItem value="granted">등록</SelectItem>
-                                <SelectItem value="rejected">거절</SelectItem>
+                                {patentStatusOptions.map((option) => (
+                                  <SelectItem key={option.value} value={option.value}>
+                                    {option.label} {option.points && `(${option.points}점`}
+                                  </SelectItem>
+                                ))}
                               </SelectContent>
                             </Select>
                           </div>
@@ -502,10 +557,11 @@ export default function AchievementsEditModal({ employeeId, isOpen, onClose }: A
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="journal">저널</SelectItem>
-                        <SelectItem value="conference">학회</SelectItem>
-                        <SelectItem value="book">도서</SelectItem>
-                        <SelectItem value="other">기타</SelectItem>
+                        {publicationTypeOptions.map((option) => (
+                          <SelectItem key={option.value} value={option.value}>
+                            {option.label} {option.points && `(${option.points}점`}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>
@@ -644,10 +700,11 @@ export default function AchievementsEditModal({ employeeId, isOpen, onClose }: A
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="journal">저널</SelectItem>
-                                <SelectItem value="conference">학회</SelectItem>
-                                <SelectItem value="book">도서</SelectItem>
-                                <SelectItem value="other">기타</SelectItem>
+                                {publicationTypeOptions.map((option) => (
+                                  <SelectItem key={option.value} value={option.value}>
+                                    {option.label} {option.points && `(${option.points}점`}
+                                  </SelectItem>
+                                ))}
                               </SelectContent>
                             </Select>
                           </div>

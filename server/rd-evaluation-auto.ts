@@ -54,16 +54,31 @@ export async function calculateAutoRdEvaluation(employeeId: string, evaluationYe
     if (employee.education === 'master') technicalScore += 20;
     if (employee.education === 'doctor') technicalScore += 30;
     
-    // 경력 계산
-    const hireDate = new Date(employee.hireDate);
-    const years = Math.floor((new Date().getTime() - hireDate.getTime()) / (1000 * 60 * 60 * 24 * 365));
-    if (years >= 15) technicalScore += 50;
-    else if (years >= 10) technicalScore += 40;
-    else if (years >= 5) technicalScore += 30;
+    // 경력 계산 (사내 근속 + 이전 경력 반영)
+    const hireDate = employee.hireDate ? new Date(employee.hireDate) : null;
+    const inCompanyYears = hireDate ? ((Date.now() - hireDate.getTime()) / (1000 * 60 * 60 * 24 * 365)) : 0;
+    const prevYears = Number(employee.previousExperienceYears || 0);
+    const prevMonths = Number(employee.previousExperienceMonths || 0);
+    const totalYears = inCompanyYears + prevYears + (prevMonths / 12);
+    if (totalYears >= 15) technicalScore += 50;
+    else if (totalYears >= 10) technicalScore += 40;
+    else if (totalYears >= 5) technicalScore += 30;
     else technicalScore += 20;
     
-    // 자격증 점수
-    technicalScore += relatedData.certifications.length * 5;
+    // 자격증 점수 (상세 기준 반영: 기술사 20, 기사 10, 산업기사 5, 기타 3)
+    const getCertificationPoint = (cert: any): number => {
+      const name = (`${cert.name || ''}`).toLowerCase();
+      const level = (`${cert.level || ''}`).toLowerCase();
+      if (name.includes('기술사') || level.includes('expert')) return 20;
+      if ((name.includes('기사') && !name.includes('산업기사')) || level.includes('advanced')) return 10;
+      if (name.includes('산업기사') || level.includes('intermediate')) return 5;
+      return 3;
+    };
+    if (relatedData.certifications?.length) {
+      for (const cert of relatedData.certifications) {
+        technicalScore += getCertificationPoint(cert);
+      }
+    }
     
     scores.technicalCompetency = Math.min(technicalScore, 100);
     
@@ -140,7 +155,9 @@ export async function calculateAutoRdEvaluation(employeeId: string, evaluationYe
     scores.innovationProposal = Math.min(innovationScore, 100);
     
     // 상세 설명 생성
-    details.technicalCompetency = `학력: ${employee.education || '미입력'}, 경력: ${years}년, 자격증: ${relatedData.certifications.length}개`;
+    const totalYearsText = (Math.round(totalYears * 10) / 10).toFixed(1);
+    const inCompanyYearsText = (Math.round(inCompanyYears * 10) / 10).toFixed(1);
+    details.technicalCompetency = `학력: ${employee.education || '미입력'}, 경력: ${totalYearsText}년(사내 ${inCompanyYearsText}년 + 이전 ${prevYears}년 ${prevMonths}개월), 자격증: ${relatedData.certifications.length}개`;
     details.projectExperience = `프로젝트: ${relatedData.projects?.length || 0}개 (PL: ${relatedData.projects?.filter((p: any) => p.role === 'PL').length || 0}개)`;
     details.rdAchievement = `특허: ${relatedData.patents?.length || 0}건, 논문: ${relatedData.publications?.length || 0}편, 수상: ${relatedData.awards?.length || 0}건`;
     details.globalCompetency = `어학능력: ${relatedData.languages?.length || 0}개 언어`;

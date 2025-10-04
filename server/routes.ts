@@ -486,6 +486,26 @@ app.put("/api/employees/:id", async (req, res) => {
     }
   });
 
+  // 특정 직원의 모든 자격증 삭제 (편집 저장 시 전체 재등록 용도)
+  app.delete("/api/certifications", async (req, res) => {
+    try {
+      const employeeId = req.query.employeeId as string;
+      if (!employeeId) {
+        return res.status(400).json({ error: "Employee ID is required" });
+      }
+
+      const existing = await storage.getCertificationsByEmployee(employeeId);
+      for (const cert of existing) {
+        await storage.deleteCertification(cert.id);
+      }
+
+      res.json({ success: true, deletedCount: existing.length });
+    } catch (error) {
+      console.error('자격증 전체 삭제 오류:', error);
+      res.status(500).json({ error: "Failed to delete certifications" });
+    }
+  });
+
   // Language routes
   app.get("/api/languages", async (req, res) => {
     try {
@@ -2712,22 +2732,34 @@ app.put("/api/employees/:id", async (req, res) => {
   // R&D 역량평가 기준 조회
   app.get("/api/rd-evaluations/criteria", async (req, res) => {
     try {
+      console.log('🔍 R&D 역량평가 기준 조회 요청 (서버)');
+      
       // 프로젝트 루트 기준으로 경로 설정
       const dataPath = path.join(process.cwd(), 'data.json');
+      console.log('🔍 data.json 경로:', dataPath);
+      console.log('🔍 data.json 존재 여부:', fs.existsSync(dataPath));
       
       // 기존 data.json 로드
       let data = {};
       if (fs.existsSync(dataPath)) {
         const fileContent = fs.readFileSync(dataPath, 'utf8');
         data = JSON.parse(fileContent);
+        console.log('🔍 data.json 로드 성공');
+        console.log('🔍 rdEvaluationCriteria 존재 여부:', !!data.rdEvaluationCriteria);
+        console.log('🔍 rdEvaluationCriteria 키들:', data.rdEvaluationCriteria ? Object.keys(data.rdEvaluationCriteria) : 'null');
+      } else {
+        console.log('❌ data.json 파일이 존재하지 않음');
       }
       
-      res.json({
+      const result = {
         success: true,
         rdEvaluationCriteria: data.rdEvaluationCriteria || null
-      });
+      };
+      
+      console.log('🔍 응답 데이터:', result);
+      res.json(result);
     } catch (error) {
-      console.error("평가 기준 조회 오류:", error);
+      console.error("❌ 평가 기준 조회 오류:", error);
       res.status(500).json({ error: "평가 기준을 불러올 수 없습니다." });
     }
   });
@@ -2775,6 +2807,28 @@ app.put("/api/employees/:id", async (req, res) => {
 
   // R&D 역량평가 라우트 설정
   setupRdEvaluationRoutes(app);
+
+  // R&D 역량평가 데이터 조회
+  app.get("/api/rd-evaluations", async (req, res) => {
+    try {
+      const { employeeId } = req.query;
+      console.log(`🔍 R&D 역량평가 데이터 조회: ${employeeId}`);
+      
+      if (!employeeId) {
+        return res.status(400).json({ error: "직원 ID가 필요합니다." });
+      }
+      
+      // 자동 평가 계산
+      const { calculateAutoRdEvaluation } = await import("./rd-evaluation-auto");
+      const result = await calculateAutoRdEvaluation(employeeId);
+      
+      console.log(`✅ R&D 역량평가 결과:`, result);
+      res.json(result);
+    } catch (error) {
+      console.error("R&D 역량평가 데이터 조회 오류:", error);
+      res.status(500).json({ error: "R&D 역량평가 데이터를 불러올 수 없습니다." });
+    }
+  });
 
   // R&D 역량평가 테스트 API
   app.get("/api/rd-evaluations/test/:employeeId", async (req, res) => {

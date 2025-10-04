@@ -1064,16 +1064,43 @@
       "createdAt": "2025-09-27T11:33:43.487Z",
       "updatedAt": "2025-09-27T11:33:43.487Z"
     },
-    "a4f6adfa-c202-49ac-981e-39f84f2b492a": {
-      "id": "a4f6adfa-c202-49ac-981e-39f84f2b492a",
+    "fa980059-f7b5-4d73-9dc5-355fe58b26be": {
+      "id": "fa980059-f7b5-4d73-9dc5-355fe58b26be",
       "employeeId": "ef202e24-47a6-434d-ae9a-3a47c87b64be",
-      "name": "test 자격증",
-      "issuer": "test 기관",
+      "name": "정보처리기사",
+      "issuer": "대한상공회의소",
+      "credentialId": "",
       "category": "technical",
       "level": "advanced",
+      "score": 10,
       "isActive": true,
-      "createdAt": "2025-09-28T10:15:30.465Z",
-      "updatedAt": "2025-09-28T10:15:30.465Z"
+      "createdAt": "2025-10-03T13:49:58.090Z",
+      "updatedAt": "2025-10-03T13:49:58.090Z"
+    },
+    "ef8304ed-130e-4d03-9c61-507a14417f8f": {
+      "id": "ef8304ed-130e-4d03-9c61-507a14417f8f",
+      "employeeId": "ef202e24-47a6-434d-ae9a-3a47c87b64be",
+      "name": "기계설계산업기사",
+      "issuer": "대한상공회의소",
+      "credentialId": "",
+      "category": "technical",
+      "level": "intermediate",
+      "score": 5,
+      "isActive": true,
+      "createdAt": "2025-10-03T13:49:58.095Z",
+      "updatedAt": "2025-10-03T13:49:58.095Z"
+    },
+    "eb400193-db8a-463e-b25f-20d51dd12cbb": {
+      "id": "eb400193-db8a-463e-b25f-20d51dd12cbb",
+      "employeeId": "ef202e24-47a6-434d-ae9a-3a47c87b64be",
+      "name": "컴퓨터응용가공산업기사",
+      "issuer": "대한상공회의소",
+      "category": "technical",
+      "level": "intermediate",
+      "score": 5,
+      "isActive": true,
+      "createdAt": "2025-10-03T13:49:58.100Z",
+      "updatedAt": "2025-10-03T13:49:58.100Z"
     }
   },
   "languages": {
@@ -1086,19 +1113,20 @@
       "createdAt": "2025-09-27T11:23:48.171Z",
       "updatedAt": "2025-09-27T11:23:48.171Z"
     },
-    "d9b56216-4c41-4c56-b4de-bca89a44049c": {
-      "id": "d9b56216-4c41-4c56-b4de-bca89a44049c",
+    "7bc5586b-401c-47c5-b925-5f26deac1348": {
+      "id": "7bc5586b-401c-47c5-b925-5f26deac1348",
       "employeeId": "ef202e24-47a6-434d-ae9a-3a47c87b64be",
       "language": "Japanese",
       "proficiencyLevel": "advanced",
       "testType": "JLPT",
       "testDate": "2013-06-01T00:00:00.000Z",
+      "certificateUrl": "",
       "isActive": true,
-      "createdAt": "2025-09-28T03:19:49.333Z",
-      "updatedAt": "2025-09-28T03:19:49.333Z"
+      "createdAt": "2025-09-28T12:24:50.519Z",
+      "updatedAt": "2025-09-28T12:24:50.519Z"
     },
-    "1906c6ee-6d04-43fa-8bab-3bed131df346": {
-      "id": "1906c6ee-6d04-43fa-8bab-3bed131df346",
+    "d7f79aac-d016-402a-bd0a-f6cdf347e4e9": {
+      "id": "d7f79aac-d016-402a-bd0a-f6cdf347e4e9",
       "employeeId": "ef202e24-47a6-434d-ae9a-3a47c87b64be",
       "language": "English",
       "proficiencyLevel": "advanced",
@@ -1106,9 +1134,10 @@
       "score": 850,
       "maxScore": 990,
       "testDate": "2017-06-06T00:00:00.000Z",
+      "certificateUrl": "",
       "isActive": true,
-      "createdAt": "2025-09-28T03:19:49.339Z",
-      "updatedAt": "2025-09-28T03:19:49.339Z"
+      "createdAt": "2025-09-28T12:24:50.527Z",
+      "updatedAt": "2025-09-28T12:24:50.527Z"
     }
   },
   "skills": {
@@ -1136,59 +1165,33 @@
     }
   },
   "skillCalculations": {},
-  "patents": {
-    "4250a8a3-f420-4501-9d7e-fa821669e951": {
-      "id": "4250a8a3-f420-4501-9d7e-fa821669e951",
-      "employeeId": "ef202e24-47a6-434d-ae9a-3a47c87b64be",
-      "title": "test 특허",
-      "status": "pending",
-      "applicationDate": "2025-08-31T15:00:00.000Z",
-      "grantDate": "2025-08-31T15:00:00.000Z",
-      "applicationNumber": "",
-      "patentNumber": "",
-      "inventors": "",
-      "description": "",
-      "createdAt": "2025-09-28T10:14:57.340Z",
-      "updatedAt": "2025-09-28T10:14:57.340Z"
-    }
-  },
-  "publications": {
-    "d9fc669c-e35c-4bdb-b0c3-17d40a653b37": {
-      "id": "d9fc669c-e35c-4bdb-b0c3-17d40a653b37",
-      "employeeId": "ef202e24-47a6-434d-ae9a-3a47c87b64be",
-      "title": "test 논문",
-      "authors": "문현진",
-      "type": "journal",
-      "publicationDate": "2025-08-31T15:00:00.000Z",
-      "createdAt": "2025-09-28T10:14:57.344Z",
-      "updatedAt": "2025-09-28T10:14:57.344Z"
-    }
-  },
-  "awards": {
-    "27ecb291-06b1-46ba-bc1c-d3286e2e6739": {
-      "id": "27ecb291-06b1-46ba-bc1c-d3286e2e6739",
-      "employeeId": "ef202e24-47a6-434d-ae9a-3a47c87b64be",
-      "name": "test 수상",
-      "issuer": "회사",
-      "category": "performance",
-      "level": "company",
-      "createdAt": "2025-09-28T10:15:13.243Z",
-      "updatedAt": "2025-09-28T10:15:13.243Z"
-    }
-  },
+  "patents": {},
+  "publications": {},
+  "awards": {},
   "projects": {
-    "43c4386d-6fd1-4977-a15a-251155b6dc68": {
-      "id": "43c4386d-6fd1-4977-a15a-251155b6dc68",
+    "fb3a9860-ec40-49db-929d-19eeb8887b49": {
+      "id": "fb3a9860-ec40-49db-929d-19eeb8887b49",
       "employeeId": "ef202e24-47a6-434d-ae9a-3a47c87b64be",
-      "projectName": "test 프로젝트1",
-      "role": "PL",
+      "projectName": "테스트 프로젝트1",
+      "role": "project_leader",
       "status": "completed",
-      "startDate": "2024-05-31T15:00:00.000Z",
-      "endDate": "2025-08-31T15:00:00.000Z",
-      "teamSize": 8,
-      "client": "TEST회사",
-      "createdAt": "2025-09-28T10:14:11.729Z",
-      "updatedAt": "2025-09-28T10:14:11.729Z"
+      "description": "",
+      "technologies": "",
+      "teamSize": 0,
+      "budget": 0,
+      "client": "",
+      "notes": "",
+      "createdAt": "2025-10-03T14:25:50.009Z",
+      "updatedAt": "2025-10-03T14:25:50.009Z"
+    },
+    "fc357de8-254c-4134-918f-c5e40cd38503": {
+      "id": "fc357de8-254c-4134-918f-c5e40cd38503",
+      "employeeId": "ef202e24-47a6-434d-ae9a-3a47c87b64be",
+      "projectName": "테스트 프로젝트2",
+      "role": "core_member",
+      "status": "completed",
+      "createdAt": "2025-10-03T14:25:50.014Z",
+      "updatedAt": "2025-10-03T14:25:50.014Z"
     }
   },
   "trainingHours": {
@@ -1682,200 +1685,6 @@
       "notes": "",
       "createdAt": "2025-09-28T11:30:25.849Z",
       "updatedAt": "2025-09-28T11:30:25.849Z"
-    }
-  },
-  "rdEvaluationCriteria": {
-    "technical_competency": {
-      "name": "전문기술",
-      "weight": 25,
-      "description": "전문 기술 역량",
-      "maxScore": 25,
-      "scoringRanges": [
-        {
-          "min": 80,
-          "max": 100,
-          "converted": 100,
-          "label": "80점↑ → 100점"
-        },
-        {
-          "min": 60,
-          "max": 79,
-          "converted": 80,
-          "label": "60-79점 → 80점"
-        },
-        {
-          "min": 40,
-          "max": 59,
-          "converted": 60,
-          "label": "40-59점 → 60점"
-        },
-        {
-          "min": 0,
-          "max": 39,
-          "converted": 40,
-          "label": "40점↓ → 40점"
-        }
-      ]
-    },
-    "project_experience": {
-      "name": "프로젝트",
-      "weight": 20,
-      "description": "프로젝트 수행 경험",
-      "maxScore": 20,
-      "scoringRanges": [
-        {
-          "min": 30,
-          "max": 100,
-          "converted": 100,
-          "label": "30점↑ → 100점"
-        },
-        {
-          "min": 20,
-          "max": 29,
-          "converted": 80,
-          "label": "20-29점 → 80점"
-        },
-        {
-          "min": 10,
-          "max": 19,
-          "converted": 60,
-          "label": "10-19점 → 60점"
-        },
-        {
-          "min": 0,
-          "max": 9,
-          "converted": 40,
-          "label": "10점↓ → 40점"
-        }
-      ]
-    },
-    "rd_achievement": {
-      "name": "연구성과",
-      "weight": 25,
-      "description": "연구개발 성과",
-      "maxScore": 25,
-      "scoringRanges": [
-        {
-          "min": 40,
-          "max": 100,
-          "converted": 100,
-          "label": "40점↑ → 100점"
-        },
-        {
-          "min": 25,
-          "max": 39,
-          "converted": 80,
-          "label": "25-39점 → 80점"
-        },
-        {
-          "min": 10,
-          "max": 24,
-          "converted": 60,
-          "label": "10-24점 → 60점"
-        },
-        {
-          "min": 0,
-          "max": 9,
-          "converted": 40,
-          "label": "10점↓ → 40점"
-        }
-      ]
-    },
-    "global_competency": {
-      "name": "글로벌",
-      "weight": 10,
-      "description": "글로벌 역량",
-      "maxScore": 10,
-      "scoringRanges": [
-        {
-          "min": 10,
-          "max": 10,
-          "converted": 100,
-          "label": "10점 → 100점"
-        },
-        {
-          "min": 7,
-          "max": 8,
-          "converted": 80,
-          "label": "7-8점 → 80점"
-        },
-        {
-          "min": 4,
-          "max": 6,
-          "converted": 60,
-          "label": "4-6점 → 60점"
-        },
-        {
-          "min": 0,
-          "max": 2,
-          "converted": 40,
-          "label": "2점 → 40점"
-        }
-      ]
-    },
-    "knowledge_sharing": {
-      "name": "기술확산",
-      "weight": 10,
-      "description": "기술 확산 및 자기계발",
-      "maxScore": 10,
-      "scoringRanges": [
-        {
-          "min": 15,
-          "max": 100,
-          "converted": 100,
-          "label": "15점↑ → 100점"
-        },
-        {
-          "min": 10,
-          "max": 14,
-          "converted": 80,
-          "label": "10-14점 → 80점"
-        },
-        {
-          "min": 5,
-          "max": 9,
-          "converted": 60,
-          "label": "5-9점 → 60점"
-        },
-        {
-          "min": 1,
-          "max": 4,
-          "converted": 40,
-          "label": "1-4점 → 40점"
-        }
-      ]
-    },
-    "innovation_proposal": {
-      "name": "혁신제안",
-      "weight": 10,
-      "description": "업무개선 및 혁신 제안",
-      "maxScore": 10,
-      "scoringRanges": [
-        {
-          "min": 60,
-          "max": 100,
-          "converted": 100,
-          "label": "60점↑ → 100점"
-        },
-        {
-          "min": 30,
-          "max": 59,
-          "converted": 80,
-          "label": "30-59점 → 80점"
-        },
-        {
-          "min": 5,
-          "max": 29,
-          "converted": 60,
-          "label": "5-29점 → 60점"
-        },
-        {
-          "min": 0,
-          "max": 4,
-          "converted": 40,
-          "label": "5점↓ → 40점"
-        }
-      ]
     }
   }
 }

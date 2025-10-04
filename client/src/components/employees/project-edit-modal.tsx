@@ -43,6 +43,55 @@ export default function ProjectEditModal({ employeeId, isOpen, onClose }: Projec
   });
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [roleOptions, setRoleOptions] = useState<Array<{ value: string; label: string; points?: number }>>([
+    { value: 'project_leader', label: 'Project Leader', points: 15 },
+    { value: 'core_member', label: '핵심 멤버', points: 10 },
+    { value: 'member', label: '일반 멤버', points: 5 }
+  ]);
+
+  // R&D 상세설정의 프로젝트 리더십 기준과 연동
+  useEffect(() => {
+    if (!isOpen) return;
+    const loadProjectRoleCriteria = async () => {
+      try {
+        const res = await fetch('/api/rd-evaluations/criteria');
+        if (!res.ok) return;
+        const json = await res.json();
+        const criteria = json.criteria || json.rdEvaluationCriteria || {};
+        const items = criteria.competencyItems || criteria;
+        const projectBlock = items.project_experience || items.projectExperience || {};
+        // 가능한 경로들을 순회하며 역할 배열 찾기
+        const candidates: any[] = [];
+        const pushIfArray = (x: any) => { if (Array.isArray(x)) candidates.push(...x); };
+        pushIfArray(projectBlock.roles);
+        pushIfArray(projectBlock.leadership);
+        pushIfArray(projectBlock.detailedCriteria?.roles);
+        pushIfArray(projectBlock.detailedCriteria?.leadership);
+        // 객체 map 형태일 수도 있음 { 'Project Leader': 15, '핵심 멤버': 10, ... }
+        const asObject = projectBlock.roles || projectBlock.leadership || projectBlock.detailedCriteria?.roles || projectBlock.detailedCriteria?.leadership;
+        const parsed: Array<{ value: string; label: string; points?: number }> = [];
+        if (candidates.length > 0) {
+          candidates.forEach((it: any) => {
+            const label = it.label || it.name || it.title || it.key || '';
+            const val = (it.value || label || '').toString().trim().toLowerCase().replace(/\s+/g, '_');
+            parsed.push({ value: val || label, label: label || val, points: it.points || it.score || it.value });
+          });
+        } else if (asObject && typeof asObject === 'object') {
+          Object.keys(asObject).forEach(k => {
+            const v = asObject[k];
+            const val = k.toString().trim().toLowerCase().replace(/\s+/g, '_');
+            parsed.push({ value: val, label: k, points: typeof v === 'number' ? v : undefined });
+          });
+        }
+        if (parsed.length > 0) {
+          setRoleOptions(parsed);
+        }
+      } catch (e) {
+        // 무시: 폴백 옵션 사용
+      }
+    };
+    loadProjectRoleCriteria();
+  }, [isOpen]);
 
   // 기존 프로젝트 데이터 로드
   useEffect(() => {
@@ -192,13 +241,20 @@ export default function ProjectEditModal({ employeeId, isOpen, onClose }: Projec
                   />
                 </div>
                 <div>
-                  <Label htmlFor="role">역할</Label>
-                  <Input
-                    id="role"
+                  <Label htmlFor="role">리더십/역할</Label>
+                  <Select
                     value={newProject.role}
-                    onChange={(e) => setNewProject({ ...newProject, role: e.target.value })}
-                    placeholder="예: 프론트엔드 리드"
-                  />
+                    onValueChange={(value) => setNewProject({ ...newProject, role: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="역할 선택" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {roleOptions.map(opt => (
+                        <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div>
                   <Label htmlFor="status">상태</Label>
@@ -328,11 +384,20 @@ export default function ProjectEditModal({ employeeId, isOpen, onClose }: Projec
                           />
                         </div>
                         <div>
-                          <Label>역할</Label>
-                          <Input
-                            value={project.role}
-                            onChange={(e) => updateProject(index, 'role', e.target.value)}
-                          />
+                          <Label>리더십/역할</Label>
+                          <Select
+                            value={project.role || ''}
+                            onValueChange={(value) => updateProject(index, 'role', value)}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="역할 선택" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {roleOptions.map(opt => (
+                                <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                         </div>
                         <div>
                           <Label>상태</Label>

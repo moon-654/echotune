@@ -17,6 +17,16 @@ export default function SimpleRadarChart({ data, size = 300 }: SimpleRadarChartP
     return <div className="p-4 text-center text-gray-500">데이터가 없습니다</div>;
   }
 
+  // 스타일 토큰
+  const gridStroke = '#CBD5E1'; // slate-300
+  const gridFillEven = 'rgba(241, 245, 249, 0.6)'; // slate-50
+  const gridFillOdd = 'rgba(241, 245, 249, 0.25)';
+  const radarStroke = '#4F46E5'; // indigo-600
+  const radarPointFill = '#4F46E5';
+  const radarPointStroke = '#ffffff';
+  const labelColor = '#374151'; // gray-700
+  const tickColor = '#6B7280'; // gray-500
+
   const centerX = size / 2;
   const centerY = size / 2;
   const maxRadius = size * 0.35;
@@ -38,17 +48,22 @@ export default function SimpleRadarChart({ data, size = 300 }: SimpleRadarChartP
     return `${index === 0 ? 'M' : 'L'} ${point.x} ${point.y}`;
   }).join(' ') + ' Z';
 
-  // 그리드 원 생성
-  const gridCircles = Array.from({ length: levels + 1 }, (_, i) => {
-    const radius = (i / levels) * maxRadius;
+  // 레벨별 다각형(스파이더웹) 그리드 생성
+  const gridPolygons = Array.from({ length: levels }, (_, i) => {
+    const ratio = (i + 1) / levels; // 1/levels .. 1
+    const points = data.map((_, index) => {
+      const angle = index * angleStep - Math.PI / 2;
+      const radius = ratio * maxRadius;
+      const x = centerX + radius * Math.cos(angle);
+      const y = centerY + radius * Math.sin(angle);
+      return `${x},${y}`;
+    }).join(' ');
     return (
-      <circle
+      <polygon
         key={i}
-        cx={centerX}
-        cy={centerY}
-        r={radius}
-        fill="none"
-        stroke="#e5e7eb"
+        points={points}
+        fill={i % 2 === 0 ? gridFillEven : gridFillOdd}
+        stroke={gridStroke}
         strokeWidth="1"
       />
     );
@@ -66,7 +81,7 @@ export default function SimpleRadarChart({ data, size = 300 }: SimpleRadarChartP
         y1={centerY}
         x2={endX}
         y2={endY}
-        stroke="#e5e7eb"
+        stroke={gridStroke}
         strokeWidth="1"
       />
     );
@@ -81,8 +96,8 @@ export default function SimpleRadarChart({ data, size = 300 }: SimpleRadarChartP
         cx={point.x}
         cy={point.y}
         r="4"
-        fill="#3b82f6"
-        stroke="#fff"
+        fill={radarPointFill}
+        stroke={radarPointStroke}
         strokeWidth="2"
       />
     );
@@ -102,7 +117,8 @@ export default function SimpleRadarChart({ data, size = 300 }: SimpleRadarChartP
         y={y}
         textAnchor="middle"
         dominantBaseline="middle"
-        className="text-xs font-medium fill-gray-700"
+        className="text-xs font-medium"
+        fill={labelColor}
       >
         {item.name}
       </text>
@@ -121,7 +137,8 @@ export default function SimpleRadarChart({ data, size = 300 }: SimpleRadarChartP
         y={y}
         textAnchor="start"
         dominantBaseline="middle"
-        className="text-xs fill-gray-500"
+        className="text-xs"
+        fill={tickColor}
       >
         {value}
       </text>
@@ -131,16 +148,22 @@ export default function SimpleRadarChart({ data, size = 300 }: SimpleRadarChartP
   return (
     <div className="flex items-center justify-center p-4">
       <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
-        {/* 그리드 배경 */}
-        {gridCircles}
+        <defs>
+          <linearGradient id="radarFill" x1="0" x2="0" y1="0" y2="1">
+            <stop offset="0%" stopColor={radarStroke} stopOpacity="0.28" />
+            <stop offset="100%" stopColor={radarStroke} stopOpacity="0.12" />
+          </linearGradient>
+        </defs>
+        {/* 그리드 배경 (스파이더웹 다각형 + 축 라인) */}
+        {gridPolygons}
         {gridLines}
         
         {/* 레이더 차트 영역 */}
         <path
           d={radarPath}
-          fill="rgba(59, 130, 246, 0.2)"
-          stroke="#3b82f6"
-          strokeWidth="2"
+          fill="url(#radarFill)"
+          stroke={radarStroke}
+          strokeWidth="2.5"
         />
         
         {/* 데이터 포인트 */}
@@ -155,3 +178,4 @@ export default function SimpleRadarChart({ data, size = 300 }: SimpleRadarChartP
     </div>
   );
 }
+

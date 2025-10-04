@@ -44,3 +44,4 @@ export default function SimpleBarChart({ data }: SimpleBarChartProps) {
     </div>
   );
 }
+

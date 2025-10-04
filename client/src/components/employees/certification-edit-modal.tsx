@@ -45,6 +45,7 @@ export default function CertificationEditModal({ employeeId, isOpen, onClose }: 
   });
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [criteria, setCriteria] = useState<any>(null);
 
   // 기존 자격증 데이터 로드
   useEffect(() => {
@@ -84,6 +85,56 @@ export default function CertificationEditModal({ employeeId, isOpen, onClose }: 
 
     loadCertifications();
   }, [isOpen, employeeId]);
+
+  // R&D 평가 기준 로드 (연동용)
+  useEffect(() => {
+    if (!isOpen) return;
+    const loadCriteria = async () => {
+      try {
+        const res = await fetch('/api/rd-evaluations/criteria');
+        if (res.ok) {
+          const data = await res.json();
+          const criteriaData = data.criteria || data.rdEvaluationCriteria;
+          const finalCriteria = criteriaData?.competencyItems || criteriaData;
+          setCriteria(finalCriteria || null);
+        }
+      } catch (e) {
+        console.warn('자격증 기준 로드 실패(무시 가능):', e);
+        setCriteria(null);
+      }
+    };
+    loadCriteria();
+  }, [isOpen]);
+
+  // 기준 템플릿 매핑 (기준 데이터가 없을 시 기본값 사용)
+  const certificationTemplates: Array<{key: string; label: string; category: CertificationFormData['category']; level: CertificationFormData['level']; score: number; description: string;}> = [
+    { key: 'gisulsa', label: '기술사', category: 'technical', level: 'expert', score: 20, description: 'R&D 상세기준(기술사) 자동 적용' },
+    { key: 'gisa', label: '기사', category: 'technical', level: 'advanced', score: 10, description: 'R&D 상세기준(기사) 자동 적용' },
+    { key: 'sanupgisa', label: '산업기사', category: 'technical', level: 'intermediate', score: 5, description: 'R&D 상세기준(산업기사) 자동 적용' },
+    { key: 'etc', label: '기타', category: 'technical', level: 'basic', score: 3, description: 'R&D 상세기준(기타) 자동 적용' },
+  ];
+
+  const applyTemplateToNew = (templateKey: string) => {
+    const t = certificationTemplates.find(x => x.key === templateKey);
+    if (!t) return;
+    setNewCertification({
+      ...newCertification,
+      category: t.category,
+      level: t.level,
+      score: t.score,
+      description: t.description
+    });
+  };
+
+  const applyTemplateToExisting = (index: number, templateKey: string) => {
+    const t = certificationTemplates.find(x => x.key === templateKey);
+    if (!t) return;
+    updateCertification(index, 'category', t.category);
+    updateCertification(index, 'level', t.level);
+    updateCertification(index, 'score', t.score);
+    const currentDesc = certifications[index]?.description || '';
+    updateCertification(index, 'description', currentDesc ? currentDesc : t.description);
+  };
 
   const addNewCertification = () => {
     if (newCertification.name.trim()) {
@@ -184,6 +235,19 @@ export default function CertificationEditModal({ employeeId, isOpen, onClose }: 
             <div className="border rounded-lg p-4 space-y-4">
               <h3 className="text-lg font-semibold">새 자격증 추가</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="template">기준 선택</Label>
+                  <Select onValueChange={(v) => applyTemplateToNew(v)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="R&D 상세기준 선택" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {certificationTemplates.map(t => (
+                        <SelectItem key={t.key} value={t.key}>{t.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
                 <div>
                   <Label htmlFor="certName">자격증명</Label>
                   <Input
@@ -331,6 +395,19 @@ export default function CertificationEditModal({ employeeId, isOpen, onClose }: 
                         </Button>
                       </div>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <Label>기준 선택</Label>
+                          <Select onValueChange={(v) => applyTemplateToExisting(index, v)}>
+                            <SelectTrigger>
+                              <SelectValue placeholder="R&D 상세기준 선택" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {certificationTemplates.map(t => (
+                                <SelectItem key={t.key} value={t.key}>{t.label}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
                         <div>
                           <Label>자격증명</Label>
                           <Input
