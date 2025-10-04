@@ -10,6 +10,7 @@ import EmployeeDetail from "@/pages/employee-detail";
 import DepartmentTeamManagement from "@/pages/department-team-management";
 import Training from "@/pages/training";
 import TrainingAnalysis from "@/pages/training-analysis";
+import Achievements from "@/pages/achievements";
 import RdEvaluation from "@/pages/rd-evaluation";
 import Reports from "@/pages/reports";
 import NotFound from "@/pages/not-found";
@@ -33,6 +34,7 @@ function Router() {
             <Route path="/teams" component={DepartmentTeamManagement} />
             <Route path="/training" component={Training} />
             <Route path="/training-analysis" component={TrainingAnalysis} />
+            <Route path="/achievements" component={Achievements} />
             <Route path="/rd-evaluation" component={RdEvaluation} />
             <Route path="/reports" component={Reports} />
             <Route component={NotFound} />

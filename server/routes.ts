@@ -14,6 +14,7 @@ import {
   insertSkillCalculationSchema 
 } from "@shared/schema";
 import { setupRdEvaluationRoutes } from "./rd-evaluation-routes";
+import { setupAchievementsRoutes } from "./achievements-routes";
 
 // Helper function to parse Excel dates
 function parseExcelDate(cellValue: any): string | null {
@@ -2642,13 +2643,125 @@ app.put("/api/employees/:id", async (req, res) => {
     try {
       console.log('🔍 R&D 역량평가 기준 조회 요청 (routes.ts)');
       
-      // data.json에서 기준 조회
+      // 서버 측 기본 역량 항목 정의 (프론트엔드와 동일한 구조)
+      const defaultCompetencyItems = {
+        technical_competency: { 
+          name: "전문기술", 
+          weight: 25, 
+          description: "전문 기술 역량",
+          maxScore: 25,
+          scoringRanges: [
+            { min: 80, max: 100, converted: 100, label: "80점↑ → 100점" },
+            { min: 60, max: 79, converted: 80, label: "60-79점 → 80점" },
+            { min: 40, max: 59, converted: 60, label: "40-59점 → 60점" },
+            { min: 0, max: 39, converted: 40, label: "40점↓ → 40점" }
+          ]
+        },
+        project_experience: { 
+          name: "프로젝트", 
+          weight: 20, 
+          description: "프로젝트 수행 경험",
+          maxScore: 20,
+          scoringRanges: [
+            { min: 30, max: 100, converted: 100, label: "30점↑ → 100점" },
+            { min: 20, max: 29, converted: 80, label: "20-29점 → 80점" },
+            { min: 10, max: 19, converted: 60, label: "10-19점 → 60점" },
+            { min: 0, max: 9, converted: 40, label: "10점↓ → 40점" }
+          ]
+        },
+        rd_achievement: { 
+          name: "연구성과", 
+          weight: 25, 
+          description: "연구개발 성과",
+          maxScore: 25,
+          scoringRanges: [
+            { min: 40, max: 100, converted: 100, label: "40점↑ → 100점" },
+            { min: 25, max: 39, converted: 80, label: "25-39점 → 80점" },
+            { min: 10, max: 24, converted: 60, label: "10-24점 → 60점" },
+            { min: 0, max: 9, converted: 40, label: "10점↓ → 40점" }
+          ]
+        },
+        global_competency: { 
+          name: "글로벌", 
+          weight: 10, 
+          description: "글로벌 역량",
+          maxScore: 10,
+          scoringRanges: [
+            { min: 10, max: 10, converted: 100, label: "10점 → 100점" },
+            { min: 7, max: 8, converted: 80, label: "7-8점 → 80점" },
+            { min: 4, max: 6, converted: 60, label: "4-6점 → 60점" },
+            { min: 0, max: 2, converted: 40, label: "2점 → 40점" }
+          ]
+        },
+        knowledge_sharing: { 
+          name: "기술확산", 
+          weight: 10, 
+          description: "기술 확산 및 자기계발",
+          maxScore: 10,
+          scoringRanges: [
+            { min: 15, max: 100, converted: 100, label: "15점↑ → 100점" },
+            { min: 10, max: 14, converted: 80, label: "10-14점 → 80점" },
+            { min: 5, max: 9, converted: 60, label: "5-9점 → 60점" },
+            { min: 1, max: 4, converted: 40, label: "1-4점 → 40점" }
+          ]
+        },
+        innovation_proposal: { 
+          name: "혁신제안", 
+          weight: 10, 
+          description: "업무개선 및 혁신 제안",
+          maxScore: 10,
+          scoringRanges: [
+            { min: 60, max: 100, converted: 100, label: "60점↑ → 100점" },
+            { min: 30, max: 59, converted: 80, label: "30-59점 → 80점" },
+            { min: 5, max: 29, converted: 60, label: "5-29점 → 60점" },
+            { min: 0, max: 4, converted: 40, label: "5점↓ → 40점" }
+          ]
+        }
+      };
+
+      // 서버 측 기본 상세 기준 정의
+      const defaultDetailedCriteria = {
+        technical_competency: {
+          education: { 박사: 30, 석사: 20, 학사: 10, 전문대: 5 },
+          experience: { "15년 이상": 50, "10년 이상": 40, "5년 이상": 30, "5년 미만": 20 },
+          certifications: { 기술사: 20, 기사: 10, 산업기사: 5, 기타: 3 }
+        },
+        project_experience: {
+          leadership: { "Project Leader": 15, "핵심 멤버": 10, "일반 멤버": 5 },
+          count: { "3개 이상": 30, "2개": 20, "1개": 10 }
+        },
+        rd_achievement: {
+          patents: { 등록: 20, 출원: 5 },
+          publications: { "SCI(E)급": 25, "국내 학술지": 10 },
+          awards: { 국제: 15, 국가: 10, 산업: 5 }
+        },
+        global_competency: {
+          "영어 TOEIC": { "950-990": 10, "900-949": 8, "800-899": 6, "700-799": 4, "700미만": 2 },
+          "영어 TOEFL": { "113-120": 10, "105-112": 8, "90-104": 6, "70-89": 4, "70미만": 2 },
+          "영어 IELTS": { "8.5-9.0": 10, "7.5-8.4": 8, "6.5-7.4": 6, "5.5-6.4": 4, "5.5미만": 2 },
+          "영어 TEPS": { "526-600": 10, "453-525": 8, "387-452": 6, "327-386": 4, "327미만": 2 },
+          "일본어 JLPT": { "N1": 10, "N2": 7, "N3": 4, "N4": 2, "N5": 1 },
+          "일본어 JPT": { "900-990": 8, "800-899": 6, "700-799": 4, "700미만": 2 },
+          "중국어 HSK": { "6급": 10, "5급": 8, "4급": 6, "3급": 4, "2급": 2, "1급": 1 },
+          "중국어 TOCFL": { "Band C Level 6": 10, "Band C Level 5": 8, "Band B Level 4": 6, "Band B Level 3": 4, "Band A Level 2": 2, "Band A Level 1": 1 }
+        },
+        knowledge_sharing: {
+          training: { "40시간 이상": 5, "20시간 이상": 3, "10시간 이상": 2 },
+          certifications: { "신규 취득": 5 },
+          mentoring: { "멘토링 1명": 3 },
+          instructor: { "강의 1회": 5, "강의 2회": 10, "강의 3회 이상": 15 }
+        },
+        innovation_proposal: {
+          awards: { 최우수상: 80, 우수상: 60, 장려상: 40 },
+          adoption: { 채택: 5 }
+        }
+      };
       
-      // 프로젝트 루트 기준으로 경로 설정
+      // data.json에서 기준 조회
       const dataPath = path.join(process.cwd(), 'data.json');
       
-      let criteria;
-      let data = {}; // data 변수를 함수 스코프로 이동
+      let criteria: any;
+      let data: any = {}; // data 변수를 함수 스코프로 이동
       if (fs.existsSync(dataPath)) {
         // data.json에서 R&D 평가 기준 로드
         const fileContent = fs.readFileSync(dataPath, 'utf8');
@@ -2676,10 +2789,28 @@ app.put("/api/employees/:id", async (req, res) => {
           }
         };
       }
+
+      // 깊은 병합: 저장된 기준을 기본값과 병합
+      const mergedCriteria: any = { ...defaultCompetencyItems };
+      for (const [key, value] of Object.entries(criteria)) {
+        if (mergedCriteria[key]) {
+          mergedCriteria[key] = { ...mergedCriteria[key], ...value };
+        }
+      }
+
+      // 상세 기준도 병합
+      const mergedDetailedCriteria: any = { ...defaultDetailedCriteria };
+      if (data.detailedCriteria) {
+        for (const [key, value] of Object.entries(data.detailedCriteria)) {
+          if (mergedDetailedCriteria[key]) {
+            mergedDetailedCriteria[key] = { ...mergedDetailedCriteria[key], ...value };
+          }
+        }
+      }
       
       // 언어 테스트 정보 추출
       const globalCompetency = criteria.global_competency || {};
-      const languageTests = {};
+      const languageTests: any = {};
       
       // 영어 테스트
       if (globalCompetency.english?.toeic) {
@@ -2721,8 +2852,8 @@ app.put("/api/employees/:id", async (req, res) => {
       
       res.json({
         success: true,
-        rdEvaluationCriteria: criteria,
-        detailedCriteria: data.detailedCriteria || null,
+        rdEvaluationCriteria: mergedCriteria,
+        detailedCriteria: mergedDetailedCriteria,
         languageTests: languageTests
       });
     } catch (error) {
@@ -2745,7 +2876,7 @@ app.put("/api/employees/:id", async (req, res) => {
       const dataPath = path.join(process.cwd(), 'data.json');
       
       // 기존 data.json 로드
-      let data = {};
+      let data: any = {};
       if (fs.existsSync(dataPath)) {
         const fileContent = fs.readFileSync(dataPath, 'utf8');
         data = JSON.parse(fileContent);
@@ -2818,6 +2949,9 @@ app.put("/api/employees/:id", async (req, res) => {
       res.status(500).json({ error: "R&D 역량평가 테스트 실패", details: error.message });
     }
   });
+
+  // 성과관리 라우트 설정
+  setupAchievementsRoutes(app);
 
   const httpServer = createServer(app);
   return httpServer;

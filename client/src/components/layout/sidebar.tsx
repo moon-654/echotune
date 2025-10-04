@@ -7,7 +7,10 @@ import {
   BookOpen, 
   BarChart3,
   User,
-  Award
+  Award,
+  Trophy,
+  FileText,
+  Medal
 } from "lucide-react";
 
 const navigation = [
@@ -15,6 +18,7 @@ const navigation = [
   { name: "조직도", href: "/orgchart", icon: Table },
   { name: "직원 관리", href: "/employees", icon: Users },
   { name: "교육 관리", href: "/training", icon: BookOpen },
+  { name: "성과관리", href: "/achievements", icon: Trophy },
   { name: "R&D 역량평가", href: "/rd-evaluation", icon: Award },
   { name: "보고서", href: "/reports", icon: BarChart3 },
 ];

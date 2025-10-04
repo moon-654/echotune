@@ -193,9 +193,26 @@ export default function RdEvaluationCriteriaModal({ isOpen, onClose }: RdEvaluat
       const response = await fetch("/api/rd-evaluations/criteria");
       if (response.ok) {
         const data = await response.json();
+        
+        // 서버에서 받은 기준을 안전하게 병합
         if (data.rdEvaluationCriteria) {
-          setCompetencyItems(data.rdEvaluationCriteria);
+          const serverCriteria = data.rdEvaluationCriteria;
+          const mergedCriteria = { ...competencyItems };
+          
+          // 서버 데이터가 유효한 경우에만 병합
+          for (const [key, serverValue] of Object.entries(serverCriteria)) {
+            if (mergedCriteria[key] && serverValue && typeof serverValue === 'object') {
+              // 필수 필드가 있는지 확인
+              if (serverValue.name && serverValue.weight !== undefined && serverValue.maxScore !== undefined) {
+                mergedCriteria[key] = { ...mergedCriteria[key], ...serverValue };
+              }
+            }
+          }
+          
+          setCompetencyItems(mergedCriteria);
         }
+        
+        // 상세 기준 처리
         if (data.detailedCriteria && Object.keys(data.detailedCriteria).length > 0) {
           setDetailedCriteria(data.detailedCriteria);
         } else {
