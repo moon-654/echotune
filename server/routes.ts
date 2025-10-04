@@ -2648,10 +2648,11 @@ app.put("/api/employees/:id", async (req, res) => {
       const dataPath = path.join(process.cwd(), 'data.json');
       
       let criteria;
+      let data = {}; // data 변수를 함수 스코프로 이동
       if (fs.existsSync(dataPath)) {
         // data.json에서 R&D 평가 기준 로드
         const fileContent = fs.readFileSync(dataPath, 'utf8');
-        const data = JSON.parse(fileContent);
+        data = JSON.parse(fileContent);
         criteria = data.rdEvaluationCriteria || {};
         console.log('✅ data.json에서 R&D 역량평가 기준 로드:', criteria);
       } else {
@@ -2720,7 +2721,8 @@ app.put("/api/employees/:id", async (req, res) => {
       
       res.json({
         success: true,
-        criteria: criteria,
+        rdEvaluationCriteria: criteria,
+        detailedCriteria: data.detailedCriteria || null,
         languageTests: languageTests
       });
     } catch (error) {
@@ -2729,47 +2731,13 @@ app.put("/api/employees/:id", async (req, res) => {
     }
   });
 
-  // R&D 역량평가 기준 조회
-  app.get("/api/rd-evaluations/criteria", async (req, res) => {
-    try {
-      console.log('🔍 R&D 역량평가 기준 조회 요청 (서버)');
-      
-      // 프로젝트 루트 기준으로 경로 설정
-      const dataPath = path.join(process.cwd(), 'data.json');
-      console.log('🔍 data.json 경로:', dataPath);
-      console.log('🔍 data.json 존재 여부:', fs.existsSync(dataPath));
-      
-      // 기존 data.json 로드
-      let data = {};
-      if (fs.existsSync(dataPath)) {
-        const fileContent = fs.readFileSync(dataPath, 'utf8');
-        data = JSON.parse(fileContent);
-        console.log('🔍 data.json 로드 성공');
-        console.log('🔍 rdEvaluationCriteria 존재 여부:', !!data.rdEvaluationCriteria);
-        console.log('🔍 rdEvaluationCriteria 키들:', data.rdEvaluationCriteria ? Object.keys(data.rdEvaluationCriteria) : 'null');
-      } else {
-        console.log('❌ data.json 파일이 존재하지 않음');
-      }
-      
-      const result = {
-        success: true,
-        rdEvaluationCriteria: data.rdEvaluationCriteria || null
-      };
-      
-      console.log('🔍 응답 데이터:', result);
-      res.json(result);
-    } catch (error) {
-      console.error("❌ 평가 기준 조회 오류:", error);
-      res.status(500).json({ error: "평가 기준을 불러올 수 없습니다." });
-    }
-  });
 
   // R&D 역량평가 기준 저장
   app.put("/api/rd-evaluations/criteria", async (req, res) => {
     try {
-      const { criteria, updateEmployeeForms } = req.body;
+      const { criteria, detailedCriteria, updateEmployeeForms } = req.body;
       
-      console.log('🔧 R&D 역량평가 기준 저장 요청 (routes.ts):', { criteria, updateEmployeeForms });
+      console.log('🔧 R&D 역량평가 기준 저장 요청 (routes.ts):', { criteria, detailedCriteria, updateEmployeeForms });
       
       // data.json에 기준 저장
       
@@ -2785,6 +2753,9 @@ app.put("/api/employees/:id", async (req, res) => {
       
       // R&D 평가 기준 업데이트
       data.rdEvaluationCriteria = criteria;
+      if (detailedCriteria) {
+        data.detailedCriteria = detailedCriteria;
+      }
       
       // 기준 저장
       try {

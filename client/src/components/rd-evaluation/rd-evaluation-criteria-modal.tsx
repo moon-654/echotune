@@ -42,43 +42,8 @@ export default function RdEvaluationCriteriaModal({ isOpen, onClose }: RdEvaluat
   const [newItemName, setNewItemName] = useState("");
   const [newItemScore, setNewItemScore] = useState(0);
 
-  // 6대 역량별 상세 설정 (동적 관리)
-  const [detailedCriteria, setDetailedCriteria] = useState({
-    technical_competency: {
-      education: { 박사: 30, 석사: 20, 학사: 10, 전문대: 5 },
-      experience: { "15년 이상": 50, "10년 이상": 40, "5년 이상": 30, "5년 미만": 20 },
-      certifications: { 기술사: 20, 기사: 10, 산업기사: 5, 기타: 3 }
-    },
-    project_experience: {
-      leadership: { "Project Leader": 15, "핵심 멤버": 10, "일반 멤버": 5 },
-      count: { "3개 이상": 30, "2개": 20, "1개": 10 }
-    },
-    rd_achievement: {
-      patents: { 등록: 20, 출원: 5 },
-      publications: { "SCI(E)급": 25, "국내 학술지": 10 },
-      awards: { 국제: 15, 국가: 10, 산업: 5 }
-    },
-    global_competency: {
-      "영어 TOEIC": { "950-990": 10, "900-949": 8, "800-899": 6, "700-799": 4, "700미만": 2 },
-      "영어 TOEFL": { "113-120": 10, "105-112": 8, "90-104": 6, "70-89": 4, "70미만": 2 },
-      "영어 IELTS": { "8.5-9.0": 10, "7.5-8.4": 8, "6.5-7.4": 6, "5.5-6.4": 4, "5.5미만": 2 },
-      "영어 TEPS": { "526-600": 10, "453-525": 8, "387-452": 6, "327-386": 4, "327미만": 2 },
-      "일본어 JLPT": { "N1": 10, "N2": 7, "N3": 4, "N4": 2, "N5": 1 },
-      "일본어 JPT": { "900-990": 8, "800-899": 6, "700-799": 4, "700미만": 2 },
-      "중국어 HSK": { "6급": 10, "5급": 8, "4급": 6, "3급": 4, "2급": 2, "1급": 1 },
-      "중국어 TOCFL": { "Band C Level 6": 10, "Band C Level 5": 8, "Band B Level 4": 6, "Band B Level 3": 4, "Band A Level 2": 2, "Band A Level 1": 1 }
-    },
-    knowledge_sharing: {
-      training: { "40시간 이상": 5, "20시간 이상": 3, "10시간 이상": 2 },
-      certifications: { "신규 취득": 5 },
-      mentoring: { "멘토링 1명": 3 },
-      instructor: { "강의 1회": 5, "강의 2회": 10, "강의 3회 이상": 15 }
-    },
-    innovation_proposal: {
-      awards: { 최우수상: 80, 우수상: 60, 장려상: 40 },
-      adoption: { 채택: 5 }
-    }
-  });
+  // 6대 역량별 상세 설정 (동적 관리) - 서버에서 로드
+  const [detailedCriteria, setDetailedCriteria] = useState({});
 
   // 6대 역량 항목 관리 (동적) - 요청된 기준에 맞게 수정
   const [competencyItems, setCompetencyItems] = useState({
@@ -202,6 +167,7 @@ export default function RdEvaluationCriteriaModal({ isOpen, onClose }: RdEvaluat
         },
         body: JSON.stringify({
           criteria: competencyItems,
+          detailedCriteria: detailedCriteria,
           updateEmployeeForms: true
         })
       });
@@ -229,7 +195,48 @@ export default function RdEvaluationCriteriaModal({ isOpen, onClose }: RdEvaluat
         const data = await response.json();
         if (data.rdEvaluationCriteria) {
           setCompetencyItems(data.rdEvaluationCriteria);
-          alert("저장된 기준을 불러왔습니다.");
+        }
+        if (data.detailedCriteria && Object.keys(data.detailedCriteria).length > 0) {
+          setDetailedCriteria(data.detailedCriteria);
+        } else {
+          // 서버에 데이터가 없으면 기본값 설정
+          const defaultDetailedCriteria = {
+            technical_competency: {
+              education: { 박사: 30, 석사: 20, 학사: 10, 전문대: 5 },
+              experience: { "15년 이상": 50, "10년 이상": 40, "5년 이상": 30, "5년 미만": 20 },
+              certifications: { 기술사: 20, 기사: 10, 산업기사: 5, 기타: 3 }
+            },
+            project_experience: {
+              leadership: { "Project Leader": 15, "핵심 멤버": 10, "일반 멤버": 5 },
+              count: { "3개 이상": 30, "2개": 20, "1개": 10 }
+            },
+            rd_achievement: {
+              patents: { 등록: 20, 출원: 5 },
+              publications: { "SCI(E)급": 25, "국내 학술지": 10 },
+              awards: { 국제: 15, 국가: 10, 산업: 5 }
+            },
+            global_competency: {
+              "영어 TOEIC": { "950-990": 10, "900-949": 8, "800-899": 6, "700-799": 4, "700미만": 2 },
+              "영어 TOEFL": { "113-120": 10, "105-112": 8, "90-104": 6, "70-89": 4, "70미만": 2 },
+              "영어 IELTS": { "8.5-9.0": 10, "7.5-8.4": 8, "6.5-7.4": 6, "5.5-6.4": 4, "5.5미만": 2 },
+              "영어 TEPS": { "526-600": 10, "453-525": 8, "387-452": 6, "327-386": 4, "327미만": 2 },
+              "일본어 JLPT": { "N1": 10, "N2": 7, "N3": 4, "N4": 2, "N5": 1 },
+              "일본어 JPT": { "900-990": 8, "800-899": 6, "700-799": 4, "700미만": 2 },
+              "중국어 HSK": { "6급": 10, "5급": 8, "4급": 6, "3급": 4, "2급": 2, "1급": 1 },
+              "중국어 TOCFL": { "Band C Level 6": 10, "Band C Level 5": 8, "Band B Level 4": 6, "Band B Level 3": 4, "Band A Level 2": 2, "Band A Level 1": 1 }
+            },
+            knowledge_sharing: {
+              training: { "40시간 이상": 5, "20시간 이상": 3, "10시간 이상": 2 },
+              certifications: { "신규 취득": 5 },
+              mentoring: { "멘토링 1명": 3 },
+              instructor: { "강의 1회": 5, "강의 2회": 10, "강의 3회 이상": 15 }
+            },
+            innovation_proposal: {
+              awards: { 최우수상: 80, 우수상: 60, 장려상: 40 },
+              adoption: { 채택: 5 }
+            }
+          };
+          setDetailedCriteria(defaultDetailedCriteria);
         }
       }
     } catch (error) {
