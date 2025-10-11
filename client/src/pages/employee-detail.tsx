@@ -10,7 +10,8 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { DatePicker } from "@/components/ui/date-picker";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, Edit, Mail, Phone, Calendar, MapPin, Users, Award, BookOpen, TrendingUp, FileText, Trophy, Lightbulb, GraduationCap, Building, CalendarIcon } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { ArrowLeft, Edit, Mail, Phone, Calendar, MapPin, Users, Award, BookOpen, TrendingUp, FileText, Trophy, Lightbulb, GraduationCap, Building, CalendarIcon, CalendarClock } from "lucide-react";
 import RdCapabilityBarChart from "@/components/charts/rd-capability-bar-chart";
 import SimpleBarChart from "@/components/charts/simple-bar-chart";
 import SimpleRadarChart from "@/components/charts/simple-radar-chart";
@@ -1339,18 +1340,26 @@ export default function EmployeeDetail({ employeeId: propEmployeeId }: EmployeeD
                   <TrendingUp className="w-5 h-5 mr-2" />
                   성과 요약
                 </CardTitle>
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-4 flex-wrap">
                   {/* 회계연도 토글 */}
-                  <div className="flex items-center gap-2 text-sm">
-                    <Switch
-                      checked={useFiscalYear}
-                      onCheckedChange={setUseFiscalYear}
-                      id="fiscal-year-mode"
-                    />
-                    <Label htmlFor="fiscal-year-mode" className="cursor-pointer">
-                      회계연도 기준 (4월~3월)
-                    </Label>
-                  </div>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div className="flex items-center gap-2 text-sm">
+                          <Switch
+                            checked={useFiscalYear}
+                            onCheckedChange={setUseFiscalYear}
+                            id="fiscal-year-mode"
+                          />
+                          <Label htmlFor="fiscal-year-mode" className="hidden sm:inline cursor-pointer">
+                            회계연도 기준 (4월~3월)
+                          </Label>
+                          <CalendarClock className="sm:hidden w-4 h-4" />
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent>회계연도 기준 (4월~3월)</TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
                   
                   <div className="flex items-center gap-2">
                     {/* 버튼 그룹 */}

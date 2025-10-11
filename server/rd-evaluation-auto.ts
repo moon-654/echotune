@@ -1,5 +1,4 @@
 import { storage } from "./storage";
-import { RD_EVALUATION_CRITERIA, calculateRdEvaluationScore } from "@shared/rd-evaluation-criteria";
 import fs from "fs";
 import path from "path";
 
@@ -10,6 +9,7 @@ export async function calculateAutoRdEvaluation(employeeId: string, evaluationYe
     const dataPath = path.join(process.cwd(), 'data.json');
     let employee = null;
     let rdEvaluationCriteria = null;
+    let detailedCriteria = null;  // 함수 스코프로 이동
     
     if (fs.existsSync(dataPath)) {
       const fileContent = fs.readFileSync(dataPath, 'utf8');
@@ -23,6 +23,12 @@ export async function calculateAutoRdEvaluation(employeeId: string, evaluationYe
       if (data.rdEvaluationCriteria) {
         rdEvaluationCriteria = data.rdEvaluationCriteria;
         console.log('🔍 R&D 역량평가 기준 로드:', rdEvaluationCriteria);
+      }
+      
+      // detailedCriteria 로드
+      if (data.detailedCriteria) {
+        detailedCriteria = data.detailedCriteria;
+        console.log('🔍 detailedCriteria 로드:', detailedCriteria);
       }
     }
     
@@ -123,41 +129,51 @@ export async function calculateAutoRdEvaluation(employeeId: string, evaluationYe
     // 4. 글로벌 역량 계산
     let globalScore = 0;
     if (relatedData.languages && relatedData.languages.length > 0) {
-      // R&D 역량평가 기준에서 글로벌 역량 기준 가져오기
-      const globalCriteria = rdEvaluationCriteria?.global_competency || {};
+      // detailedCriteria에서 글로벌 역량 기준 가져오기
+      const globalCriteria = detailedCriteria?.global_competency || {};
       
       for (const lang of relatedData.languages) {
         // 영어 점수 계산 (TOEIC)
         if (lang.language === 'English' && lang.testType === 'TOEIC') {
           const score = lang.score || 0;
-          const toeicCriteria = globalCriteria.english?.toeic || {};
+          const toeicCriteria = globalCriteria["영어 TOEIC"] || {};
           
           // 점수 범위에 따른 점수 계산
-          if (score >= 950) globalScore += toeicCriteria["950-990"] || 10;
-          else if (score >= 900) globalScore += toeicCriteria["900-949"] || 8;
-          else if (score >= 800) globalScore += toeicCriteria["800-899"] || 6;
-          else if (score >= 700) globalScore += toeicCriteria["700-799"] || 4;
-          else globalScore += toeicCriteria["700미만"] || 2;
+          for (const [range, points] of Object.entries(toeicCriteria)) {
+            if (range.includes('-')) {
+              const [min, max] = range.split('-').map(Number);
+              if (score >= min && score <= max) {
+                globalScore += points;
+                break;
+              }
+            } else if (range.includes('미만')) {
+              const max = parseInt(range);
+              if (score < max) {
+                globalScore += points;
+                break;
+              }
+            }
+          }
         }
         
         // 일본어 점수 계산 (JLPT)
         if (lang.language === 'Japanese' && lang.testType === 'JLPT') {
-          const jlptCriteria = globalCriteria.japanese?.jlpt || {};
+          const jlptCriteria = globalCriteria["일본어 JLPT"] || {};
           
           // testLevel이 있으면 우선 사용 (N1, N2 등)
           if (lang.testLevel) {
             globalScore += jlptCriteria[lang.testLevel] || 0;
           } else {
-            // testLevel이 없으면 proficiencyLevel 사용 (기존 방식)
-            if (lang.proficiencyLevel === 'advanced') globalScore += jlptCriteria["N1"] || 10;
-            else if (lang.proficiencyLevel === 'intermediate') globalScore += jlptCriteria["N2"] || 7;
-            else if (lang.proficiencyLevel === 'beginner') globalScore += jlptCriteria["N3"] || 4;
+            // testLevel이 없으면 proficiencyLevel 사용
+            if (lang.proficiencyLevel === 'advanced') globalScore += jlptCriteria["N1"] || 0;
+            else if (lang.proficiencyLevel === 'intermediate') globalScore += jlptCriteria["N2"] || 0;
+            else if (lang.proficiencyLevel === 'beginner') globalScore += jlptCriteria["N3"] || 0;
           }
         }
         
         // 중국어 점수 계산 (HSK)
         if (lang.language === 'Chinese' && lang.testType === 'HSK' && lang.testLevel) {
-          const hskCriteria = globalCriteria.chinese?.hsk || {};
+          const hskCriteria = globalCriteria["중국어 HSK"] || {};
           globalScore += hskCriteria[lang.testLevel] || 0;
         }
       }
