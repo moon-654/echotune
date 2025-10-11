@@ -1001,8 +1001,8 @@
       "createdAt": "2025-09-27T23:31:41.254Z",
       "updatedAt": "2025-09-27T23:31:41.254Z"
     },
-    "89ebbd21-f9a1-4d7b-8a60-d6a7c18bf594": {
-      "id": "89ebbd21-f9a1-4d7b-8a60-d6a7c18bf594",
+    "4b500b51-c020-456d-851b-85b02766b5ca": {
+      "id": "4b500b51-c020-456d-851b-85b02766b5ca",
       "employeeId": "ef202e24-47a6-434d-ae9a-3a47c87b64be",
       "courseName": "test 교육11",
       "provider": "온라인",
@@ -1012,13 +1012,14 @@
       "completionDate": null,
       "duration": 8,
       "status": "completed",
+      "instructorRole": null,
       "certificateUrl": "",
       "notes": "",
-      "createdAt": "2025-10-11T08:29:47.771Z",
-      "updatedAt": "2025-10-11T08:29:47.771Z"
+      "createdAt": "2025-10-11T14:05:04.469Z",
+      "updatedAt": "2025-10-11T14:05:04.469Z"
     },
-    "989751b5-6953-4664-83df-189ba901a10f": {
-      "id": "989751b5-6953-4664-83df-189ba901a10f",
+    "28671dd9-a91a-4f18-8284-ee3c7b808e0a": {
+      "id": "28671dd9-a91a-4f18-8284-ee3c7b808e0a",
       "employeeId": "ef202e24-47a6-434d-ae9a-3a47c87b64be",
       "courseName": "tset211",
       "provider": "",
@@ -1028,10 +1029,45 @@
       "completionDate": "2025-09-10T15:00:00.000Z",
       "duration": 40,
       "status": "completed",
+      "instructorRole": null,
       "certificateUrl": "",
       "notes": "",
-      "createdAt": "2025-10-11T08:29:47.781Z",
-      "updatedAt": "2025-10-11T08:29:47.781Z"
+      "createdAt": "2025-10-11T14:05:04.476Z",
+      "updatedAt": "2025-10-11T14:05:04.476Z"
+    },
+    "393cbb42-9ac2-4c9e-b5e9-f5ed8022a754": {
+      "id": "393cbb42-9ac2-4c9e-b5e9-f5ed8022a754",
+      "employeeId": "ef202e24-47a6-434d-ae9a-3a47c87b64be",
+      "courseName": "멘토테스트1",
+      "provider": "",
+      "type": "optional",
+      "category": "",
+      "startDate": "2025-10-05T15:00:00.000Z",
+      "completionDate": "2025-10-08T15:00:00.000Z",
+      "duration": 0,
+      "status": "completed",
+      "instructorRole": "mentor",
+      "certificateUrl": "",
+      "notes": "",
+      "createdAt": "2025-10-11T14:05:04.486Z",
+      "updatedAt": "2025-10-11T14:05:04.486Z"
+    },
+    "21ce764b-4a5b-44d3-8b89-d73e73ffb6ae": {
+      "id": "21ce764b-4a5b-44d3-8b89-d73e73ffb6ae",
+      "employeeId": "ef202e24-47a6-434d-ae9a-3a47c87b64be",
+      "courseName": "강사테스틑",
+      "provider": "",
+      "type": "optional",
+      "category": "",
+      "startDate": "2025-10-06T15:00:00.000Z",
+      "completionDate": "2025-10-07T15:00:00.000Z",
+      "duration": 0,
+      "status": "completed",
+      "instructorRole": "instructor",
+      "certificateUrl": "",
+      "notes": "",
+      "createdAt": "2025-10-11T14:05:04.494Z",
+      "updatedAt": "2025-10-11T14:05:04.494Z"
     }
   },
   "certifications": {
@@ -1445,20 +1481,20 @@
       "year": 1970,
       "team": "연구기획팀",
       "trainingType": "optional",
-      "hours": 32,
+      "hours": 64,
       "description": "연구기획팀 optional 교육시간 (자동생성)",
       "createdAt": "2025-09-28T10:13:23.564Z",
-      "updatedAt": "2025-10-11T08:29:47.774Z"
+      "updatedAt": "2025-10-11T14:05:04.472Z"
     },
     "81507f9c-d6df-422a-b2ab-6fa92d400ec5": {
       "id": "81507f9c-d6df-422a-b2ab-6fa92d400ec5",
       "year": 2025,
       "team": "연구기획팀",
       "trainingType": "optional",
-      "hours": 120,
+      "hours": 280,
       "description": "연구기획팀 optional 교육시간 (자동생성)",
       "createdAt": "2025-09-28T11:32:49.208Z",
-      "updatedAt": "2025-10-11T08:29:47.783Z"
+      "updatedAt": "2025-10-11T14:05:04.496Z"
     }
   },
   "teamEmployees": {},

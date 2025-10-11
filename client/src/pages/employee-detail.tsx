@@ -490,13 +490,14 @@ export default function EmployeeDetail({ employeeId: propEmployeeId }: EmployeeD
   // 실제 어학능력 데이터 상태 관리
   const [languages, setLanguages] = useState<Array<{
     language: string;
-    speaking: string;
-    reading: string;
-    writing: string;
-    listening: string;
-    overallLevel: string;
-    certification?: string;
+    proficiencyLevel: string;
+    testType?: string;
+    testLevel?: string;
     score?: number;
+    maxScore?: number;
+    testDate?: string;
+    certificateUrl?: string;
+    isActive: boolean;
   }>>([]);
   const [languagesLoading, setLanguagesLoading] = useState(true);
 
@@ -889,7 +890,7 @@ export default function EmployeeDetail({ employeeId: propEmployeeId }: EmployeeD
     
     languages.forEach(lang => {
       let score = 0;
-      if (lang.language === 'English' && lang.certification === 'TOEIC') {
+      if (lang.language === 'English' && lang.testType === 'TOEIC') {
         const scoreValue = lang.score || 0;
         if (scoreValue >= 950) score = 10;
         else if (scoreValue >= 900) score = 8;
@@ -902,14 +903,42 @@ export default function EmployeeDetail({ employeeId: propEmployeeId }: EmployeeD
           value: `TOEIC ${scoreValue}점`,
           score: score
         });
-      } else if (lang.language === 'Japanese' && lang.certification === 'JLPT') {
-        if (lang.overallLevel === 'advanced') score = 10;
-        else if (lang.overallLevel === 'intermediate') score = 7;
-        else if (lang.overallLevel === 'beginner') score = 4;
+      } else if (lang.language === 'Japanese' && lang.testType === 'JLPT') {
+        // testLevel이 있으면 우선 사용 (N1, N2 등)
+        if (lang.testLevel) {
+          // testLevel에 따른 점수 계산 (N1=10, N2=7, N3=4, N4=2, N5=1)
+          const levelScores: {[key: string]: number} = {
+            'N1': 10, 'N2': 7, 'N3': 4, 'N4': 2, 'N5': 1
+          };
+          score = levelScores[lang.testLevel] || 0;
+          
+          details.push({
+            label: '일본어',
+            value: `JLPT ${lang.testLevel}`,
+            score: score
+          });
+        } else {
+          // testLevel이 없으면 proficiencyLevel 사용 (기존 방식)
+          if (lang.proficiencyLevel === 'advanced') score = 10;
+          else if (lang.proficiencyLevel === 'intermediate') score = 7;
+          else if (lang.proficiencyLevel === 'beginner') score = 4;
+          
+          details.push({
+            label: '일본어',
+            value: `JLPT ${lang.proficiencyLevel}`,
+            score: score
+          });
+        }
+      } else if (lang.language === 'Chinese' && lang.testType === 'HSK' && lang.testLevel) {
+        // 중국어 HSK 등급 표시
+        const levelScores: {[key: string]: number} = {
+          '6급': 10, '5급': 8, '4급': 6, '3급': 4, '2급': 2, '1급': 1
+        };
+        score = levelScores[lang.testLevel] || 0;
         
         details.push({
-          label: '일본어',
-          value: `JLPT ${lang.overallLevel}`,
+          label: '중국어',
+          value: `HSK ${lang.testLevel}`,
           score: score
         });
       }
@@ -2034,21 +2063,14 @@ export default function EmployeeDetail({ employeeId: propEmployeeId }: EmployeeD
                         <div className="flex-1">
                           <div className="font-medium">{lang.language}</div>
                           <div className="text-sm text-muted-foreground mt-2">
-                            <div className="grid grid-cols-2 gap-4">
-                              <div>말하기: {lang.speaking}</div>
-                              <div>읽기: {lang.reading}</div>
-                              <div>쓰기: {lang.writing}</div>
-                              <div>듣기: {lang.listening}</div>
-                            </div>
+                            <div>수준: {lang.proficiencyLevel}</div>
+                            {lang.testType && (
+                              <div>시험 유형: {lang.testType}</div>
+                            )}
+                            {lang.testLevel && (
+                              <div>등급: {lang.testLevel}</div>
+                            )}
                           </div>
-                          <div className="text-sm text-muted-foreground mt-2">
-                            종합 수준: {lang.overallLevel}
-                          </div>
-                          {lang.certification && (
-                            <div className="text-sm text-muted-foreground">
-                              자격증: {lang.certification}
-                            </div>
-                          )}
                           {lang.score && (
                             <div className="text-sm text-muted-foreground">
                               점수: {lang.score}점

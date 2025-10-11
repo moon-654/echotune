@@ -70,6 +70,7 @@ export const languages = pgTable("languages", {
   language: text("language").notNull(), // "English", "Chinese", "Japanese", etc.
   proficiencyLevel: text("proficiency_level").notNull(), // "beginner", "intermediate", "advanced", "native"
   testType: text("test_type"), // "TOEIC", "TOEFL", "JLPT", "HSK", etc.
+  testLevel: text("test_level"), // "N1", "N2", "6급", "Band C Level 6", etc.
   score: integer("score"),
   maxScore: integer("max_score"),
   testDate: timestamp("test_date"),

@@ -9,6 +9,7 @@ export async function calculateAutoRdEvaluation(employeeId: string, evaluationYe
     // 직원 기본 정보 조회 (data.json에서)
     const dataPath = path.join(process.cwd(), 'data.json');
     let employee = null;
+    let rdEvaluationCriteria = null;
     
     if (fs.existsSync(dataPath)) {
       const fileContent = fs.readFileSync(dataPath, 'utf8');
@@ -16,6 +17,12 @@ export async function calculateAutoRdEvaluation(employeeId: string, evaluationYe
       
       if (data.employees && data.employees[employeeId]) {
         employee = data.employees[employeeId];
+      }
+      
+      // R&D 역량평가 기준 로드
+      if (data.rdEvaluationCriteria) {
+        rdEvaluationCriteria = data.rdEvaluationCriteria;
+        console.log('🔍 R&D 역량평가 기준 로드:', rdEvaluationCriteria);
       }
     }
     
@@ -116,19 +123,42 @@ export async function calculateAutoRdEvaluation(employeeId: string, evaluationYe
     // 4. 글로벌 역량 계산
     let globalScore = 0;
     if (relatedData.languages && relatedData.languages.length > 0) {
+      // R&D 역량평가 기준에서 글로벌 역량 기준 가져오기
+      const globalCriteria = rdEvaluationCriteria?.global_competency || {};
+      
       for (const lang of relatedData.languages) {
+        // 영어 점수 계산 (TOEIC)
         if (lang.language === 'English' && lang.testType === 'TOEIC') {
           const score = lang.score || 0;
-          if (score >= 950) globalScore += 10;
-          else if (score >= 900) globalScore += 8;
-          else if (score >= 800) globalScore += 6;
-          else if (score >= 700) globalScore += 4;
-          else globalScore += 2;
+          const toeicCriteria = globalCriteria.english?.toeic || {};
+          
+          // 점수 범위에 따른 점수 계산
+          if (score >= 950) globalScore += toeicCriteria["950-990"] || 10;
+          else if (score >= 900) globalScore += toeicCriteria["900-949"] || 8;
+          else if (score >= 800) globalScore += toeicCriteria["800-899"] || 6;
+          else if (score >= 700) globalScore += toeicCriteria["700-799"] || 4;
+          else globalScore += toeicCriteria["700미만"] || 2;
         }
+        
+        // 일본어 점수 계산 (JLPT)
         if (lang.language === 'Japanese' && lang.testType === 'JLPT') {
-          if (lang.proficiencyLevel === 'advanced') globalScore += 10;
-          else if (lang.proficiencyLevel === 'intermediate') globalScore += 7;
-          else if (lang.proficiencyLevel === 'beginner') globalScore += 4;
+          const jlptCriteria = globalCriteria.japanese?.jlpt || {};
+          
+          // testLevel이 있으면 우선 사용 (N1, N2 등)
+          if (lang.testLevel) {
+            globalScore += jlptCriteria[lang.testLevel] || 0;
+          } else {
+            // testLevel이 없으면 proficiencyLevel 사용 (기존 방식)
+            if (lang.proficiencyLevel === 'advanced') globalScore += jlptCriteria["N1"] || 10;
+            else if (lang.proficiencyLevel === 'intermediate') globalScore += jlptCriteria["N2"] || 7;
+            else if (lang.proficiencyLevel === 'beginner') globalScore += jlptCriteria["N3"] || 4;
+          }
+        }
+        
+        // 중국어 점수 계산 (HSK)
+        if (lang.language === 'Chinese' && lang.testType === 'HSK' && lang.testLevel) {
+          const hskCriteria = globalCriteria.chinese?.hsk || {};
+          globalScore += hskCriteria[lang.testLevel] || 0;
         }
       }
     }
