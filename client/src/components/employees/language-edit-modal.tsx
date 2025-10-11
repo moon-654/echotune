@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { DatePicker } from "@/components/ui/date-picker";
-import { Loader2, Plus, Trash2 } from "lucide-react";
+import { Loader2, Plus, Trash2, Edit } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
@@ -102,6 +102,14 @@ export default function LanguageEditModal({ employeeId, isOpen, onClose }: Langu
   });
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  
+  // 수정 모드 상태
+  const [editingItem, setEditingItem] = useState<{
+    id: string;
+  } | null>(null);
+  
+  // 수정 중인 데이터
+  const [editFormData, setEditFormData] = useState<LanguageFormData | null>(null);
 
   // 기존 어학능력 데이터 로드
   useEffect(() => {
@@ -161,6 +169,45 @@ export default function LanguageEditModal({ employeeId, isOpen, onClose }: Langu
     const updatedLanguages = [...languages];
     updatedLanguages[index] = { ...updatedLanguages[index], [field]: value };
     setLanguages(updatedLanguages);
+  };
+
+  // 수정 관련 핸들러
+  const handleEditClick = (index: number) => {
+    setEditingItem({ id: index.toString() });
+    setEditFormData({ ...languages[index] });
+  };
+
+  const handleEditSave = async (index: number) => {
+    if (!editFormData) return;
+    
+    setIsSaving(true);
+    try {
+      const updatedLanguages = [...languages];
+      updatedLanguages[index] = editFormData;
+      setLanguages(updatedLanguages);
+      
+      setEditingItem(null);
+      setEditFormData(null);
+      
+      toast({
+        title: "성공",
+        description: "언어가 수정되었습니다.",
+      });
+    } catch (error) {
+      console.error('언어 수정 오류:', error);
+      toast({
+        title: "오류",
+        description: "언어 수정에 실패했습니다.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleEditCancel = () => {
+    setEditingItem(null);
+    setEditFormData(null);
   };
 
   const handleSave = async () => {
@@ -396,186 +443,230 @@ export default function LanguageEditModal({ employeeId, isOpen, onClose }: Langu
 
             {/* 기존 어학능력 목록 */}
             <div className="space-y-4">
-              <h3 className="text-lg font-semibold">등록된 어학능력 ({languages.length}개)</h3>
+              <h3 className="text-lg font-medium">등록된 어학능력 ({languages.length}개)</h3>
               {languages.length === 0 ? (
-                <p className="text-muted-foreground text-center py-8">등록된 어학능력이 없습니다.</p>
+                <p className="text-muted-foreground text-center py-4">등록된 어학능력이 없습니다.</p>
               ) : (
-                <div className="space-y-4">
+                <div className="space-y-2">
                   {languages.map((language, index) => (
-                    <div key={index} className="border rounded-lg p-4 space-y-4">
-                      <div className="flex justify-between items-start">
-                        <h4 className="font-medium">{language.language}</h4>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => removeLanguage(index)}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                          <Label>언어</Label>
-                          <Select
-                            value={language.language}
-                            onValueChange={(value) => updateLanguage(index, 'language', value)}
-                          >
-                            <SelectTrigger>
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {SUPPORTED_LANGUAGES.map((lang) => (
-                                <SelectItem key={lang.value} value={lang.value}>
-                                  {lang.label}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div>
-                          <Label>수준</Label>
-                          <Select
-                            value={language.proficiencyLevel}
-                            onValueChange={(value) => updateLanguage(index, 'proficiencyLevel', value)}
-                          >
-                            <SelectTrigger>
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="beginner">초급</SelectItem>
-                              <SelectItem value="intermediate">중급</SelectItem>
-                              <SelectItem value="advanced">고급</SelectItem>
-                              <SelectItem value="native">원어민</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div>
-                          <Label>시험 종류</Label>
-                          {language.language && LANGUAGE_TESTS[language.language as keyof typeof LANGUAGE_TESTS] ? (
-                            <Select
-                              value={language.testType || ''}
-                              onValueChange={(value) => updateLanguage(index, 'testType', value)}
-                            >
-                              <SelectTrigger>
-                                <SelectValue placeholder="시험 종류를 선택하세요" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {LANGUAGE_TESTS[language.language as keyof typeof LANGUAGE_TESTS].tests.map((test) => (
-                                  <SelectItem key={test.value} value={test.value}>
-                                    {test.label}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          ) : (
-                            <Input
-                              value={language.testType || ''}
-                              onChange={(e) => updateLanguage(index, 'testType', e.target.value)}
-                              placeholder="시험 종류를 입력하세요"
-                            />
-                          )}
-                        </div>
-                        {(() => {
-                          const selectedTest = language.language && LANGUAGE_TESTS[language.language as keyof typeof LANGUAGE_TESTS] 
-                            ? LANGUAGE_TESTS[language.language as keyof typeof LANGUAGE_TESTS].tests.find(t => t.value === language.testType)
-                            : null;
-                          
-                          if (selectedTest?.hasLevel) {
-                            return (
-                              <div>
-                                <Label>등급</Label>
+                    <div key={index} className="p-4 border rounded-lg">
+                      {editingItem && editingItem.id === index.toString() ? (
+                        // 수정 모드 - 편집 폼
+                        <div className="space-y-4">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                              <Label>언어</Label>
+                              <Select
+                                value={editFormData?.language || ''}
+                                onValueChange={(value) => setEditFormData(prev => ({ ...prev, language: value }))}
+                              >
+                                <SelectTrigger>
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {SUPPORTED_LANGUAGES.map((lang) => (
+                                    <SelectItem key={lang.value} value={lang.value}>
+                                      {lang.label}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            <div>
+                              <Label>수준</Label>
+                              <Select
+                                value={editFormData?.proficiencyLevel || 'beginner'}
+                                onValueChange={(value) => setEditFormData(prev => ({ ...prev, proficiencyLevel: value as any }))}
+                              >
+                                <SelectTrigger>
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="beginner">초급</SelectItem>
+                                  <SelectItem value="intermediate">중급</SelectItem>
+                                  <SelectItem value="advanced">고급</SelectItem>
+                                  <SelectItem value="native">원어민</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            <div>
+                              <Label>시험 종류</Label>
+                              {editFormData?.language && LANGUAGE_TESTS[editFormData.language as keyof typeof LANGUAGE_TESTS] ? (
                                 <Select
-                                  value={language.testLevel || ''}
-                                  onValueChange={(value) => updateLanguage(index, 'testLevel', value)}
+                                  value={editFormData?.testType || ''}
+                                  onValueChange={(value) => setEditFormData(prev => ({ ...prev, testType: value }))}
                                 >
                                   <SelectTrigger>
-                                    <SelectValue placeholder="등급을 선택하세요" />
+                                    <SelectValue placeholder="시험 종류를 선택하세요" />
                                   </SelectTrigger>
                                   <SelectContent>
-                                    {selectedTest.levels.map((level) => (
-                                      <SelectItem key={level} value={level}>
-                                        {level}
+                                    {LANGUAGE_TESTS[editFormData.language as keyof typeof LANGUAGE_TESTS].tests.map((test) => (
+                                      <SelectItem key={test.value} value={test.value}>
+                                        {test.label}
                                       </SelectItem>
                                     ))}
                                   </SelectContent>
                                 </Select>
-                              </div>
-                            );
-                          } else if (selectedTest?.hasScore) {
-                            return (
-                              <>
-                                <div>
-                                  <Label>점수</Label>
-                                  <Input
-                                    type="number"
-                                    value={language.score || ''}
-                                    onChange={(e) => updateLanguage(index, 'score', parseInt(e.target.value) || undefined)}
-                                    placeholder={`예: ${selectedTest.scoreRange}`}
-                                    min="0"
-                                  />
-                                </div>
-                                <div>
-                                  <Label>만점</Label>
-                                  <Input
-                                    type="number"
-                                    value={language.maxScore || ''}
-                                    onChange={(e) => updateLanguage(index, 'maxScore', parseInt(e.target.value) || undefined)}
-                                    placeholder={`예: ${selectedTest.scoreRange.split('-')[1]}`}
-                                    min="0"
-                                  />
-                                </div>
-                              </>
-                            );
-                          } else {
-                            return (
-                              <>
-                                <div>
-                                  <Label>점수</Label>
-                                  <Input
-                                    type="number"
-                                    value={language.score || ''}
-                                    onChange={(e) => updateLanguage(index, 'score', parseInt(e.target.value) || undefined)}
-                                    min="0"
-                                  />
-                                </div>
-                                <div>
-                                  <Label>만점</Label>
-                                  <Input
-                                    type="number"
-                                    value={language.maxScore || ''}
-                                    onChange={(e) => updateLanguage(index, 'maxScore', parseInt(e.target.value) || undefined)}
-                                    min="0"
-                                  />
-                                </div>
-                              </>
-                            );
-                          }
-                        })()}
-                        <div>
-                          <Label>시험일</Label>
-                          <DatePicker
-                            date={language.testDate}
-                            onDateChange={(date) => updateLanguage(index, 'testDate', date)}
-                            placeholder="시험일 선택"
-                            className="w-full"
-                          />
+                              ) : (
+                                <Input
+                                  value={editFormData?.testType || ''}
+                                  onChange={(e) => setEditFormData(prev => ({ ...prev, testType: e.target.value }))}
+                                  placeholder="시험 종류를 입력하세요"
+                                />
+                              )}
+                            </div>
+                            {(() => {
+                              const selectedTest = editFormData?.language && LANGUAGE_TESTS[editFormData.language as keyof typeof LANGUAGE_TESTS] 
+                                ? LANGUAGE_TESTS[editFormData.language as keyof typeof LANGUAGE_TESTS].tests.find(t => t.value === editFormData?.testType)
+                                : null;
+                              
+                              if (selectedTest?.hasLevel) {
+                                return (
+                                  <div>
+                                    <Label>등급</Label>
+                                    <Select
+                                      value={editFormData?.testLevel || ''}
+                                      onValueChange={(value) => setEditFormData(prev => ({ ...prev, testLevel: value }))}
+                                    >
+                                      <SelectTrigger>
+                                        <SelectValue placeholder="등급을 선택하세요" />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        {selectedTest.levels.map((level) => (
+                                          <SelectItem key={level} value={level}>
+                                            {level}
+                                          </SelectItem>
+                                        ))}
+                                      </SelectContent>
+                                    </Select>
+                                  </div>
+                                );
+                              } else if (selectedTest?.hasScore) {
+                                return (
+                                  <>
+                                    <div>
+                                      <Label>점수</Label>
+                                      <Input
+                                        type="number"
+                                        value={editFormData?.score || ''}
+                                        onChange={(e) => setEditFormData(prev => ({ ...prev, score: parseInt(e.target.value) || undefined }))}
+                                        placeholder={`예: ${selectedTest.scoreRange}`}
+                                        min="0"
+                                      />
+                                    </div>
+                                    <div>
+                                      <Label>만점</Label>
+                                      <Input
+                                        type="number"
+                                        value={editFormData?.maxScore || ''}
+                                        onChange={(e) => setEditFormData(prev => ({ ...prev, maxScore: parseInt(e.target.value) || undefined }))}
+                                        placeholder={`예: ${selectedTest.scoreRange.split('-')[1]}`}
+                                        min="0"
+                                      />
+                                    </div>
+                                  </>
+                                );
+                              } else {
+                                return (
+                                  <>
+                                    <div>
+                                      <Label>점수</Label>
+                                      <Input
+                                        type="number"
+                                        value={editFormData?.score || ''}
+                                        onChange={(e) => setEditFormData(prev => ({ ...prev, score: parseInt(e.target.value) || undefined }))}
+                                        min="0"
+                                      />
+                                    </div>
+                                    <div>
+                                      <Label>만점</Label>
+                                      <Input
+                                        type="number"
+                                        value={editFormData?.maxScore || ''}
+                                        onChange={(e) => setEditFormData(prev => ({ ...prev, maxScore: parseInt(e.target.value) || undefined }))}
+                                        min="0"
+                                      />
+                                    </div>
+                                  </>
+                                );
+                              }
+                            })()}
+                            <div>
+                              <Label>시험일</Label>
+                              <DatePicker
+                                date={editFormData?.testDate}
+                                onDateChange={(date) => setEditFormData(prev => ({ ...prev, testDate: date }))}
+                                placeholder="시험일 선택"
+                                className="w-full"
+                              />
+                            </div>
+                            <div>
+                              <Label>자격증 URL</Label>
+                              <Input
+                                value={editFormData?.certificateUrl || ''}
+                                onChange={(e) => setEditFormData(prev => ({ ...prev, certificateUrl: e.target.value }))}
+                                placeholder="예: https://example.com/certificate.pdf"
+                              />
+                            </div>
+                            <div className="md:col-span-2">
+                              <Label>메모</Label>
+                              <Textarea
+                                value={editFormData?.notes || ''}
+                                onChange={(e) => setEditFormData(prev => ({ ...prev, notes: e.target.value }))}
+                                placeholder="추가 정보나 메모"
+                                rows={3}
+                              />
+                            </div>
+                          </div>
+                          
+                          <div className="flex justify-end space-x-2">
+                            <Button variant="outline" onClick={handleEditCancel}>
+                              취소
+                            </Button>
+                            <Button 
+                              onClick={() => handleEditSave(index)}
+                              disabled={isSaving}
+                            >
+                              {isSaving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                              저장
+                            </Button>
+                          </div>
                         </div>
-                        <div>
-                          <Label>자격증 URL</Label>
-                          <Input
-                            value={language.certificateUrl}
-                            onChange={(e) => updateLanguage(index, 'certificateUrl', e.target.value)}
-                          />
+                      ) : (
+                        // 일반 모드 - 읽기 전용
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="font-medium">{language.language}</div>
+                            <div className="text-sm text-muted-foreground mt-1">
+                              {language.proficiencyLevel === 'beginner' ? '초급' :
+                               language.proficiencyLevel === 'intermediate' ? '중급' :
+                               language.proficiencyLevel === 'advanced' ? '고급' : '원어민'}
+                              {language.testType && ` • ${language.testType}`}
+                              {language.testLevel && ` • ${language.testLevel}`}
+                              {language.score && ` • ${language.score}점`}
+                            </div>
+                            <div className="text-sm text-muted-foreground">
+                              {language.testDate && `시험일: ${format(language.testDate, 'yyyy-MM-dd')}`}
+                            </div>
+                          </div>
+                          <div className="flex space-x-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleEditClick(index)}
+                            >
+                              <Edit className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => removeLanguage(index)}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
                         </div>
-                        <div className="md:col-span-2">
-                          <Label>메모</Label>
-                          <Textarea
-                            value={language.notes}
-                            onChange={(e) => updateLanguage(index, 'notes', e.target.value)}
-                            rows={3}
-                          />
-                        </div>
-                      </div>
+                      )}
                     </div>
                   ))}
                 </div>

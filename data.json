@@ -1001,10 +1001,10 @@
       "createdAt": "2025-09-27T23:31:41.254Z",
       "updatedAt": "2025-09-27T23:31:41.254Z"
     },
-    "8580a8ef-6a95-4fc2-aec8-f16b15a7e7b0": {
-      "id": "8580a8ef-6a95-4fc2-aec8-f16b15a7e7b0",
+    "89ebbd21-f9a1-4d7b-8a60-d6a7c18bf594": {
+      "id": "89ebbd21-f9a1-4d7b-8a60-d6a7c18bf594",
       "employeeId": "ef202e24-47a6-434d-ae9a-3a47c87b64be",
-      "courseName": "test 교육",
+      "courseName": "test 교육11",
       "provider": "온라인",
       "type": "optional",
       "category": "기술",
@@ -1014,13 +1014,13 @@
       "status": "completed",
       "certificateUrl": "",
       "notes": "",
-      "createdAt": "2025-09-28T11:32:49.194Z",
-      "updatedAt": "2025-09-28T11:32:49.194Z"
+      "createdAt": "2025-10-11T08:29:47.771Z",
+      "updatedAt": "2025-10-11T08:29:47.771Z"
     },
-    "4badcc39-ecda-427b-a627-36e7e12b65ea": {
-      "id": "4badcc39-ecda-427b-a627-36e7e12b65ea",
+    "989751b5-6953-4664-83df-189ba901a10f": {
+      "id": "989751b5-6953-4664-83df-189ba901a10f",
       "employeeId": "ef202e24-47a6-434d-ae9a-3a47c87b64be",
-      "courseName": "tset2",
+      "courseName": "tset211",
       "provider": "",
       "type": "optional",
       "category": "",
@@ -1028,8 +1028,10 @@
       "completionDate": "2025-09-10T15:00:00.000Z",
       "duration": 40,
       "status": "completed",
-      "createdAt": "2025-09-28T11:32:49.205Z",
-      "updatedAt": "2025-09-28T11:32:49.205Z"
+      "certificateUrl": "",
+      "notes": "",
+      "createdAt": "2025-10-11T08:29:47.781Z",
+      "updatedAt": "2025-10-11T08:29:47.781Z"
     }
   },
   "certifications": {
@@ -1456,20 +1458,20 @@
       "year": 1970,
       "team": "연구기획팀",
       "trainingType": "optional",
-      "hours": 16,
+      "hours": 32,
       "description": "연구기획팀 optional 교육시간 (자동생성)",
       "createdAt": "2025-09-28T10:13:23.564Z",
-      "updatedAt": "2025-09-28T11:32:49.198Z"
+      "updatedAt": "2025-10-11T08:29:47.774Z"
     },
     "81507f9c-d6df-422a-b2ab-6fa92d400ec5": {
       "id": "81507f9c-d6df-422a-b2ab-6fa92d400ec5",
       "year": 2025,
       "team": "연구기획팀",
       "trainingType": "optional",
-      "hours": 40,
+      "hours": 120,
       "description": "연구기획팀 optional 교육시간 (자동생성)",
       "createdAt": "2025-09-28T11:32:49.208Z",
-      "updatedAt": "2025-09-28T11:32:49.208Z"
+      "updatedAt": "2025-10-11T08:29:47.783Z"
     }
   },
   "teamEmployees": {},

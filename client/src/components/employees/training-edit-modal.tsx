@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { DatePicker } from "@/components/ui/date-picker";
-import { Loader2, Plus, Trash2 } from "lucide-react";
+import { Loader2, Plus, Trash2, Edit } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
@@ -45,6 +45,14 @@ export default function TrainingEditModal({ employeeId, isOpen, onClose }: Train
   });
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  
+  // 수정 모드 상태
+  const [editingItem, setEditingItem] = useState<{
+    id: string;
+  } | null>(null);
+  
+  // 수정 중인 데이터
+  const [editFormData, setEditFormData] = useState<TrainingFormData | null>(null);
 
   // 기존 교육 데이터 로드
   useEffect(() => {
@@ -105,6 +113,45 @@ export default function TrainingEditModal({ employeeId, isOpen, onClose }: Train
     const updatedTrainings = [...trainings];
     updatedTrainings[index] = { ...updatedTrainings[index], [field]: value };
     setTrainings(updatedTrainings);
+  };
+
+  // 수정 관련 핸들러
+  const handleEditClick = (index: number) => {
+    setEditingItem({ id: index.toString() });
+    setEditFormData({ ...trainings[index] });
+  };
+
+  const handleEditSave = async (index: number) => {
+    if (!editFormData) return;
+    
+    setIsSaving(true);
+    try {
+      const updatedTrainings = [...trainings];
+      updatedTrainings[index] = editFormData;
+      setTrainings(updatedTrainings);
+      
+      setEditingItem(null);
+      setEditFormData(null);
+      
+      toast({
+        title: "성공",
+        description: "교육이 수정되었습니다.",
+      });
+    } catch (error) {
+      console.error('교육 수정 오류:', error);
+      toast({
+        title: "오류",
+        description: "교육 수정에 실패했습니다.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleEditCancel = () => {
+    setEditingItem(null);
+    setEditFormData(null);
   };
 
   const handleSave = async () => {
@@ -304,118 +351,172 @@ export default function TrainingEditModal({ employeeId, isOpen, onClose }: Train
 
             {/* 기존 교육 목록 */}
             <div className="space-y-4">
-              <h3 className="text-lg font-semibold">등록된 교육 ({trainings.length}개)</h3>
+              <h3 className="text-lg font-medium">등록된 교육 ({trainings.length}개)</h3>
               {trainings.length === 0 ? (
-                <p className="text-muted-foreground text-center py-8">등록된 교육이 없습니다.</p>
+                <p className="text-muted-foreground text-center py-4">등록된 교육이 없습니다.</p>
               ) : (
-                <div className="space-y-4">
+                <div className="space-y-2">
                   {trainings.map((training, index) => (
-                    <div key={index} className="border rounded-lg p-4 space-y-4">
-                      <div className="flex justify-between items-start">
-                        <h4 className="font-medium">{training.courseName}</h4>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => removeTraining(index)}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                          <Label>과정명</Label>
-                          <Input
-                            value={training.courseName}
-                            onChange={(e) => updateTraining(index, 'courseName', e.target.value)}
-                          />
+                    <div key={index} className="p-4 border rounded-lg">
+                      {editingItem && editingItem.id === index.toString() ? (
+                        // 수정 모드 - 편집 폼
+                        <div className="space-y-4">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                              <Label>과정명</Label>
+                              <Input
+                                value={editFormData?.courseName || ''}
+                                onChange={(e) => setEditFormData(prev => ({ ...prev, courseName: e.target.value }))}
+                                placeholder="예: React 고급 패턴"
+                              />
+                            </div>
+                            <div>
+                              <Label>제공기관</Label>
+                              <Input
+                                value={editFormData?.provider || ''}
+                                onChange={(e) => setEditFormData(prev => ({ ...prev, provider: e.target.value }))}
+                                placeholder="예: 온라인, 회사"
+                              />
+                            </div>
+                            <div>
+                              <Label>교육 유형</Label>
+                              <Select
+                                value={editFormData?.type || 'optional'}
+                                onValueChange={(value) => setEditFormData(prev => ({ ...prev, type: value as any }))}
+                              >
+                                <SelectTrigger>
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="required">필수</SelectItem>
+                                  <SelectItem value="optional">선택</SelectItem>
+                                  <SelectItem value="certification">자격증</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            <div>
+                              <Label>카테고리</Label>
+                              <Input
+                                value={editFormData?.category || ''}
+                                onChange={(e) => setEditFormData(prev => ({ ...prev, category: e.target.value }))}
+                                placeholder="예: 기술, 리더십"
+                              />
+                            </div>
+                            <div>
+                              <Label>상태</Label>
+                              <Select
+                                value={editFormData?.status || 'planned'}
+                                onValueChange={(value) => setEditFormData(prev => ({ ...prev, status: value as any }))}
+                              >
+                                <SelectTrigger>
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="planned">예정</SelectItem>
+                                  <SelectItem value="ongoing">진행중</SelectItem>
+                                  <SelectItem value="completed">완료</SelectItem>
+                                  <SelectItem value="cancelled">취소</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            <div>
+                              <Label>시작일</Label>
+                              <DatePicker
+                                date={editFormData?.startDate}
+                                onDateChange={(date) => setEditFormData(prev => ({ ...prev, startDate: date }))}
+                                placeholder="시작일 선택"
+                                className="w-full"
+                              />
+                            </div>
+                            <div>
+                              <Label>완료일</Label>
+                              <DatePicker
+                                date={editFormData?.completionDate}
+                                onDateChange={(date) => setEditFormData(prev => ({ ...prev, completionDate: date }))}
+                                placeholder="완료일 선택"
+                                className="w-full"
+                              />
+                            </div>
+                            <div>
+                              <Label>소요시간 (시간)</Label>
+                              <Input
+                                type="number"
+                                value={editFormData?.duration || ''}
+                                onChange={(e) => setEditFormData(prev => ({ ...prev, duration: parseInt(e.target.value) || 0 }))}
+                                min="0"
+                              />
+                            </div>
+                            <div>
+                              <Label>점수</Label>
+                              <Input
+                                type="number"
+                                value={editFormData?.score || ''}
+                                onChange={(e) => setEditFormData(prev => ({ ...prev, score: parseInt(e.target.value) || undefined }))}
+                                min="0"
+                                max="100"
+                              />
+                            </div>
+                            <div className="md:col-span-2">
+                              <Label>메모</Label>
+                              <Textarea
+                                value={editFormData?.notes || ''}
+                                onChange={(e) => setEditFormData(prev => ({ ...prev, notes: e.target.value }))}
+                                placeholder="추가 정보나 메모"
+                                rows={2}
+                              />
+                            </div>
+                          </div>
+                          
+                          <div className="flex justify-end space-x-2">
+                            <Button variant="outline" onClick={handleEditCancel}>
+                              취소
+                            </Button>
+                            <Button 
+                              onClick={() => handleEditSave(index)}
+                              disabled={isSaving}
+                            >
+                              {isSaving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                              저장
+                            </Button>
+                          </div>
                         </div>
-                        <div>
-                          <Label>제공기관</Label>
-                          <Input
-                            value={training.provider}
-                            onChange={(e) => updateTraining(index, 'provider', e.target.value)}
-                          />
+                      ) : (
+                        // 일반 모드 - 읽기 전용
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="font-medium">{training.courseName}</div>
+                            <div className="text-sm text-muted-foreground mt-1">
+                              {training.provider && `${training.provider} • `}
+                              {training.type === 'required' ? '필수' : 
+                               training.type === 'optional' ? '선택' : '자격증'}
+                              {training.category && ` • ${training.category}`}
+                            </div>
+                            <div className="text-sm text-muted-foreground">
+                              {training.status === 'planned' ? '예정' : 
+                               training.status === 'ongoing' ? '진행중' :
+                               training.status === 'completed' ? '완료' : '취소'}
+                              {training.startDate && ` • 시작: ${format(training.startDate, 'yyyy-MM-dd')}`}
+                              {training.completionDate && ` • 완료: ${format(training.completionDate, 'yyyy-MM-dd')}`}
+                            </div>
+                          </div>
+                          <div className="flex space-x-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleEditClick(index)}
+                            >
+                              <Edit className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => removeTraining(index)}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
                         </div>
-                        <div>
-                          <Label>교육 유형</Label>
-                          <Select
-                            value={training.type}
-                            onValueChange={(value) => updateTraining(index, 'type', value)}
-                          >
-                            <SelectTrigger>
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="required">필수</SelectItem>
-                              <SelectItem value="optional">선택</SelectItem>
-                              <SelectItem value="certification">자격증</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div>
-                          <Label>상태</Label>
-                          <Select
-                            value={training.status}
-                            onValueChange={(value) => updateTraining(index, 'status', value)}
-                          >
-                            <SelectTrigger>
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="planned">예정</SelectItem>
-                              <SelectItem value="ongoing">진행중</SelectItem>
-                              <SelectItem value="completed">완료</SelectItem>
-                              <SelectItem value="cancelled">취소</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div>
-                          <Label>시작일</Label>
-                          <DatePicker
-                            date={training.startDate}
-                            onDateChange={(date) => updateTraining(index, 'startDate', date)}
-                            placeholder="시작일 선택"
-                            className="w-full"
-                          />
-                        </div>
-                        <div>
-                          <Label>완료일</Label>
-                          <DatePicker
-                            date={training.completionDate}
-                            onDateChange={(date) => updateTraining(index, 'completionDate', date)}
-                            placeholder="완료일 선택"
-                            className="w-full"
-                          />
-                        </div>
-                        <div>
-                          <Label>소요시간 (시간)</Label>
-                          <Input
-                            type="number"
-                            value={training.duration || ''}
-                            onChange={(e) => updateTraining(index, 'duration', parseInt(e.target.value) || 0)}
-                            min="0"
-                          />
-                        </div>
-                        <div>
-                          <Label>점수</Label>
-                          <Input
-                            type="number"
-                            value={training.score || ''}
-                            onChange={(e) => updateTraining(index, 'score', parseInt(e.target.value) || undefined)}
-                            min="0"
-                            max="100"
-                          />
-                        </div>
-                        <div className="md:col-span-2">
-                          <Label>메모</Label>
-                          <Textarea
-                            value={training.notes}
-                            onChange={(e) => updateTraining(index, 'notes', e.target.value)}
-                            placeholder="추가 정보나 메모"
-                            rows={2}
-                          />
-                        </div>
-                      </div>
+                      )}
                     </div>
                   ))}
                 </div>

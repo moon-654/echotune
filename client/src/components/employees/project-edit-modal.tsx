@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { DatePicker } from "@/components/ui/date-picker";
-import { Loader2, Plus, Trash2 } from "lucide-react";
+import { Loader2, Plus, Trash2, Edit } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
@@ -43,6 +43,14 @@ export default function ProjectEditModal({ employeeId, isOpen, onClose }: Projec
   });
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  
+  // 수정 모드 상태
+  const [editingItem, setEditingItem] = useState<{
+    id: string;
+  } | null>(null);
+  
+  // 수정 중인 데이터
+  const [editFormData, setEditFormData] = useState<ProjectFormData | null>(null);
   const [roleOptions, setRoleOptions] = useState<Array<{ value: string; label: string; points?: number }>>([
     { value: 'project_leader', label: 'Project Leader', points: 15 },
     { value: 'core_member', label: '핵심 멤버', points: 10 },
@@ -150,6 +158,45 @@ export default function ProjectEditModal({ employeeId, isOpen, onClose }: Projec
     const updatedProjects = [...projects];
     updatedProjects[index] = { ...updatedProjects[index], [field]: value };
     setProjects(updatedProjects);
+  };
+
+  // 수정 관련 핸들러
+  const handleEditClick = (index: number) => {
+    setEditingItem({ id: index.toString() });
+    setEditFormData({ ...projects[index] });
+  };
+
+  const handleEditSave = async (index: number) => {
+    if (!editFormData) return;
+    
+    setIsSaving(true);
+    try {
+      const updatedProjects = [...projects];
+      updatedProjects[index] = editFormData;
+      setProjects(updatedProjects);
+      
+      setEditingItem(null);
+      setEditFormData(null);
+      
+      toast({
+        title: "성공",
+        description: "프로젝트가 수정되었습니다.",
+      });
+    } catch (error) {
+      console.error('프로젝트 수정 오류:', error);
+      toast({
+        title: "오류",
+        description: "프로젝트 수정에 실패했습니다.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleEditCancel = () => {
+    setEditingItem(null);
+    setEditFormData(null);
   };
 
   const handleSave = async () => {
@@ -358,131 +405,178 @@ export default function ProjectEditModal({ employeeId, isOpen, onClose }: Projec
 
             {/* 기존 프로젝트 목록 */}
             <div className="space-y-4">
-              <h3 className="text-lg font-semibold">등록된 프로젝트 ({projects.length}개)</h3>
+              <h3 className="text-lg font-medium">등록된 프로젝트 ({projects.length}개)</h3>
               {projects.length === 0 ? (
-                <p className="text-muted-foreground text-center py-8">등록된 프로젝트가 없습니다.</p>
+                <p className="text-muted-foreground text-center py-4">등록된 프로젝트가 없습니다.</p>
               ) : (
-                <div className="space-y-4">
+                <div className="space-y-2">
                   {projects.map((project, index) => (
-                    <div key={index} className="border rounded-lg p-4 space-y-4">
-                      <div className="flex justify-between items-start">
-                        <h4 className="font-medium">{project.projectName}</h4>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => removeProject(index)}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                          <Label>프로젝트명</Label>
-                          <Input
-                            value={project.projectName}
-                            onChange={(e) => updateProject(index, 'projectName', e.target.value)}
-                          />
+                    <div key={index} className="p-4 border rounded-lg">
+                      {editingItem && editingItem.id === index.toString() ? (
+                        // 수정 모드 - 편집 폼
+                        <div className="space-y-4">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                              <Label>프로젝트명</Label>
+                              <Input
+                                value={editFormData?.projectName || ''}
+                                onChange={(e) => setEditFormData(prev => ({ ...prev, projectName: e.target.value }))}
+                                placeholder="예: EchoTune 시스템 개발"
+                              />
+                            </div>
+                            <div>
+                              <Label>리더십/역할</Label>
+                              <Select
+                                value={editFormData?.role || ''}
+                                onValueChange={(value) => setEditFormData(prev => ({ ...prev, role: value }))}
+                              >
+                                <SelectTrigger>
+                                  <SelectValue placeholder="역할 선택" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {roleOptions.map(opt => (
+                                    <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            <div>
+                              <Label>상태</Label>
+                              <Select
+                                value={editFormData?.status || 'planned'}
+                                onValueChange={(value) => setEditFormData(prev => ({ ...prev, status: value as any }))}
+                              >
+                                <SelectTrigger>
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="planned">예정</SelectItem>
+                                  <SelectItem value="active">진행중</SelectItem>
+                                  <SelectItem value="completed">완료</SelectItem>
+                                  <SelectItem value="cancelled">취소</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            <div>
+                              <Label>클라이언트</Label>
+                              <Input
+                                value={editFormData?.client || ''}
+                                onChange={(e) => setEditFormData(prev => ({ ...prev, client: e.target.value }))}
+                                placeholder="예: ABC 회사"
+                              />
+                            </div>
+                            <div>
+                              <Label>시작일</Label>
+                              <DatePicker
+                                date={editFormData?.startDate}
+                                onDateChange={(date) => setEditFormData(prev => ({ ...prev, startDate: date }))}
+                                placeholder="시작일 선택"
+                                className="w-full"
+                              />
+                            </div>
+                            <div>
+                              <Label>종료일</Label>
+                              <DatePicker
+                                date={editFormData?.endDate}
+                                onDateChange={(date) => setEditFormData(prev => ({ ...prev, endDate: date }))}
+                                placeholder="종료일 선택"
+                                className="w-full"
+                              />
+                            </div>
+                            <div>
+                              <Label>팀 규모</Label>
+                              <Input
+                                type="number"
+                                value={editFormData?.teamSize || ''}
+                                onChange={(e) => setEditFormData(prev => ({ ...prev, teamSize: parseInt(e.target.value) || 0 }))}
+                                min="0"
+                              />
+                            </div>
+                            <div>
+                              <Label>예산 (만원)</Label>
+                              <Input
+                                type="number"
+                                value={editFormData?.budget || ''}
+                                onChange={(e) => setEditFormData(prev => ({ ...prev, budget: parseInt(e.target.value) || 0 }))}
+                                min="0"
+                              />
+                            </div>
+                            <div className="md:col-span-2">
+                              <Label>프로젝트 설명</Label>
+                              <Textarea
+                                value={editFormData?.description || ''}
+                                onChange={(e) => setEditFormData(prev => ({ ...prev, description: e.target.value }))}
+                                placeholder="프로젝트에 대한 상세 설명"
+                                rows={3}
+                              />
+                            </div>
+                            <div className="md:col-span-2">
+                              <Label>사용 기술</Label>
+                              <Input
+                                value={editFormData?.technologies || ''}
+                                onChange={(e) => setEditFormData(prev => ({ ...prev, technologies: e.target.value }))}
+                                placeholder="예: React, Node.js, PostgreSQL"
+                              />
+                            </div>
+                            <div className="md:col-span-2">
+                              <Label>메모</Label>
+                              <Textarea
+                                value={editFormData?.notes || ''}
+                                onChange={(e) => setEditFormData(prev => ({ ...prev, notes: e.target.value }))}
+                                placeholder="추가 정보나 메모"
+                                rows={2}
+                              />
+                            </div>
+                          </div>
+                          
+                          <div className="flex justify-end space-x-2">
+                            <Button variant="outline" onClick={handleEditCancel}>
+                              취소
+                            </Button>
+                            <Button 
+                              onClick={() => handleEditSave(index)}
+                              disabled={isSaving}
+                            >
+                              {isSaving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                              저장
+                            </Button>
+                          </div>
                         </div>
-                        <div>
-                          <Label>리더십/역할</Label>
-                          <Select
-                            value={project.role || ''}
-                            onValueChange={(value) => updateProject(index, 'role', value)}
-                          >
-                            <SelectTrigger>
-                              <SelectValue placeholder="역할 선택" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {roleOptions.map(opt => (
-                                <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                      ) : (
+                        // 일반 모드 - 읽기 전용
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="font-medium">{project.projectName}</div>
+                            <div className="text-sm text-muted-foreground mt-1">
+                              {project.role && `${roleOptions.find(opt => opt.value === project.role)?.label || project.role} • `}
+                              {project.status === 'planned' ? '예정' : 
+                               project.status === 'active' ? '진행중' :
+                               project.status === 'completed' ? '완료' : '취소'}
+                            </div>
+                            <div className="text-sm text-muted-foreground">
+                              {project.startDate && `시작: ${format(project.startDate, 'yyyy-MM-dd')}`}
+                              {project.endDate && ` • 종료: ${format(project.endDate, 'yyyy-MM-dd')}`}
+                              {project.client && ` • 클라이언트: ${project.client}`}
+                            </div>
+                          </div>
+                          <div className="flex space-x-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleEditClick(index)}
+                            >
+                              <Edit className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => removeProject(index)}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
                         </div>
-                        <div>
-                          <Label>상태</Label>
-                          <Select
-                            value={project.status}
-                            onValueChange={(value) => updateProject(index, 'status', value)}
-                          >
-                            <SelectTrigger>
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="planned">예정</SelectItem>
-                              <SelectItem value="active">진행중</SelectItem>
-                              <SelectItem value="completed">완료</SelectItem>
-                              <SelectItem value="cancelled">취소</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div>
-                          <Label>클라이언트</Label>
-                          <Input
-                            value={project.client}
-                            onChange={(e) => updateProject(index, 'client', e.target.value)}
-                          />
-                        </div>
-                        <div>
-                          <Label>시작일</Label>
-                          <DatePicker
-                            date={project.startDate}
-                            onDateChange={(date) => updateProject(index, 'startDate', date)}
-                            placeholder="시작일 선택"
-                            className="w-full"
-                          />
-                        </div>
-                        <div>
-                          <Label>종료일</Label>
-                          <DatePicker
-                            date={project.endDate}
-                            onDateChange={(date) => updateProject(index, 'endDate', date)}
-                            placeholder="종료일 선택"
-                            className="w-full"
-                          />
-                        </div>
-                        <div>
-                          <Label>팀 규모</Label>
-                          <Input
-                            type="number"
-                            value={project.teamSize || ''}
-                            onChange={(e) => updateProject(index, 'teamSize', parseInt(e.target.value) || 0)}
-                            min="0"
-                          />
-                        </div>
-                        <div>
-                          <Label>예산 (만원)</Label>
-                          <Input
-                            type="number"
-                            value={project.budget || ''}
-                            onChange={(e) => updateProject(index, 'budget', parseInt(e.target.value) || 0)}
-                            min="0"
-                          />
-                        </div>
-                        <div className="md:col-span-2">
-                          <Label>프로젝트 설명</Label>
-                          <Textarea
-                            value={project.description}
-                            onChange={(e) => updateProject(index, 'description', e.target.value)}
-                            rows={3}
-                          />
-                        </div>
-                        <div className="md:col-span-2">
-                          <Label>사용 기술</Label>
-                          <Input
-                            value={project.technologies}
-                            onChange={(e) => updateProject(index, 'technologies', e.target.value)}
-                          />
-                        </div>
-                        <div className="md:col-span-2">
-                          <Label>메모</Label>
-                          <Textarea
-                            value={project.notes}
-                            onChange={(e) => updateProject(index, 'notes', e.target.value)}
-                            rows={2}
-                          />
-                        </div>
-                      </div>
+                      )}
                     </div>
                   ))}
                 </div>
