@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Loader2, Plus, Trash2, Edit, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -26,6 +27,28 @@ export default function AchievementsEditModal({ employeeId, isOpen, onClose }: A
   const [isSaving, setIsSaving] = useState(false);
   const [categories, setCategories] = useState<any>({});
   const [employeeInfo, setEmployeeInfo] = useState<any>(null);
+  
+  // 삭제 확인 대화상자 상태
+  const [deleteConfirm, setDeleteConfirm] = useState<{
+    isOpen: boolean;
+    type: string;
+    id: string;
+    title: string;
+  }>({
+    isOpen: false,
+    type: '',
+    id: '',
+    title: ''
+  });
+  
+  // 수정 모드 상태
+  const [editingItem, setEditingItem] = useState<{
+    type: string;
+    id: string;
+  } | null>(null);
+  
+  // 수정 중인 데이터
+  const [editFormData, setEditFormData] = useState<any>(null);
   
   // 검색 관련 상태
   const [searchQuery, setSearchQuery] = useState('');
@@ -151,9 +174,18 @@ export default function AchievementsEditModal({ employeeId, isOpen, onClose }: A
       }
     };
 
-  const handleDelete = async (type: string, id: string) => {
+  const handleDeleteClick = (type: string, id: string, title: string) => {
+    setDeleteConfirm({
+      isOpen: true,
+      type,
+      id,
+      title
+    });
+  };
+
+  const handleDeleteConfirm = async () => {
     try {
-      const response = await fetch(`/api/${type}s/${id}`, {
+      const response = await fetch(`/api/${deleteConfirm.type}s/${deleteConfirm.id}`, {
         method: 'DELETE'
       });
 
@@ -173,7 +205,68 @@ export default function AchievementsEditModal({ employeeId, isOpen, onClose }: A
         description: "삭제에 실패했습니다.",
         variant: "destructive",
       });
+    } finally {
+      setDeleteConfirm({
+        isOpen: false,
+        type: '',
+        id: '',
+        title: ''
+      });
     }
+  };
+
+  const handleDeleteCancel = () => {
+    setDeleteConfirm({
+      isOpen: false,
+      type: '',
+      id: '',
+      title: ''
+    });
+  };
+
+  // 수정 관련 핸들러
+  const handleEditClick = (type: string, item: any) => {
+    setEditingItem({ type, id: item.id });
+    setEditFormData({ ...item });
+  };
+
+  const handleEditSave = async (type: string, id: string) => {
+    setIsSaving(true);
+    try {
+      const response = await fetch(`/api/${type}s/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(editFormData),
+      });
+
+      if (response.ok) {
+        toast({
+          title: "성공",
+          description: "수정되었습니다.",
+        });
+        loadAchievements();
+        setEditingItem(null);
+        setEditFormData(null);
+      } else {
+        throw new Error('수정 실패');
+      }
+    } catch (error) {
+      console.error('수정 오류:', error);
+      toast({
+        title: "오류",
+        description: "수정에 실패했습니다.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleEditCancel = () => {
+    setEditingItem(null);
+    setEditFormData(null);
   };
 
   const handleSave = async (type: string) => {
@@ -524,26 +617,138 @@ export default function AchievementsEditModal({ employeeId, isOpen, onClose }: A
                   <div className="space-y-2">
                     {patents.map((patent, index) => (
                       <div key={index} className="p-4 border rounded-lg">
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <div className="font-medium">{patent.title}</div>
-                            <div className="text-sm text-muted-foreground mt-1">
-                              {patent.patentNumber && `특허번호: ${patent.patentNumber}`}
+                        {editingItem && editingItem.type === 'patent' && editingItem.id === patent.id ? (
+                          // 수정 모드 - 편집 폼
+                          <div className="space-y-4">
+                            <div className="space-y-2">
+                              <Label>특허명</Label>
+                              <Input
+                                value={editFormData?.title || ''}
+                                onChange={(e) => setEditFormData(prev => ({ ...prev, title: e.target.value }))}
+                                placeholder="특허명을 입력하세요"
+                              />
                             </div>
-                            <div className="text-sm text-muted-foreground">
-                              {patent.applicationDate && `출원일: ${patent.applicationDate}`}
+                            
+                            <div className="grid grid-cols-2 gap-4">
+                              <div className="space-y-2">
+                                <Label>특허번호</Label>
+                                <Input
+                                  value={editFormData?.patentNumber || ''}
+                                  onChange={(e) => setEditFormData(prev => ({ ...prev, patentNumber: e.target.value }))}
+                                  placeholder="예: 10-2023-0012345"
+                                />
+                              </div>
+                              <div className="space-y-2">
+                                <Label>상태</Label>
+                                <Select
+                                  value={editFormData?.status || 'pending'}
+                                  onValueChange={(value) => setEditFormData(prev => ({ ...prev, status: value }))}
+                                >
+                                  <SelectTrigger>
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="pending">출원</SelectItem>
+                                    <SelectItem value="registered">등록</SelectItem>
+                                    <SelectItem value="rejected">반려</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                            </div>
+                            
+                            <div className="grid grid-cols-2 gap-4">
+                              <div className="space-y-2">
+                                <Label>출원일</Label>
+                                <Input
+                                  type="date"
+                                  value={editFormData?.applicationDate || ''}
+                                  onChange={(e) => setEditFormData(prev => ({ ...prev, applicationDate: e.target.value }))}
+                                />
+                              </div>
+                              <div className="space-y-2">
+                                <Label>등록일</Label>
+                                <Input
+                                  type="date"
+                                  value={editFormData?.registrationDate || ''}
+                                  onChange={(e) => setEditFormData(prev => ({ ...prev, registrationDate: e.target.value }))}
+                                />
+                              </div>
+                            </div>
+                            
+                            <div className="space-y-2">
+                              <Label>발명자 목록</Label>
+                              <div className="flex flex-wrap gap-2">
+                                {editFormData?.inventors?.map((inventor: string, idx: number) => (
+                                  <Badge key={idx} variant="secondary" className="flex items-center space-x-1">
+                                    <span>{inventor}</span>
+                                    <button
+                                      type="button"
+                                      onClick={() => setEditFormData(prev => ({
+                                        ...prev,
+                                        inventors: prev.inventors.filter((_: any, i: number) => i !== idx)
+                                      }))}
+                                      className="ml-1 hover:text-red-500"
+                                    >
+                                      <X className="w-3 h-3" />
+                                    </button>
+                                  </Badge>
+                                ))}
+                              </div>
+                            </div>
+                            
+                            <div className="space-y-2">
+                              <Label>특허 설명</Label>
+                              <Textarea
+                                value={editFormData?.description || ''}
+                                onChange={(e) => setEditFormData(prev => ({ ...prev, description: e.target.value }))}
+                                placeholder="특허의 기술적 내용과 특징을 설명하세요"
+                                rows={3}
+                              />
+                            </div>
+                            
+                            <div className="flex justify-end space-x-2">
+                              <Button variant="outline" onClick={handleEditCancel}>
+                                취소
+                              </Button>
+                              <Button 
+                                onClick={() => handleEditSave('patent', patent.id)}
+                                disabled={isSaving}
+                              >
+                                {isSaving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                                저장
+                              </Button>
                             </div>
                           </div>
-                          <div className="flex space-x-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                              onClick={() => handleDelete('patent', patent.id)}
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        </div>
-                        </div>
+                        ) : (
+                          // 일반 모드 - 읽기 전용
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <div className="font-medium">{patent.title}</div>
+                              <div className="text-sm text-muted-foreground mt-1">
+                                {patent.patentNumber && `특허번호: ${patent.patentNumber}`}
+                              </div>
+                              <div className="text-sm text-muted-foreground">
+                                {patent.applicationDate && `출원일: ${patent.applicationDate}`}
+                              </div>
+                            </div>
+                            <div className="flex space-x-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleEditClick('patent', patent)}
+                            >
+                              <Edit className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                                onClick={() => handleDeleteClick('patent', patent.id, patent.title)}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>
@@ -759,26 +964,148 @@ export default function AchievementsEditModal({ employeeId, isOpen, onClose }: A
                   <div className="space-y-2">
                     {publications.map((publication, index) => (
                       <div key={index} className="p-4 border rounded-lg">
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <div className="font-medium">{publication.title}</div>
-                            <div className="text-sm text-muted-foreground mt-1">
-                              {publication.journal && `학술지: ${publication.journal}`}
+                        {editingItem && editingItem.type === 'publication' && editingItem.id === publication.id ? (
+                          // 수정 모드 - 편집 폼
+                          <div className="space-y-4">
+                            <div className="space-y-2">
+                              <Label>논문 제목</Label>
+                              <Input
+                                value={editFormData?.title || ''}
+                                onChange={(e) => setEditFormData(prev => ({ ...prev, title: e.target.value }))}
+                                placeholder="논문 제목을 입력하세요"
+                              />
                             </div>
-                            <div className="text-sm text-muted-foreground">
-                              {publication.publicationDate && `발표일: ${publication.publicationDate}`}
+                            
+                            <div className="grid grid-cols-2 gap-4">
+                              <div className="space-y-2">
+                                <Label>학술지/학회명</Label>
+                                <Input
+                                  value={editFormData?.journal || ''}
+                                  onChange={(e) => setEditFormData(prev => ({ ...prev, journal: e.target.value }))}
+                                  placeholder="예: Nature, IEEE Transactions"
+                                />
+                              </div>
+                              <div className="space-y-2">
+                                <Label>논문 등급</Label>
+                                <Select
+                                  value={editFormData?.level || 'sci'}
+                                  onValueChange={(value) => setEditFormData(prev => ({ ...prev, level: value }))}
+                                >
+                                  <SelectTrigger>
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="sci">SCI(E)급</SelectItem>
+                                    <SelectItem value="domestic">국내 학술지</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                            </div>
+                            
+                            <div className="grid grid-cols-2 gap-4">
+                              <div className="space-y-2">
+                                <Label>발표일</Label>
+                                <Input
+                                  type="date"
+                                  value={editFormData?.publicationDate || ''}
+                                  onChange={(e) => setEditFormData(prev => ({ ...prev, publicationDate: e.target.value }))}
+                                />
+                              </div>
+                              <div className="space-y-2">
+                                <Label>DOI</Label>
+                                <Input
+                                  value={editFormData?.doi || ''}
+                                  onChange={(e) => setEditFormData(prev => ({ ...prev, doi: e.target.value }))}
+                                  placeholder="예: 10.1038/nature12345"
+                                />
+                              </div>
+                            </div>
+                            
+                            <div className="space-y-2">
+                              <Label>Impact Factor</Label>
+                              <Input
+                                type="number"
+                                step="0.1"
+                                value={editFormData?.impactFactor || ''}
+                                onChange={(e) => setEditFormData(prev => ({ ...prev, impactFactor: e.target.value }))}
+                                placeholder="예: 42.778"
+                              />
+                            </div>
+                            
+                            <div className="space-y-2">
+                              <Label>저자 목록</Label>
+                              <div className="flex flex-wrap gap-2">
+                                {editFormData?.authors?.map((author: string, idx: number) => (
+                                  <Badge key={idx} variant="secondary" className="flex items-center space-x-1">
+                                    <span>{author}</span>
+                                    <button
+                                      type="button"
+                                      onClick={() => setEditFormData(prev => ({
+                                        ...prev,
+                                        authors: prev.authors.filter((_: any, i: number) => i !== idx)
+                                      }))}
+                                      className="ml-1 hover:text-red-500"
+                                    >
+                                      <X className="w-3 h-3" />
+                                    </button>
+                                  </Badge>
+                                ))}
+                              </div>
+                            </div>
+                            
+                            <div className="space-y-2">
+                              <Label>논문 요약</Label>
+                              <Textarea
+                                value={editFormData?.description || ''}
+                                onChange={(e) => setEditFormData(prev => ({ ...prev, description: e.target.value }))}
+                                placeholder="논문의 주요 내용과 기여도를 설명하세요"
+                                rows={3}
+                              />
+                            </div>
+                            
+                            <div className="flex justify-end space-x-2">
+                              <Button variant="outline" onClick={handleEditCancel}>
+                                취소
+                              </Button>
+                              <Button 
+                                onClick={() => handleEditSave('publication', publication.id)}
+                                disabled={isSaving}
+                              >
+                                {isSaving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                                저장
+                              </Button>
                             </div>
                           </div>
-                          <div className="flex space-x-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                              onClick={() => handleDelete('publication', publication.id)}
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        </div>
-                        </div>
+                        ) : (
+                          // 일반 모드 - 읽기 전용
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <div className="font-medium">{publication.title}</div>
+                              <div className="text-sm text-muted-foreground mt-1">
+                                {publication.journal && `학술지: ${publication.journal}`}
+                              </div>
+                              <div className="text-sm text-muted-foreground">
+                                {publication.publicationDate && `발표일: ${publication.publicationDate}`}
+                              </div>
+                            </div>
+                            <div className="flex space-x-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleEditClick('publication', publication)}
+                            >
+                              <Edit className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleDeleteClick('publication', publication.id, publication.title)}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>
@@ -980,26 +1307,138 @@ export default function AchievementsEditModal({ employeeId, isOpen, onClose }: A
                   <div className="space-y-2">
                     {awards.map((award, index) => (
                       <div key={index} className="p-4 border rounded-lg">
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <div className="font-medium">{award.title}</div>
-                            <div className="text-sm text-muted-foreground mt-1">
-                              {award.organization && `수여기관: ${award.organization}`}
+                        {editingItem && editingItem.type === 'award' && editingItem.id === award.id ? (
+                          // 수정 모드 - 편집 폼
+                          <div className="space-y-4">
+                            <div className="space-y-2">
+                              <Label>수상명</Label>
+                              <Input
+                                value={editFormData?.title || ''}
+                                onChange={(e) => setEditFormData(prev => ({ ...prev, title: e.target.value }))}
+                                placeholder="수상명을 입력하세요"
+                              />
                             </div>
-                            <div className="text-sm text-muted-foreground">
-                              {award.awardDate && `수상일: ${award.awardDate}`}
+                            
+                            <div className="space-y-2">
+                              <Label>수여 기관</Label>
+                              <Input
+                                value={editFormData?.organization || ''}
+                                onChange={(e) => setEditFormData(prev => ({ ...prev, organization: e.target.value }))}
+                                placeholder="예: 한국과학기술원, IEEE"
+                              />
+                            </div>
+                            
+                            <div className="grid grid-cols-2 gap-4">
+                              <div className="space-y-2">
+                                <Label>수상일</Label>
+                                <Input
+                                  type="date"
+                                  value={editFormData?.awardDate || ''}
+                                  onChange={(e) => setEditFormData(prev => ({ ...prev, awardDate: e.target.value }))}
+                                />
+                              </div>
+                              <div className="space-y-2">
+                                <Label>수상 등급</Label>
+                                <Select
+                                  value={editFormData?.level || '사내'}
+                                  onValueChange={(value) => setEditFormData(prev => ({ ...prev, level: value }))}
+                                >
+                                  <SelectTrigger>
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="국제">국제</SelectItem>
+                                    <SelectItem value="국가">국가</SelectItem>
+                                    <SelectItem value="산업">산업</SelectItem>
+                                    <SelectItem value="사내">사내</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                            </div>
+                            
+                            <div className="space-y-2">
+                              <Label>수상증 URL</Label>
+                              <Input
+                                value={editFormData?.certificateUrl || ''}
+                                onChange={(e) => setEditFormData(prev => ({ ...prev, certificateUrl: e.target.value }))}
+                                placeholder="수상증 이미지 또는 문서 URL"
+                              />
+                            </div>
+                            
+                            <div className="space-y-2">
+                              <Label>팀 멤버 목록</Label>
+                              <div className="flex flex-wrap gap-2">
+                                {editFormData?.teamMembers?.map((member: string, idx: number) => (
+                                  <Badge key={idx} variant="secondary" className="flex items-center space-x-1">
+                                    <span>{member}</span>
+                                    <button
+                                      type="button"
+                                      onClick={() => setEditFormData(prev => ({
+                                        ...prev,
+                                        teamMembers: prev.teamMembers.filter((_: any, i: number) => i !== idx)
+                                      }))}
+                                      className="ml-1 hover:text-red-500"
+                                    >
+                                      <X className="w-3 h-3" />
+                                    </button>
+                                  </Badge>
+                                ))}
+                              </div>
+                            </div>
+                            
+                            <div className="space-y-2">
+                              <Label>수상 내용</Label>
+                              <Textarea
+                                value={editFormData?.description || ''}
+                                onChange={(e) => setEditFormData(prev => ({ ...prev, description: e.target.value }))}
+                                placeholder="수상 배경, 수상 이유, 기여도 등을 설명하세요"
+                                rows={3}
+                              />
+                            </div>
+                            
+                            <div className="flex justify-end space-x-2">
+                              <Button variant="outline" onClick={handleEditCancel}>
+                                취소
+                              </Button>
+                              <Button 
+                                onClick={() => handleEditSave('award', award.id)}
+                                disabled={isSaving}
+                              >
+                                {isSaving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                                저장
+                              </Button>
                             </div>
                           </div>
-                          <div className="flex space-x-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleDelete('award', award.id)}
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
+                        ) : (
+                          // 일반 모드 - 읽기 전용
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <div className="font-medium">{award.title}</div>
+                              <div className="text-sm text-muted-foreground mt-1">
+                                {award.organization && `수여기관: ${award.organization}`}
+                              </div>
+                              <div className="text-sm text-muted-foreground">
+                                {award.awardDate && `수상일: ${award.awardDate}`}
+                              </div>
+                            </div>
+                            <div className="flex space-x-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleEditClick('award', award)}
+                              >
+                                <Edit className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleDeleteClick('award', award.id, award.title)}
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </div>
                           </div>
-                        </div>
+                        )}
                       </div>
                     ))}
                   </div>
@@ -1009,6 +1448,31 @@ export default function AchievementsEditModal({ employeeId, isOpen, onClose }: A
           </Tabs>
         )}
       </DialogContent>
+      
+      {/* 삭제 확인 대화상자 */}
+      <AlertDialog open={deleteConfirm.isOpen} onOpenChange={handleDeleteCancel}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>삭제 확인</AlertDialogTitle>
+            <AlertDialogDescription>
+              '{deleteConfirm.title}'을(를) 삭제하시겠습니까?
+              <br />
+              이 작업은 되돌릴 수 없습니다.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={handleDeleteCancel}>
+              취소
+            </AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleDeleteConfirm}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              삭제
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Dialog>
   );
 }
