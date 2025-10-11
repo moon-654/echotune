@@ -28,6 +28,7 @@ interface TrainingFormData {
   duration?: number;
   score?: number;
   status: 'planned' | 'ongoing' | 'completed' | 'cancelled';
+  instructorRole?: 'instructor' | 'mentor' | null;
   certificateUrl?: string;
   notes?: string;
 }
@@ -41,7 +42,8 @@ export default function TrainingEditModal({ employeeId, isOpen, onClose }: Train
     provider: '',
     type: 'optional',
     category: '',
-    status: 'planned'
+    status: 'planned',
+    instructorRole: null
   });
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -74,6 +76,7 @@ export default function TrainingEditModal({ employeeId, isOpen, onClose }: Train
             duration: training.duration || 0,
             score: training.score || undefined,
             status: training.status as 'planned' | 'ongoing' | 'completed' | 'cancelled',
+            instructorRole: (training as any).instructorRole || null,
             certificateUrl: training.certificateUrl || '',
             notes: training.notes || ''
           }));
@@ -92,6 +95,14 @@ export default function TrainingEditModal({ employeeId, isOpen, onClose }: Train
     loadTrainings();
   }, [isOpen, employeeId]);
 
+  // 모달이 닫힐 때 편집 상태 초기화
+  useEffect(() => {
+    if (!isOpen) {
+      setEditingItem(null);
+      setEditFormData(null);
+    }
+  }, [isOpen]);
+
   const addNewTraining = () => {
     if (newTraining.courseName.trim()) {
       setTrainings([...trainings, { ...newTraining }]);
@@ -100,7 +111,8 @@ export default function TrainingEditModal({ employeeId, isOpen, onClose }: Train
         provider: '',
         type: 'optional',
         category: '',
-        status: 'planned'
+        status: 'planned',
+        instructorRole: null
       });
     }
   };
@@ -176,6 +188,7 @@ export default function TrainingEditModal({ employeeId, isOpen, onClose }: Train
           duration: training.duration,
           score: training.score,
           status: training.status,
+          instructorRole: training.instructorRole,
           certificateUrl: training.certificateUrl,
           notes: training.notes
         };
@@ -290,6 +303,25 @@ export default function TrainingEditModal({ employeeId, isOpen, onClose }: Train
                       <SelectItem value="ongoing">진행중</SelectItem>
                       <SelectItem value="completed">완료</SelectItem>
                       <SelectItem value="cancelled">취소</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="instructorRole">역할</Label>
+                  <Select
+                    value={newTraining.instructorRole || 'student'}
+                    onValueChange={(value) => setNewTraining({ 
+                      ...newTraining, 
+                      instructorRole: value === 'student' ? null : value as 'instructor' | 'mentor'
+                    })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="student">수강생</SelectItem>
+                      <SelectItem value="instructor">강사</SelectItem>
+                      <SelectItem value="mentor">멘토</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -420,6 +452,25 @@ export default function TrainingEditModal({ employeeId, isOpen, onClose }: Train
                               </Select>
                             </div>
                             <div>
+                              <Label>역할</Label>
+                              <Select
+                                value={editFormData?.instructorRole || 'student'}
+                                onValueChange={(value) => setEditFormData(prev => ({ 
+                                  ...prev, 
+                                  instructorRole: value === 'student' ? null : value as 'instructor' | 'mentor'
+                                }))}
+                              >
+                                <SelectTrigger>
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="student">수강생</SelectItem>
+                                  <SelectItem value="instructor">강사</SelectItem>
+                                  <SelectItem value="mentor">멘토</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            <div>
                               <Label>시작일</Label>
                               <DatePicker
                                 date={editFormData?.startDate}
@@ -495,6 +546,7 @@ export default function TrainingEditModal({ employeeId, isOpen, onClose }: Train
                               {training.status === 'planned' ? '예정' : 
                                training.status === 'ongoing' ? '진행중' :
                                training.status === 'completed' ? '완료' : '취소'}
+                              {training.instructorRole && ` • ${training.instructorRole === 'instructor' ? '강사' : '멘토'}`}
                               {training.startDate && ` • 시작: ${format(training.startDate, 'yyyy-MM-dd')}`}
                               {training.completionDate && ` • 완료: ${format(training.completionDate, 'yyyy-MM-dd')}`}
                             </div>

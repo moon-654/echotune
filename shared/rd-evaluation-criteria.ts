@@ -247,23 +247,23 @@ export const RD_EVALUATION_CRITERIA: RdEvaluationCriteria[] = [
       {
         id: 'training_completion',
         name: '교육 이수',
-        description: '교육 이수 시간에 따른 점수',
+        description: '교육 이수 시간에 따른 점수 (수강생 역할만)',
         condition: 'training_hours',
         score: 0,
         dataSource: 'training_history',
         dataField: 'duration',
         operator: 'sum',
         value: {
-          '40시간 이상': 5,
-          '20시간 이상': 3,
-          '10시간 이상': 2
+          '40시간 이상': 20,
+          '20시간 이상': 15,
+          '10시간 이상': 10
         },
         maxScore: 20
       },
       {
         id: 'certification_acquisition',
-        name: '자격증 취득',
-        description: '신규 자격증 취득',
+        name: '신규 자격증',
+        description: '평가 기간 내 발급된 자격증',
         condition: 'new_certifications',
         score: 0,
         dataSource: 'certifications',
@@ -277,16 +277,32 @@ export const RD_EVALUATION_CRITERIA: RdEvaluationCriteria[] = [
       {
         id: 'mentoring',
         name: '멘토링',
-        description: '멘토링 활동 (수동 입력 필요)',
+        description: '멘토링 활동 (자동 추출)',
         condition: 'mentoring',
         score: 0,
-        dataSource: 'manual',
-        dataField: 'mentoring_count',
+        dataSource: 'training_history',
+        dataField: 'instructor_role',
         operator: 'count',
         value: {
-          '멘토링 1명': 3
+          '멘토링 1회': 3
         },
         maxScore: 15
+      },
+      {
+        id: 'lecturing',
+        name: '강의',
+        description: '강의 활동 (자동 추출)',
+        condition: 'lecturing',
+        score: 0,
+        dataSource: 'training_history',
+        dataField: 'instructor_role',
+        operator: 'count',
+        value: {
+          '강의 1회': 5,
+          '강의 2회': 10,
+          '강의 3회 이상': 15
+        },
+        maxScore: 20
       }
     ]
   },

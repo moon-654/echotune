@@ -150,6 +150,14 @@ export default function LanguageEditModal({ employeeId, isOpen, onClose }: Langu
     loadLanguages();
   }, [isOpen, employeeId]);
 
+  // 모달이 닫힐 때 편집 상태 초기화
+  useEffect(() => {
+    if (!isOpen) {
+      setEditingItem(null);
+      setEditFormData(null);
+    }
+  }, [isOpen]);
+
   const addNewLanguage = () => {
     if (newLanguage.language.trim()) {
       setLanguages([...languages, { ...newLanguage }]);

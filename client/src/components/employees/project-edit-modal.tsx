@@ -139,6 +139,14 @@ export default function ProjectEditModal({ employeeId, isOpen, onClose }: Projec
     loadProjects();
   }, [isOpen, employeeId]);
 
+  // 모달이 닫힐 때 편집 상태 초기화
+  useEffect(() => {
+    if (!isOpen) {
+      setEditingItem(null);
+      setEditFormData(null);
+    }
+  }, [isOpen]);
+
   const addNewProject = () => {
     if (newProject.projectName.trim()) {
       setProjects([...projects, { ...newProject }]);

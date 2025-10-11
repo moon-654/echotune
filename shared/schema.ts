@@ -42,6 +42,7 @@ export const trainingHistory = pgTable("training_history", {
   duration: integer("duration"), // in hours
   score: real("score"),
   status: text("status").notNull().default("planned"), // "planned", "ongoing", "completed", "cancelled"
+  instructorRole: text("instructor_role"), // "instructor" (강사), "mentor" (멘토), null (수강생)
   certificateUrl: text("certificate_url"),
   notes: text("notes"),
   createdAt: timestamp("created_at").default(sql`now()`)
@@ -219,7 +220,8 @@ export const insertTrainingHistorySchema = createInsertSchema(trainingHistory).o
   createdAt: true
 }).extend({
   startDate: z.string().datetime().optional().nullable().transform((val) => val ? new Date(val) : null),
-  completionDate: z.string().datetime().optional().nullable().transform((val) => val ? new Date(val) : null)
+  completionDate: z.string().datetime().optional().nullable().transform((val) => val ? new Date(val) : null),
+  instructorRole: z.enum(["instructor", "mentor"]).optional().nullable()
 });
 
 export const insertCertificationSchema = createInsertSchema(certifications).omit({

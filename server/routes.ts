@@ -468,9 +468,29 @@ app.put("/api/employees/:id", async (req, res) => {
   app.get("/api/certifications", async (req, res) => {
     try {
       const employeeId = req.query.employeeId as string;
-      const certifications = employeeId 
+      const startDate = req.query.startDate as string;
+      const endDate = req.query.endDate as string;
+      
+      let certifications = employeeId 
         ? await storage.getCertificationsByEmployee(employeeId)
         : await storage.getAllCertifications();
+      
+      // 날짜 필터링 적용
+      if (startDate || endDate) {
+        certifications = certifications.filter(certification => {
+          const certDate = certification.issueDate;
+          if (!certDate) return false; // 날짜가 없는 자격증은 제외
+          
+          const date = new Date(certDate);
+          if (isNaN(date.getTime())) return false; // 유효하지 않은 날짜는 제외
+          
+          if (startDate && date < new Date(startDate)) return false;
+          if (endDate && date > new Date(endDate)) return false;
+          
+          return true;
+        });
+      }
+      
       res.json(certifications);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch certifications" });
@@ -648,9 +668,29 @@ app.put("/api/employees/:id", async (req, res) => {
   app.get("/api/training-history", async (req, res) => {
     try {
       const employeeId = req.query.employeeId as string;
-      const trainings = employeeId 
+      const startDate = req.query.startDate as string;
+      const endDate = req.query.endDate as string;
+      
+      let trainings = employeeId 
         ? await storage.getTrainingHistoryByEmployee(employeeId)
         : await storage.getAllTrainingHistory();
+      
+      // 날짜 필터링 적용
+      if (startDate || endDate) {
+        trainings = trainings.filter(training => {
+          const trainingDate = training.completionDate || training.startDate;
+          if (!trainingDate) return false; // 날짜가 없는 교육은 제외
+          
+          const date = new Date(trainingDate);
+          if (isNaN(date.getTime())) return false; // 유효하지 않은 날짜는 제외
+          
+          if (startDate && date < new Date(startDate)) return false;
+          if (endDate && date > new Date(endDate)) return false;
+          
+          return true;
+        });
+      }
+      
       res.json(trainings);
     } catch (error) {
       console.error('교육 이력 조회 오류:', error);
@@ -754,9 +794,29 @@ app.put("/api/employees/:id", async (req, res) => {
   app.get("/api/projects", async (req, res) => {
     try {
       const employeeId = req.query.employeeId as string;
-      const projects = employeeId 
+      const startDate = req.query.startDate as string;
+      const endDate = req.query.endDate as string;
+      
+      let projects = employeeId 
         ? await storage.getProjectsByEmployee(employeeId)
         : await storage.getAllProjects();
+      
+      // 날짜 필터링 적용
+      if (startDate || endDate) {
+        projects = projects.filter(project => {
+          const projectDate = project.startDate;
+          if (!projectDate) return false; // 날짜가 없는 프로젝트는 제외
+          
+          const date = new Date(projectDate);
+          if (isNaN(date.getTime())) return false; // 유효하지 않은 날짜는 제외
+          
+          if (startDate && date < new Date(startDate)) return false;
+          if (endDate && date > new Date(endDate)) return false;
+          
+          return true;
+        });
+      }
+      
       res.json(projects);
     } catch (error) {
       console.error('프로젝트 조회 오류:', error);
@@ -824,9 +884,29 @@ app.put("/api/employees/:id", async (req, res) => {
   app.get("/api/patents", async (req, res) => {
     try {
       const employeeId = req.query.employeeId as string;
-      const patents = employeeId 
+      const startDate = req.query.startDate as string;
+      const endDate = req.query.endDate as string;
+      
+      let patents = employeeId 
         ? await storage.getPatentsByEmployee(employeeId)
         : await storage.getAllPatents();
+      
+      // 날짜 필터링 적용
+      if (startDate || endDate) {
+        patents = patents.filter(patent => {
+          const patentDate = patent.applicationDate;
+          if (!patentDate) return false; // 날짜가 없는 특허는 제외
+          
+          const date = new Date(patentDate);
+          if (isNaN(date.getTime())) return false; // 유효하지 않은 날짜는 제외
+          
+          if (startDate && date < new Date(startDate)) return false;
+          if (endDate && date > new Date(endDate)) return false;
+          
+          return true;
+        });
+      }
+      
       res.json(patents);
     } catch (error) {
       console.error('특허 조회 오류:', error);
@@ -894,9 +974,29 @@ app.put("/api/employees/:id", async (req, res) => {
   app.get("/api/publications", async (req, res) => {
     try {
       const employeeId = req.query.employeeId as string;
-      const publications = employeeId 
+      const startDate = req.query.startDate as string;
+      const endDate = req.query.endDate as string;
+      
+      let publications = employeeId 
         ? await storage.getPublicationsByEmployee(employeeId)
         : await storage.getAllPublications();
+      
+      // 날짜 필터링 적용
+      if (startDate || endDate) {
+        publications = publications.filter(publication => {
+          const publicationDate = publication.publicationDate;
+          if (!publicationDate) return false; // 날짜가 없는 논문은 제외
+          
+          const date = new Date(publicationDate);
+          if (isNaN(date.getTime())) return false; // 유효하지 않은 날짜는 제외
+          
+          if (startDate && date < new Date(startDate)) return false;
+          if (endDate && date > new Date(endDate)) return false;
+          
+          return true;
+        });
+      }
+      
       res.json(publications);
     } catch (error) {
       console.error('논문 조회 오류:', error);
@@ -964,9 +1064,29 @@ app.put("/api/employees/:id", async (req, res) => {
   app.get("/api/awards", async (req, res) => {
     try {
       const employeeId = req.query.employeeId as string;
-      const awards = employeeId 
+      const startDate = req.query.startDate as string;
+      const endDate = req.query.endDate as string;
+      
+      let awards = employeeId 
         ? await storage.getAwardsByEmployee(employeeId)
         : await storage.getAllAwards();
+      
+      // 날짜 필터링 적용
+      if (startDate || endDate) {
+        awards = awards.filter(award => {
+          const awardDate = award.awardDate;
+          if (!awardDate) return false; // 날짜가 없는 수상은 제외
+          
+          const date = new Date(awardDate);
+          if (isNaN(date.getTime())) return false; // 유효하지 않은 날짜는 제외
+          
+          if (startDate && date < new Date(startDate)) return false;
+          if (endDate && date > new Date(endDate)) return false;
+          
+          return true;
+        });
+      }
+      
       res.json(awards);
     } catch (error) {
       console.error('수상 조회 오류:', error);
@@ -1623,8 +1743,8 @@ app.put("/api/employees/:id", async (req, res) => {
   // Proposals routes
   app.get("/api/proposals", async (req, res) => {
     try {
-      const { employeeId } = req.query;
-      console.log('🔍 제안제도 조회 요청:', { employeeId });
+      const { employeeId, startDate, endDate } = req.query;
+      console.log('🔍 제안제도 조회 요청:', { employeeId, startDate, endDate });
       
       // data.json에서 제안제도 데이터 로드
       const dataPath = path.join(process.cwd(), 'data.json');
@@ -1647,6 +1767,22 @@ app.put("/api/employees/:id", async (req, res) => {
         // employeeId가 있으면 필터링
         if (employeeId) {
           proposals = proposals.filter((p: any) => p.employeeId === employeeId);
+        }
+        
+        // 날짜 필터링 적용
+        if (startDate || endDate) {
+          proposals = proposals.filter((proposal: any) => {
+            const proposalDate = proposal.submissionDate;
+            if (!proposalDate) return false; // 날짜가 없는 제안은 제외
+            
+            const date = new Date(proposalDate);
+            if (isNaN(date.getTime())) return false; // 유효하지 않은 날짜는 제외
+            
+            if (startDate && date < new Date(startDate)) return false;
+            if (endDate && date > new Date(endDate)) return false;
+            
+            return true;
+          });
         }
       }
       
@@ -3027,11 +3163,17 @@ app.put("/api/employees/:id", async (req, res) => {
   app.get("/api/rd-evaluations/test/:employeeId", async (req, res) => {
     try {
       const { employeeId } = req.params;
-      console.log(`🔍 R&D 역량평가 테스트 시작: ${employeeId}`);
+      const { startDate, endDate } = req.query;
+      console.log(`🔍 R&D 역량평가 테스트 시작: ${employeeId}`, { startDate, endDate });
       
-      // 자동 평가 계산
+      // 자동 평가 계산 (날짜 필터 적용)
       const { calculateAutoRdEvaluation } = await import("./rd-evaluation-auto");
-      const result = await calculateAutoRdEvaluation(employeeId);
+      const result = await calculateAutoRdEvaluation(
+        employeeId, 
+        new Date().getFullYear(), 
+        startDate as string, 
+        endDate as string
+      );
       
       console.log(`✅ R&D 역량평가 결과:`, result);
       res.json(result);

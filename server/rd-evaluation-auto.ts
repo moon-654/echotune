@@ -4,7 +4,7 @@ import fs from "fs";
 import path from "path";
 
 // 직원의 6대 역량 자동 평가 실행
-export async function calculateAutoRdEvaluation(employeeId: string, evaluationYear: number = new Date().getFullYear()) {
+export async function calculateAutoRdEvaluation(employeeId: string, evaluationYear: number = new Date().getFullYear(), startDate?: string, endDate?: string) {
   try {
     // 직원 기본 정보 조회 (data.json에서)
     const dataPath = path.join(process.cwd(), 'data.json');
@@ -23,8 +23,8 @@ export async function calculateAutoRdEvaluation(employeeId: string, evaluationYe
       throw new Error("직원을 찾을 수 없습니다.");
     }
     
-    // 관련 데이터 조회
-    const relatedData = await getRelatedData(employeeId);
+    // 관련 데이터 조회 (날짜 필터 적용)
+    const relatedData = await getRelatedData(employeeId, startDate, endDate);
     
     // 6대 역량별 점수 계산
     const scores = {
@@ -137,14 +137,53 @@ export async function calculateAutoRdEvaluation(employeeId: string, evaluationYe
     
     // 5. 기술 확산 및 자기계발 계산
     let knowledgeScore = 0;
+    
+    // 교육이수 점수 (수강생 역할만) - 원점수 계산
     if (relatedData.trainingHistory && relatedData.trainingHistory.length > 0) {
-      const totalHours = relatedData.trainingHistory.reduce((sum: number, training: any) => sum + (training.duration || 0), 0);
+      const studentTrainings = relatedData.trainingHistory.filter((training: any) => 
+        training.status === 'completed' && 
+        (training.instructorRole === null || training.instructorRole === undefined)
+      );
+      const totalHours = studentTrainings.reduce((sum: number, training: any) => sum + (training.duration || 0), 0);
+      
       if (totalHours >= 40) knowledgeScore += 5;
       else if (totalHours >= 20) knowledgeScore += 3;
       else if (totalHours >= 10) knowledgeScore += 2;
     }
     
-    scores.knowledgeSharing = Math.min(knowledgeScore, 100);
+    // 신규 자격증 점수 (평가 기간 내 발급) - 원점수 계산
+    if (relatedData.certifications && relatedData.certifications.length > 0) {
+      const newCerts = relatedData.certifications.filter((cert: any) => {
+        if (!cert.issueDate) return false;
+        const issueDate = new Date(cert.issueDate);
+        const start = startDate ? new Date(startDate) : new Date(evaluationYear, 0, 1);
+        const end = endDate ? new Date(endDate) : new Date(evaluationYear, 11, 31);
+        return issueDate >= start && issueDate <= end;
+      });
+      knowledgeScore += Math.min(newCerts.length * 5, 25);
+    }
+    
+    // 멘토링 활동 점수 - 원점수 계산
+    if (relatedData.trainingHistory && relatedData.trainingHistory.length > 0) {
+      const mentoringCount = relatedData.trainingHistory.filter((training: any) => 
+        training.status === 'completed' && training.instructorRole === 'mentor'
+      ).length;
+      knowledgeScore += Math.min(mentoringCount * 3, 15);
+    }
+    
+    // 강의 활동 점수 - 원점수 계산
+    if (relatedData.trainingHistory && relatedData.trainingHistory.length > 0) {
+      const lectureCount = relatedData.trainingHistory.filter((training: any) => 
+        training.status === 'completed' && training.instructorRole === 'instructor'
+      ).length;
+      
+      if (lectureCount >= 3) knowledgeScore += 15;
+      else if (lectureCount >= 2) knowledgeScore += 10;
+      else if (lectureCount >= 1) knowledgeScore += 5;
+    }
+    
+    // 원점수 그대로 저장 (scoringRanges는 convertScore에서 적용)
+    scores.knowledgeSharing = knowledgeScore;
     
     // 6. 업무개선 및 혁신 제안 계산
     let innovationScore = 0;
@@ -161,7 +200,26 @@ export async function calculateAutoRdEvaluation(employeeId: string, evaluationYe
     details.projectExperience = `프로젝트: ${relatedData.projects?.length || 0}개 (PL: ${relatedData.projects?.filter((p: any) => p.role === 'PL').length || 0}개)`;
     details.rdAchievement = `특허: ${relatedData.patents?.length || 0}건, 논문: ${relatedData.publications?.length || 0}편, 수상: ${relatedData.awards?.length || 0}건`;
     details.globalCompetency = `어학능력: ${relatedData.languages?.length || 0}개 언어`;
-    details.knowledgeSharing = `교육이수: ${relatedData.trainingHistory?.reduce((sum: number, t: any) => sum + (t.duration || 0), 0) || 0}시간`;
+    // 기술확산 상세 정보 생성
+    const studentTrainings = relatedData.trainingHistory?.filter((t: any) => 
+      t.status === 'completed' && (t.instructorRole === null || t.instructorRole === undefined)
+    ) || [];
+    const mentoringCount = relatedData.trainingHistory?.filter((t: any) => 
+      t.status === 'completed' && t.instructorRole === 'mentor'
+    ).length || 0;
+    const lectureCount = relatedData.trainingHistory?.filter((t: any) => 
+      t.status === 'completed' && t.instructorRole === 'instructor'
+    ).length || 0;
+    const newCertsCount = relatedData.certifications?.filter((cert: any) => {
+      if (!cert.issueDate) return false;
+      const issueDate = new Date(cert.issueDate);
+      const start = startDate ? new Date(startDate) : new Date(evaluationYear, 0, 1);
+      const end = endDate ? new Date(endDate) : new Date(evaluationYear, 11, 31);
+      return issueDate >= start && issueDate <= end;
+    }).length || 0;
+    
+    const totalStudentHours = studentTrainings.reduce((sum: number, t: any) => sum + (t.duration || 0), 0);
+    details.knowledgeSharing = `교육이수: ${totalStudentHours}시간, 신규자격증: ${newCertsCount}개, 멘토링: ${mentoringCount}회, 강의: ${lectureCount}회`;
     details.innovationProposal = `제안제도: ${relatedData.proposals?.length || 0}건`;
     
     // 종합 점수 계산
@@ -192,8 +250,26 @@ export async function calculateAutoRdEvaluation(employeeId: string, evaluationYe
   }
 }
 
+// 날짜 필터링 헬퍼 함수
+function filterByDateRange(items: any[], dateField: string, startDate?: string, endDate?: string): any[] {
+  if (!startDate && !endDate) return items;
+  
+  return items.filter(item => {
+    const itemDate = item[dateField];
+    if (!itemDate) return false; // 날짜가 없는 항목은 제외
+    
+    const itemDateObj = new Date(itemDate);
+    if (isNaN(itemDateObj.getTime())) return false; // 유효하지 않은 날짜는 제외
+    
+    if (startDate && itemDateObj < new Date(startDate)) return false;
+    if (endDate && itemDateObj > new Date(endDate)) return false;
+    
+    return true;
+  });
+}
+
 // 관련 데이터 조회 (data.json에서)
-async function getRelatedData(employeeId: string) {
+async function getRelatedData(employeeId: string, startDate?: string, endDate?: string) {
   const dataPath = path.join(process.cwd(), 'data.json');
   const results: any = {
     certifications: [],
@@ -213,45 +289,58 @@ async function getRelatedData(employeeId: string) {
       
       // 각 데이터 타입별로 필터링
       if (data.certifications) {
-        results.certifications = Object.values(data.certifications).filter((item: any) => 
+        let certifications = Object.values(data.certifications).filter((item: any) => 
           item.employeeId === employeeId && item.isActive
         );
+        // 자격증은 발급일 기준으로 필터링
+        results.certifications = filterByDateRange(certifications, 'issueDate', startDate, endDate);
       }
       
       if (data.languages) {
+        // 어학능력은 날짜 필터링 없이 전체 포함 (언어 능력은 지속적)
         results.languages = Object.values(data.languages).filter((item: any) => 
           item.employeeId === employeeId && item.isActive
         );
       }
       
       if (data.trainingHistory) {
-        results.trainingHistory = Object.values(data.trainingHistory).filter((item: any) => 
+        let trainingHistory = Object.values(data.trainingHistory).filter((item: any) => 
           item.employeeId === employeeId && item.status === 'completed'
         );
+        // 교육은 완료일 기준으로 필터링
+        results.trainingHistory = filterByDateRange(trainingHistory, 'completionDate', startDate, endDate);
       }
       
       if (data.projects) {
-        results.projects = Object.values(data.projects).filter((item: any) => 
+        let projects = Object.values(data.projects).filter((item: any) => 
           item.employeeId === employeeId
         );
+        // 프로젝트는 시작일 기준으로 필터링
+        results.projects = filterByDateRange(projects, 'startDate', startDate, endDate);
       }
       
       if (data.patents) {
-        results.patents = Object.values(data.patents).filter((item: any) => 
+        let patents = Object.values(data.patents).filter((item: any) => 
           item.employeeId === employeeId
         );
+        // 특허는 출원일 기준으로 필터링
+        results.patents = filterByDateRange(patents, 'applicationDate', startDate, endDate);
       }
       
       if (data.publications) {
-        results.publications = Object.values(data.publications).filter((item: any) => 
+        let publications = Object.values(data.publications).filter((item: any) => 
           item.employeeId === employeeId
         );
+        // 논문은 발행일 기준으로 필터링
+        results.publications = filterByDateRange(publications, 'publicationDate', startDate, endDate);
       }
       
       if (data.awards) {
-        results.awards = Object.values(data.awards).filter((item: any) => 
+        let awards = Object.values(data.awards).filter((item: any) => 
           item.employeeId === employeeId
         );
+        // 수상은 수상일 기준으로 필터링
+        results.awards = filterByDateRange(awards, 'awardDate', startDate, endDate);
       }
       
       // 제안제도 데이터 (data.json에서 로드)
@@ -262,7 +351,9 @@ async function getRelatedData(employeeId: string) {
         } else {
           proposals = Object.values(data.proposals); // Convert object to array
         }
-        results.proposals = proposals.filter((p: any) => p.employeeId === employeeId);
+        let filteredProposals = proposals.filter((p: any) => p.employeeId === employeeId);
+        // 제안제도는 제출일 기준으로 필터링
+        results.proposals = filterByDateRange(filteredProposals, 'submissionDate', startDate, endDate);
       }
     }
   } catch (error) {

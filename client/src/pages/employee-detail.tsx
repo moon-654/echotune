@@ -6,7 +6,11 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
-import { ArrowLeft, Edit, Mail, Phone, Calendar, MapPin, Users, Award, BookOpen, TrendingUp, FileText, Trophy, Lightbulb, GraduationCap, Building } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { DatePicker } from "@/components/ui/date-picker";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { ArrowLeft, Edit, Mail, Phone, Calendar, MapPin, Users, Award, BookOpen, TrendingUp, FileText, Trophy, Lightbulb, GraduationCap, Building, CalendarIcon } from "lucide-react";
 import RdCapabilityBarChart from "@/components/charts/rd-capability-bar-chart";
 import SimpleBarChart from "@/components/charts/simple-bar-chart";
 import SimpleRadarChart from "@/components/charts/simple-radar-chart";
@@ -39,8 +43,24 @@ export default function EmployeeDetail({ employeeId: propEmployeeId }: EmployeeD
   const [isLanguageModalOpen, setIsLanguageModalOpen] = useState(false);
   const [isProposalModalOpen, setIsProposalModalOpen] = useState(false);
 
+  // 날짜 필터 상태 관리
+  const [dateFilter, setDateFilter] = useState<'1year' | '3years' | '5years' | 'all' | 'custom'>('all');
+  const [customStartDate, setCustomStartDate] = useState<Date | undefined>();
+  const [customEndDate, setCustomEndDate] = useState<Date | undefined>();
+  
+  // 회계연도 기준 설정 (localStorage에서 로드)
+  const [useFiscalYear, setUseFiscalYear] = useState(() => {
+    const saved = localStorage.getItem('useFiscalYear');
+    return saved === 'true';
+  });
+
   // props로 받은 employeeId가 있으면 사용, 없으면 URL에서 가져오기
   const employeeId = propEmployeeId || location.split('/').pop() || "emp1";
+
+  // 회계연도 설정 변경 시 localStorage에 저장
+  useEffect(() => {
+    localStorage.setItem('useFiscalYear', useFiscalYear.toString());
+  }, [useFiscalYear]);
 
   // 실제 직원 데이터 상태 관리
   const [employee, setEmployee] = useState<Employee | null>(null);
@@ -76,6 +96,9 @@ export default function EmployeeDetail({ employeeId: propEmployeeId }: EmployeeD
   // R&D 역량평가 기준 데이터 상태 관리
   const [rdEvaluationCriteria, setRdEvaluationCriteria] = useState<any>(null);
   const [rdEvaluationCriteriaLoading, setRdEvaluationCriteriaLoading] = useState(true);
+  
+  // 선택된 역량 상태 관리
+  const [selectedCompetency, setSelectedCompetency] = useState<string>('knowledge_sharing');
 
   // 직원 데이터 로드
   useEffect(() => {
@@ -132,6 +155,8 @@ export default function EmployeeDetail({ employeeId: propEmployeeId }: EmployeeD
     startDate?: string;
     score?: number;
     status: string;
+    duration?: number;
+    instructorRole?: 'instructor' | 'mentor' | null;
   }>>([]);
   const [trainingsLoading, setTrainingsLoading] = useState(true);
 
@@ -139,10 +164,24 @@ export default function EmployeeDetail({ employeeId: propEmployeeId }: EmployeeD
   useEffect(() => {
     const loadTrainings = async () => {
       try {
-        const response = await fetch(`/api/training-history?employeeId=${employeeId}`);
+        const { startDate, endDate } = getDateRange();
+        const params = new URLSearchParams();
+        if (startDate) params.append('startDate', startDate.toISOString().split('T')[0]);
+        if (endDate) params.append('endDate', endDate.toISOString().split('T')[0]);
+        
+        const response = await fetch(`/api/training-history?employeeId=${employeeId}&${params.toString()}`);
         if (response.ok) {
           const data = await response.json();
-          setTrainings(data);
+          const formattedTrainings = data.map((training: any) => ({
+            courseName: training.courseName,
+            completionDate: training.completionDate,
+            startDate: training.startDate,
+            score: training.score,
+            status: training.status,
+            duration: training.duration,
+            instructorRole: training.instructorRole || null
+          }));
+          setTrainings(formattedTrainings);
         } else {
           setTrainings([]);
         }
@@ -157,13 +196,18 @@ export default function EmployeeDetail({ employeeId: propEmployeeId }: EmployeeD
     if (employeeId) {
       loadTrainings();
     }
-  }, [employeeId]);
+  }, [employeeId, dateFilter, customStartDate, customEndDate, useFiscalYear]);
 
   // 제안제도 데이터 로드
   useEffect(() => {
     const loadProposals = async () => {
       try {
-        const response = await fetch(`/api/proposals?employeeId=${employeeId}`);
+        const { startDate, endDate } = getDateRange();
+        const params = new URLSearchParams();
+        if (startDate) params.append('startDate', startDate.toISOString().split('T')[0]);
+        if (endDate) params.append('endDate', endDate.toISOString().split('T')[0]);
+        
+        const response = await fetch(`/api/proposals?employeeId=${employeeId}&${params.toString()}`);
         if (response.ok) {
           const data = await response.json();
           setProposals(data);
@@ -181,13 +225,18 @@ export default function EmployeeDetail({ employeeId: propEmployeeId }: EmployeeD
     if (employeeId) {
       loadProposals();
     }
-  }, [employeeId]);
+  }, [employeeId, dateFilter, customStartDate, customEndDate, useFiscalYear]);
 
   // R&D 역량평가 데이터 로드
   useEffect(() => {
     const loadRdEvaluation = async () => {
       try {
-        const response = await fetch(`/api/rd-evaluations/test/${employeeId}`);
+        const { startDate, endDate } = getDateRange();
+        const params = new URLSearchParams();
+        if (startDate) params.append('startDate', startDate.toISOString().split('T')[0]);
+        if (endDate) params.append('endDate', endDate.toISOString().split('T')[0]);
+        
+        const response = await fetch(`/api/rd-evaluations/test/${employeeId}?${params.toString()}`);
         
         if (response.ok) {
           const data = await response.json();
@@ -230,7 +279,7 @@ export default function EmployeeDetail({ employeeId: propEmployeeId }: EmployeeD
     if (employeeId) {
       loadRdEvaluation();
     }
-  }, [employeeId]);
+  }, [employeeId, dateFilter, customStartDate, customEndDate, useFiscalYear]);
 
   // R&D 역량평가 기준 데이터 로드
   useEffect(() => {
@@ -327,7 +376,12 @@ export default function EmployeeDetail({ employeeId: propEmployeeId }: EmployeeD
   useEffect(() => {
     const loadProjects = async () => {
       try {
-        const response = await fetch(`/api/projects?employeeId=${employeeId}`);
+        const { startDate, endDate } = getDateRange();
+        const params = new URLSearchParams();
+        if (startDate) params.append('startDate', startDate.toISOString().split('T')[0]);
+        if (endDate) params.append('endDate', endDate.toISOString().split('T')[0]);
+        
+        const response = await fetch(`/api/projects?employeeId=${employeeId}&${params.toString()}`);
         if (response.ok) {
           const data = await response.json();
           setProjects(data);
@@ -345,7 +399,7 @@ export default function EmployeeDetail({ employeeId: propEmployeeId }: EmployeeD
     if (employeeId) {
       loadProjects();
     }
-  }, [employeeId]);
+  }, [employeeId, dateFilter, customStartDate, customEndDate, useFiscalYear]);
 
   // 실제 성과 데이터 상태 관리
   const [patents, setPatents] = useState<Array<{
@@ -370,10 +424,15 @@ export default function EmployeeDetail({ employeeId: propEmployeeId }: EmployeeD
       try {
         console.log('🔍 성과 데이터 로드 시작:', employeeId);
         
+        const { startDate, endDate } = getDateRange();
+        const params = new URLSearchParams();
+        if (startDate) params.append('startDate', startDate.toISOString().split('T')[0]);
+        if (endDate) params.append('endDate', endDate.toISOString().split('T')[0]);
+        
         // 특허와 논문을 병렬로 로드
         const [patentsResponse, publicationsResponse] = await Promise.all([
-          fetch(`/api/patents?employeeId=${employeeId}`),
-          fetch(`/api/publications?employeeId=${employeeId}`)
+          fetch(`/api/patents?employeeId=${employeeId}&${params.toString()}`),
+          fetch(`/api/publications?employeeId=${employeeId}&${params.toString()}`)
         ]);
 
         if (patentsResponse.ok) {
@@ -403,14 +462,16 @@ export default function EmployeeDetail({ employeeId: propEmployeeId }: EmployeeD
     if (employeeId) {
       loadAchievements();
     }
-  }, [employeeId]);
+  }, [employeeId, dateFilter, customStartDate, customEndDate, useFiscalYear]);
 
   // 실제 수상 데이터 상태 관리
   const [awards, setAwards] = useState<Array<{
-    name: string;
-    issuer: string;
+    title: string;
+    organization: string;
     awardDate: string;
     category: string;
+    description?: string;
+    level: string;
   }>>([]);
   const [awardsLoading, setAwardsLoading] = useState(true);
 
@@ -445,7 +506,12 @@ export default function EmployeeDetail({ employeeId: propEmployeeId }: EmployeeD
     const loadAwards = async () => {
       try {
         console.log('🔍 수상 데이터 로드 시작:', employeeId);
-        const response = await fetch(`/api/awards?employeeId=${employeeId}`);
+        const { startDate, endDate } = getDateRange();
+        const params = new URLSearchParams();
+        if (startDate) params.append('startDate', startDate.toISOString().split('T')[0]);
+        if (endDate) params.append('endDate', endDate.toISOString().split('T')[0]);
+        
+        const response = await fetch(`/api/awards?employeeId=${employeeId}&${params.toString()}`);
         if (response.ok) {
           const data = await response.json();
           console.log('🔍 수상 데이터 로드 성공:', data);
@@ -465,14 +531,19 @@ export default function EmployeeDetail({ employeeId: propEmployeeId }: EmployeeD
     if (employeeId) {
       loadAwards();
     }
-  }, [employeeId]);
+  }, [employeeId, dateFilter, customStartDate, customEndDate, useFiscalYear]);
 
   // 자격증 데이터 로드
   useEffect(() => {
     const loadCertifications = async () => {
       try {
         console.log('🔍 자격증 데이터 로드 시작:', employeeId);
-        const response = await fetch(`/api/certifications?employeeId=${employeeId}`);
+        const { startDate, endDate } = getDateRange();
+        const params = new URLSearchParams();
+        if (startDate) params.append('startDate', startDate.toISOString().split('T')[0]);
+        if (endDate) params.append('endDate', endDate.toISOString().split('T')[0]);
+        
+        const response = await fetch(`/api/certifications?employeeId=${employeeId}&${params.toString()}`);
         if (response.ok) {
           const data = await response.json();
           console.log('🔍 자격증 데이터 로드 성공:', data);
@@ -492,7 +563,7 @@ export default function EmployeeDetail({ employeeId: propEmployeeId }: EmployeeD
     if (employeeId) {
       loadCertifications();
     }
-  }, [employeeId]);
+  }, [employeeId, dateFilter, customStartDate, customEndDate, useFiscalYear]);
 
   // 어학능력 데이터 로드
   useEffect(() => {
@@ -521,15 +592,6 @@ export default function EmployeeDetail({ employeeId: propEmployeeId }: EmployeeD
     }
   }, [employeeId]);
 
-
-  const overallSkill = skills.length > 0 
-    ? Math.floor(skills.reduce((sum, skill) => sum + skill.proficiencyLevel, 0) / skills.length)
-    : 0;
-  
-  // employee 데이터가 로드된 후에만 experience 계산
-  const experience = employee && employee.hireDate 
-    ? Math.floor((new Date().getTime() - new Date(employee.hireDate).getTime()) / (1000 * 60 * 60 * 24 * 365))
-    : 0;
 
   // R&D 역량평가 기준에 따른 점수 환산 함수
   const convertScore = (category: string, rawScore: number): number => {
@@ -606,7 +668,7 @@ export default function EmployeeDetail({ employeeId: propEmployeeId }: EmployeeD
           { min: 0, max: 4, converted: 40 }
         ]}
       };
-      sourceBlock = defaultsBlock[competencyKey || ''] || null;
+      sourceBlock = competencyKey ? defaultsBlock[competencyKey] || null : null;
       if (!sourceBlock) {
         console.log(`❌ 역량 키 없음: ${category} = ${rawScore}점 (원점수 유지)`);
         return rawScore;
@@ -654,7 +716,7 @@ export default function EmployeeDetail({ employeeId: propEmployeeId }: EmployeeD
           { min: 0, max: 4, converted: 40 }
         ]
       };
-      scoringRanges = defaults[competencyKey] || [];
+      scoringRanges = competencyKey && competencyKey in defaults ? defaults[competencyKey] || [] : [];
       if (scoringRanges.length === 0) {
         console.log(`❌ 점수 범위 없음: ${category} = ${rawScore}점 (원점수 유지)`);
         return rawScore;
@@ -681,6 +743,427 @@ export default function EmployeeDetail({ employeeId: propEmployeeId }: EmployeeD
 
     console.log(`⚠️ 범위 매칭 실패: ${category} = ${clampedScore}점 (원점수 유지)`);
     return clampedScore;
+  };
+
+  // R&D 역량평가 기반 종합능력치 계산
+  const calculateOverallSkill = () => {
+    if (!rdEvaluation || rdEvaluationLoading) return 0;
+    
+    if (!rdEvaluationCriteria) {
+      // 기준이 없으면 원점수 사용
+      return Math.round(rdEvaluation.totalScore || 0);
+    }
+    
+    // R&D 역량평가 기준에 따른 종합점수 계산
+    const tc = convertScore('전문기술', rdEvaluation.scores?.technicalCompetency || 0) / 100 * 25;
+    const pj = convertScore('프로젝트', rdEvaluation.scores?.projectExperience || 0) / 100 * 20;
+    const rd = convertScore('연구성과', rdEvaluation.scores?.rdAchievement || 0) / 100 * 25;
+    const gl = convertScore('글로벌', rdEvaluation.scores?.globalCompetency || 0) / 100 * 10;
+    const ks = convertScore('기술확산', rdEvaluation.scores?.knowledgeSharing || 0) / 100 * 10;
+    const ip = convertScore('혁신제안', rdEvaluation.scores?.innovationProposal || 0) / 100 * 10;
+    
+    const total = tc + pj + rd + gl + ks + ip;
+    return Math.round(total);
+  };
+  
+  const overallSkill = calculateOverallSkill();
+  
+  // 각 역량별 세부 점수 계산 함수들
+  const getTechnicalDetails = () => {
+    if (!employee) return [];
+    
+    const details: Array<{label: string, value: string, score: number}> = [];
+    
+    // 학위 점수
+    let educationScore = 0;
+    if (employee.education === 'bachelor') educationScore = 10;
+    else if (employee.education === 'master') educationScore = 20;
+    else if (employee.education === 'doctor') educationScore = 30;
+    
+    if (educationScore > 0) {
+      details.push({
+        label: '학위',
+        value: employee.education || '미입력',
+        score: educationScore
+      });
+    }
+    
+    // 경력 점수
+    const hireDate = employee.hireDate ? new Date(employee.hireDate) : null;
+    const inCompanyYears = hireDate ? ((Date.now() - hireDate.getTime()) / (1000 * 60 * 60 * 24 * 365)) : 0;
+    const prevYears = Number(employee.previousExperienceYears || 0);
+    const prevMonths = Number(employee.previousExperienceMonths || 0);
+    const totalYears = inCompanyYears + prevYears + (prevMonths / 12);
+    
+    let experienceScore = 0;
+    if (totalYears >= 15) experienceScore = 50;
+    else if (totalYears >= 10) experienceScore = 40;
+    else if (totalYears >= 5) experienceScore = 30;
+    else experienceScore = 20;
+    
+    details.push({
+      label: '경력',
+      value: `${totalYears.toFixed(1)}년`,
+      score: experienceScore
+    });
+    
+    // 자격증 점수
+    const certScore = certifications.length * 5; // 간단한 계산
+    if (certScore > 0) {
+      details.push({
+        label: '자격증',
+        value: `${certifications.length}개`,
+        score: certScore
+      });
+    }
+    
+    return details;
+  };
+  
+  const getProjectDetails = () => {
+    const details: Array<{label: string, value: string, score: number}> = [];
+    
+    const totalProjects = projects.length;
+    const plProjects = projects.filter(p => p.role === 'PL' || p.role === 'Project Leader').length;
+    const coreProjects = projects.filter(p => p.role === '핵심 멤버').length;
+    
+    if (totalProjects > 0) {
+      details.push({
+        label: '프로젝트 수',
+        value: `${totalProjects}개`,
+        score: totalProjects * 10
+      });
+    }
+    
+    if (plProjects > 0) {
+      details.push({
+        label: 'PL 역할',
+        value: `${plProjects}개`,
+        score: plProjects * 15
+      });
+    }
+    
+    if (coreProjects > 0) {
+      details.push({
+        label: '핵심 멤버',
+        value: `${coreProjects}개`,
+        score: coreProjects * 10
+      });
+    }
+    
+    return details;
+  };
+  
+  const getRdAchievementDetails = () => {
+    const details: Array<{label: string, value: string, score: number}> = [];
+    
+    if (patents.length > 0) {
+      details.push({
+        label: '특허',
+        value: `${patents.length}건`,
+        score: patents.length * 10
+      });
+    }
+    
+    if (publications.length > 0) {
+      details.push({
+        label: '논문',
+        value: `${publications.length}편`,
+        score: publications.length * 15
+      });
+    }
+    
+    if (awards.length > 0) {
+      details.push({
+        label: '수상',
+        value: `${awards.length}건`,
+        score: awards.length * 20
+      });
+    }
+    
+    return details;
+  };
+  
+  const getGlobalDetails = () => {
+    const details: Array<{label: string, value: string, score: number}> = [];
+    
+    languages.forEach(lang => {
+      let score = 0;
+      if (lang.language === 'English' && lang.certification === 'TOEIC') {
+        const scoreValue = lang.score || 0;
+        if (scoreValue >= 950) score = 10;
+        else if (scoreValue >= 900) score = 8;
+        else if (scoreValue >= 800) score = 6;
+        else if (scoreValue >= 700) score = 4;
+        else score = 2;
+        
+        details.push({
+          label: '영어',
+          value: `TOEIC ${scoreValue}점`,
+          score: score
+        });
+      } else if (lang.language === 'Japanese' && lang.certification === 'JLPT') {
+        if (lang.overallLevel === 'advanced') score = 10;
+        else if (lang.overallLevel === 'intermediate') score = 7;
+        else if (lang.overallLevel === 'beginner') score = 4;
+        
+        details.push({
+          label: '일본어',
+          value: `JLPT ${lang.overallLevel}`,
+          score: score
+        });
+      }
+    });
+    
+    return details;
+  };
+  
+  const getKnowledgeSharingDetails = () => {
+    const details: Array<{label: string, value: string, score: number}> = [];
+    
+    // 교육이수
+    const studentTrainings = trainings.filter(t => t.status === 'completed');
+    const totalHours = studentTrainings.reduce((sum, t) => sum + (t.duration || 0), 0);
+    let educationScore = 0;
+    if (totalHours >= 40) educationScore = 5;
+    else if (totalHours >= 20) educationScore = 3;
+    else if (totalHours >= 10) educationScore = 2;
+    
+    if (educationScore > 0) {
+      details.push({
+        label: '교육이수',
+        value: `${totalHours}시간`,
+        score: educationScore
+      });
+    }
+    
+    // 신규자격증
+    const currentYear = new Date().getFullYear();
+    const newCerts = certifications.filter(cert => {
+      if (!cert.issueDate) return false;
+      const issueDate = new Date(cert.issueDate);
+      const start = new Date(currentYear, 0, 1);
+      const end = new Date(currentYear, 11, 31);
+      return issueDate >= start && issueDate <= end;
+    });
+    
+    if (newCerts.length > 0) {
+      details.push({
+        label: '신규자격증',
+        value: `${newCerts.length}개`,
+        score: newCerts.length * 5
+      });
+    }
+    
+    // 멘토링
+    const mentoringCount = trainings.filter(t => 
+      t.status === 'completed' && t.instructorRole === 'mentor'
+    ).length;
+    
+    if (mentoringCount > 0) {
+      details.push({
+        label: '멘토링',
+        value: `${mentoringCount}회`,
+        score: mentoringCount * 3
+      });
+    }
+    
+    // 강의
+    const lectureCount = trainings.filter(t => 
+      t.status === 'completed' && t.instructorRole === 'instructor'
+    ).length;
+    
+    if (lectureCount > 0) {
+      let lectureScore = 0;
+      if (lectureCount >= 3) lectureScore = 15;
+      else if (lectureCount >= 2) lectureScore = 10;
+      else if (lectureCount >= 1) lectureScore = 5;
+      
+      details.push({
+        label: '강의',
+        value: `${lectureCount}회`,
+        score: lectureScore
+      });
+    }
+    
+    return details;
+  };
+  
+  const getInnovationDetails = () => {
+    const details: Array<{label: string, value: string, score: number}> = [];
+    
+    if (proposals.length > 0) {
+      details.push({
+        label: '제안 제출',
+        value: `${proposals.length}건`,
+        score: proposals.length * 10
+      });
+      
+      const approvedCount = proposals.filter(p => p.status === 'approved' || p.status === 'implemented').length;
+      if (approvedCount > 0) {
+        details.push({
+          label: '제안 채택',
+          value: `${approvedCount}건`,
+          score: approvedCount * 20
+        });
+      }
+    }
+    
+    return details;
+  };
+  
+  // 선택된 역량의 세부 점수 가져오기
+  const getCompetencyDetails = (competency: string) => {
+    switch(competency) {
+      case 'technical_competency': return getTechnicalDetails();
+      case 'project_experience': return getProjectDetails();
+      case 'rd_achievement': return getRdAchievementDetails();
+      case 'global_competency': return getGlobalDetails();
+      case 'knowledge_sharing': return getKnowledgeSharingDetails();
+      case 'innovation_proposal': return getInnovationDetails();
+      default: return [];
+    }
+  };
+  
+  // 역량 이름 매핑
+  const getCompetencyName = (competency: string) => {
+    const names: Record<string, string> = {
+      'technical_competency': '전문기술',
+      'project_experience': '프로젝트',
+      'rd_achievement': '연구성과',
+      'global_competency': '글로벌',
+      'knowledge_sharing': '기술확산',
+      'innovation_proposal': '혁신제안'
+    };
+    return names[competency] || competency;
+  };
+  
+  // 총 경력 계산 (이전 경력 + 현재 회사 경력)
+  const calculateTotalExperience = () => {
+    if (!employee) return { years: 0, months: 0 };
+    
+    let totalYears = 0;
+    let totalMonths = 0;
+    
+    // 이전 경력 추가
+    if (employee.previousExperienceYears) {
+      totalYears += employee.previousExperienceYears;
+    }
+    if (employee.previousExperienceMonths) {
+      totalMonths += employee.previousExperienceMonths;
+    }
+    
+    // 현재 회사 경력 계산
+    if (employee.hireDate) {
+      const hireDate = new Date(employee.hireDate);
+      const currentDate = new Date();
+      
+      let years = currentDate.getFullYear() - hireDate.getFullYear();
+      let months = currentDate.getMonth() - hireDate.getMonth();
+      
+      if (months < 0) {
+        years--;
+        months += 12;
+      }
+      
+      // 일 단위로 더 정확한 계산
+      if (currentDate.getDate() < hireDate.getDate()) {
+        months--;
+        if (months < 0) {
+          years--;
+          months += 12;
+        }
+      }
+      
+      totalYears += years;
+      totalMonths += months;
+    }
+    
+    // 월이 12개월 이상이면 년으로 변환
+    if (totalMonths >= 12) {
+      totalYears += Math.floor(totalMonths / 12);
+      totalMonths = totalMonths % 12;
+    }
+    
+    return { years: totalYears, months: totalMonths };
+  };
+  
+  const totalExperience = calculateTotalExperience();
+
+  // 날짜 범위 계산 헬퍼 함수
+  const getDateRange = () => {
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth(); // 0-11
+    
+    let startDate: Date | undefined;
+    let endDate: Date | undefined;
+
+    // 회계연도 계산 (4월~3월) - 동적으로 계산
+    const getFiscalYearRange = (yearsBack: number) => {
+      let fiscalYear = currentYear;
+      // 4월(3) 이전이면 전 회계연도
+      if (currentMonth < 3) {
+        fiscalYear--;
+      }
+      
+      const start = new Date(fiscalYear - yearsBack, 3, 1); // 4월 1일
+      const end = new Date(fiscalYear + 1, 2, 31); // 3월 31일
+      return { start, end };
+    };
+
+    // 연도 계산 (1월~12월) - 동적으로 계산
+    const getCalendarYearRange = (yearsBack: number) => {
+      const start = new Date(currentYear - yearsBack, 0, 1); // 1월 1일
+      const end = new Date(currentYear - 1, 11, 31); // 작년 12월 31일
+      return { start, end };
+    };
+
+    switch(dateFilter) {
+      case '1year':
+        if (useFiscalYear) {
+          const { start, end } = getFiscalYearRange(1);
+          startDate = start;
+          endDate = end;
+        } else {
+          const { start, end } = getCalendarYearRange(1);
+          startDate = start;
+          endDate = end;
+        }
+        break;
+      case '3years':
+        if (useFiscalYear) {
+          const { start, end } = getFiscalYearRange(3);
+          startDate = start;
+          endDate = end;
+        } else {
+          const { start, end } = getCalendarYearRange(3);
+          startDate = start;
+          endDate = end;
+        }
+        break;
+      case '5years':
+        if (useFiscalYear) {
+          const { start, end } = getFiscalYearRange(5);
+          startDate = start;
+          endDate = end;
+        } else {
+          const { start, end } = getCalendarYearRange(5);
+          startDate = start;
+          endDate = end;
+        }
+        break;
+      case 'custom':
+        startDate = customStartDate;
+        endDate = customEndDate;
+        break;
+      case 'all':
+      default:
+        startDate = undefined;
+        endDate = undefined;
+    }
+
+    return { startDate, endDate };
   };
 
   // 로딩 상태 또는 직원 데이터가 없는 경우
@@ -762,7 +1245,7 @@ export default function EmployeeDetail({ employeeId: propEmployeeId }: EmployeeD
                   </div>
                   <div className="flex items-center space-x-2">
                     <MapPin className="w-4 h-4 text-muted-foreground" />
-                    <span className="text-sm">경력: {experience}년</span>
+                    <span className="text-sm">총 경력: {totalExperience.years}년 {totalExperience.months}개월</span>
                   </div>
                   <div className="flex items-center space-x-2">
                     <Award className="w-4 h-4 text-muted-foreground" />
@@ -821,12 +1304,117 @@ export default function EmployeeDetail({ employeeId: propEmployeeId }: EmployeeD
         <TabsContent value="overview" className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Card>
-              <CardHeader>
+            <CardHeader>
+              <div className="flex items-center justify-between">
                 <CardTitle className="flex items-center">
                   <TrendingUp className="w-5 h-5 mr-2" />
                   성과 요약
                 </CardTitle>
-              </CardHeader>
+                <div className="flex items-center gap-4">
+                  {/* 회계연도 토글 */}
+                  <div className="flex items-center gap-2 text-sm">
+                    <Switch
+                      checked={useFiscalYear}
+                      onCheckedChange={setUseFiscalYear}
+                      id="fiscal-year-mode"
+                    />
+                    <Label htmlFor="fiscal-year-mode" className="cursor-pointer">
+                      회계연도 기준 (4월~3월)
+                    </Label>
+                  </div>
+                  
+                  <div className="flex items-center gap-2">
+                    {/* 버튼 그룹 */}
+                    <div className="flex border rounded-md">
+                      <Button 
+                        variant={dateFilter === '1year' ? 'default' : 'ghost'} 
+                        size="sm" 
+                        onClick={() => setDateFilter('1year')}
+                        className="rounded-r-none"
+                      >
+                        1년
+                      </Button>
+                      <Button 
+                        variant={dateFilter === '3years' ? 'default' : 'ghost'} 
+                        size="sm" 
+                        onClick={() => setDateFilter('3years')}
+                        className="rounded-none"
+                      >
+                        3년
+                      </Button>
+                      <Button 
+                        variant={dateFilter === '5years' ? 'default' : 'ghost'} 
+                        size="sm" 
+                        onClick={() => setDateFilter('5years')}
+                        className="rounded-none"
+                      >
+                        5년
+                      </Button>
+                      <Button 
+                        variant={dateFilter === 'all' ? 'default' : 'ghost'} 
+                        size="sm" 
+                        onClick={() => setDateFilter('all')}
+                        className="rounded-l-none"
+                      >
+                        전체
+                      </Button>
+                    </div>
+                    {/* 날짜 선택기 */}
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => setDateFilter('custom')}
+                        >
+                          <CalendarIcon className="w-4 h-4 mr-2" />
+                          기간 선택
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-4">
+                        <div className="space-y-4">
+                          <div className="space-y-2">
+                            <label className="text-sm font-medium">시작일</label>
+                            <DatePicker
+                              date={customStartDate}
+                              onDateChange={setCustomStartDate}
+                              placeholder="시작일 선택"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <label className="text-sm font-medium">종료일</label>
+                            <DatePicker
+                              date={customEndDate}
+                              onDateChange={setCustomEndDate}
+                              placeholder="종료일 선택"
+                            />
+                          </div>
+                          <div className="flex justify-end gap-2">
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => {
+                                setCustomStartDate(undefined);
+                                setCustomEndDate(undefined);
+                                setDateFilter('all');
+                              }}
+                            >
+                              초기화
+                            </Button>
+                            <Button 
+                              size="sm"
+                              onClick={() => setDateFilter('custom')}
+                            >
+                              적용
+                            </Button>
+                          </div>
+                        </div>
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+                </div>
+              </div>
+            </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex justify-between">
                   <span>종합 능력치</span>
@@ -888,6 +1476,36 @@ export default function EmployeeDetail({ employeeId: propEmployeeId }: EmployeeD
                     }
                   </span>
                 </div>
+                
+                <div className="flex justify-between">
+                  <span>현재 회사 경력</span>
+                  <span className="font-semibold">
+                    {employee?.hireDate 
+                      ? (() => {
+                          const hireDate = new Date(employee.hireDate);
+                          const currentDate = new Date();
+                          let years = currentDate.getFullYear() - hireDate.getFullYear();
+                          let months = currentDate.getMonth() - hireDate.getMonth();
+                          
+                          if (months < 0) {
+                            years--;
+                            months += 12;
+                          }
+                          
+                          if (currentDate.getDate() < hireDate.getDate()) {
+                            months--;
+                            if (months < 0) {
+                              years--;
+                              months += 12;
+                            }
+                          }
+                          
+                          return `${years}년 ${months}개월`;
+                        })()
+                      : '미정'
+                    }
+                  </span>
+                </div>
               </CardContent>
             </Card>
 
@@ -927,7 +1545,46 @@ export default function EmployeeDetail({ employeeId: propEmployeeId }: EmployeeD
                             { name: '혁신제안', value: convertScore('혁신제안', rdEvaluation?.scores?.innovationProposal || 0) }
                           ]}
                           size={280}
+                          onLabelClick={(label) => {
+                            const competencyMap: Record<string, string> = {
+                              '전문기술': 'technical_competency',
+                              '프로젝트': 'project_experience',
+                              '연구성과': 'rd_achievement',
+                              '글로벌': 'global_competency',
+                              '기술확산': 'knowledge_sharing',
+                              '혁신제안': 'innovation_proposal'
+                            };
+                            setSelectedCompetency(competencyMap[label] || 'knowledge_sharing');
+                          }}
+                          selectedLabel={getCompetencyName(selectedCompetency)}
                         />
+                      </div>
+                      
+                      {/* 선택된 역량의 세부 점수 표시 */}
+                      <div className="p-3 bg-white rounded border border-slate-200">
+                        <div className="mb-2">
+                          <h5 className="text-sm font-semibold text-blue-700 mb-1">
+                            {getCompetencyName(selectedCompetency)} 세부 점수
+                          </h5>
+                          <p className="text-xs text-gray-500">
+                            레이더차트의 라벨을 클릭하여 다른 역량의 세부 점수를 확인할 수 있습니다.
+                          </p>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2 text-xs">
+                          {getCompetencyDetails(selectedCompetency).map((detail, index) => (
+                            <div key={index} className="flex justify-between">
+                              <span>{detail.label}:</span>
+                              <span className="font-medium">
+                                {detail.value} ({detail.score}점)
+                              </span>
+                            </div>
+                          ))}
+                          {getCompetencyDetails(selectedCompetency).length === 0 && (
+                            <div className="col-span-2 text-center text-gray-500 text-xs py-2">
+                              해당 역량의 세부 데이터가 없습니다.
+                            </div>
+                          )}
+                        </div>
                       </div>
                       
                       <div className="space-y-2">

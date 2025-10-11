@@ -85,6 +85,14 @@ export default function SkillEditModal({ employeeId, isOpen, onClose }: SkillEdi
     loadSkills();
   }, [isOpen, employeeId]);
 
+  // 모달이 닫힐 때 편집 상태 초기화
+  useEffect(() => {
+    if (!isOpen) {
+      setEditingItem(null);
+      setEditFormData(null);
+    }
+  }, [isOpen]);
+
   const addNewSkill = () => {
     if (newSkill.skillName.trim()) {
       setSkills([...skills, { ...newSkill }]);

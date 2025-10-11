@@ -1115,8 +1115,8 @@
       "createdAt": "2025-09-27T11:23:48.171Z",
       "updatedAt": "2025-09-27T11:23:48.171Z"
     },
-    "7bc5586b-401c-47c5-b925-5f26deac1348": {
-      "id": "7bc5586b-401c-47c5-b925-5f26deac1348",
+    "f84a0ff2-ccf5-4963-8162-4f839b108c2f": {
+      "id": "f84a0ff2-ccf5-4963-8162-4f839b108c2f",
       "employeeId": "ef202e24-47a6-434d-ae9a-3a47c87b64be",
       "language": "Japanese",
       "proficiencyLevel": "advanced",
@@ -1124,11 +1124,11 @@
       "testDate": "2013-06-01T00:00:00.000Z",
       "certificateUrl": "",
       "isActive": true,
-      "createdAt": "2025-09-28T12:24:50.519Z",
-      "updatedAt": "2025-09-28T12:24:50.519Z"
+      "createdAt": "2025-10-11T13:44:22.224Z",
+      "updatedAt": "2025-10-11T13:44:22.224Z"
     },
-    "d7f79aac-d016-402a-bd0a-f6cdf347e4e9": {
-      "id": "d7f79aac-d016-402a-bd0a-f6cdf347e4e9",
+    "26d5f5fa-c654-4b45-9cc5-c50ce34f2448": {
+      "id": "26d5f5fa-c654-4b45-9cc5-c50ce34f2448",
       "employeeId": "ef202e24-47a6-434d-ae9a-3a47c87b64be",
       "language": "English",
       "proficiencyLevel": "advanced",
@@ -1138,8 +1138,8 @@
       "testDate": "2017-06-06T00:00:00.000Z",
       "certificateUrl": "",
       "isActive": true,
-      "createdAt": "2025-09-28T12:24:50.527Z",
-      "updatedAt": "2025-09-28T12:24:50.527Z"
+      "createdAt": "2025-10-11T13:44:22.231Z",
+      "updatedAt": "2025-10-11T13:44:22.231Z"
     }
   },
   "skills": {
@@ -1407,29 +1407,16 @@
     }
   },
   "projects": {
-    "fb3a9860-ec40-49db-929d-19eeb8887b49": {
-      "id": "fb3a9860-ec40-49db-929d-19eeb8887b49",
+    "7bfdea7c-dc42-4c02-a197-a0f8783f9011": {
+      "id": "7bfdea7c-dc42-4c02-a197-a0f8783f9011",
       "employeeId": "ef202e24-47a6-434d-ae9a-3a47c87b64be",
       "projectName": "테스트 프로젝트1",
       "role": "project_leader",
       "status": "completed",
-      "description": "",
-      "technologies": "",
-      "teamSize": 0,
-      "budget": 0,
-      "client": "",
-      "notes": "",
-      "createdAt": "2025-10-03T14:25:50.009Z",
-      "updatedAt": "2025-10-03T14:25:50.009Z"
-    },
-    "fc357de8-254c-4134-918f-c5e40cd38503": {
-      "id": "fc357de8-254c-4134-918f-c5e40cd38503",
-      "employeeId": "ef202e24-47a6-434d-ae9a-3a47c87b64be",
-      "projectName": "테스트 프로젝트2",
-      "role": "core_member",
-      "status": "completed",
-      "createdAt": "2025-10-03T14:25:50.014Z",
-      "updatedAt": "2025-10-03T14:25:50.014Z"
+      "startDate": "2021-01-01T00:00:00.000Z",
+      "endDate": "2021-03-03T00:00:00.000Z",
+      "createdAt": "2025-10-11T13:01:51.876Z",
+      "updatedAt": "2025-10-11T13:01:51.876Z"
     }
   },
   "trainingHours": {

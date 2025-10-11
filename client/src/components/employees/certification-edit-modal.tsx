@@ -94,6 +94,14 @@ export default function CertificationEditModal({ employeeId, isOpen, onClose }: 
     loadCertifications();
   }, [isOpen, employeeId]);
 
+  // 모달이 닫힐 때 편집 상태 초기화
+  useEffect(() => {
+    if (!isOpen) {
+      setEditingItem(null);
+      setEditFormData(null);
+    }
+  }, [isOpen]);
+
   // R&D 평가 기준 로드 (연동용)
   useEffect(() => {
     if (!isOpen) return;

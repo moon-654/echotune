@@ -8,9 +8,11 @@ interface RadarData {
 interface SimpleRadarChartProps {
   data: RadarData[];
   size?: number;
+  onLabelClick?: (label: string, index: number) => void;
+  selectedLabel?: string;
 }
 
-export default function SimpleRadarChart({ data, size = 300 }: SimpleRadarChartProps) {
+export default function SimpleRadarChart({ data, size = 300, onLabelClick, selectedLabel }: SimpleRadarChartProps) {
   console.log('🔍 SimpleRadarChart 렌더링:', data);
   
   if (!data || data.length === 0) {
@@ -109,6 +111,7 @@ export default function SimpleRadarChart({ data, size = 300 }: SimpleRadarChartP
     const labelRadius = maxRadius + 30;
     const x = centerX + labelRadius * Math.cos(angle);
     const y = centerY + labelRadius * Math.sin(angle);
+    const isSelected = selectedLabel === item.name;
     
     return (
       <text
@@ -117,8 +120,13 @@ export default function SimpleRadarChart({ data, size = 300 }: SimpleRadarChartP
         y={y}
         textAnchor="middle"
         dominantBaseline="middle"
-        className="text-xs font-medium"
-        fill={labelColor}
+        className={`text-xs font-medium ${onLabelClick ? 'cursor-pointer hover:fill-blue-600' : ''} ${isSelected ? 'fill-blue-600 font-bold' : ''}`}
+        fill={isSelected ? '#2563eb' : labelColor}
+        onClick={() => onLabelClick?.(item.name, index)}
+        style={{ 
+          cursor: onLabelClick ? 'pointer' : 'default',
+          userSelect: 'none'
+        }}
       >
         {item.name}
       </text>
