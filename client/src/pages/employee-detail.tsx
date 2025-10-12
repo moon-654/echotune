@@ -89,6 +89,22 @@ export default function EmployeeDetail({ employeeId: propEmployeeId }: EmployeeD
       knowledgeSharing: number;
       innovationProposal: number;
     };
+    rawScores: {
+      technicalCompetency: number;
+      projectExperience: number;
+      rdAchievement: number;
+      globalCompetency: number;
+      knowledgeSharing: number;
+      innovationProposal: number;
+    };
+    maxRawScores: {
+      technicalCompetency: number;
+      projectExperience: number;
+      rdAchievement: number;
+      globalCompetency: number;
+      knowledgeSharing: number;
+      innovationProposal: number;
+    };
     totalScore: number;
     grade: string;
   } | null>(null);
@@ -241,6 +257,10 @@ export default function EmployeeDetail({ employeeId: propEmployeeId }: EmployeeD
         
         if (response.ok) {
           const data = await response.json();
+          console.log('🔍 R&D 평가 데이터 수신:', data);
+          console.log('📊 scores:', data.scores);
+          console.log('🎯 totalScore:', data.totalScore);
+          console.log('📈 grade:', data.grade);
           setRdEvaluation(data);
         } else {
           // 기본값 설정
@@ -252,6 +272,22 @@ export default function EmployeeDetail({ employeeId: propEmployeeId }: EmployeeD
               globalCompetency: 0,
               knowledgeSharing: 0,
               innovationProposal: 0
+            },
+            rawScores: {
+              technicalCompetency: 0,
+              projectExperience: 0,
+              rdAchievement: 0,
+              globalCompetency: 0,
+              knowledgeSharing: 0,
+              innovationProposal: 0
+            },
+            maxRawScores: {
+              technicalCompetency: 100,
+              projectExperience: 100,
+              rdAchievement: 100,
+              globalCompetency: 25,
+              knowledgeSharing: 60,
+              innovationProposal: 100
             },
             totalScore: 0,
             grade: 'D'
@@ -268,6 +304,22 @@ export default function EmployeeDetail({ employeeId: propEmployeeId }: EmployeeD
             globalCompetency: 0,
             knowledgeSharing: 0,
             innovationProposal: 0
+          },
+          rawScores: {
+            technicalCompetency: 0,
+            projectExperience: 0,
+            rdAchievement: 0,
+            globalCompetency: 0,
+            knowledgeSharing: 0,
+            innovationProposal: 0
+          },
+          maxRawScores: {
+            technicalCompetency: 100,
+            projectExperience: 100,
+            rdAchievement: 100,
+            globalCompetency: 25,
+            knowledgeSharing: 60,
+            innovationProposal: 100
           },
           totalScore: 0,
           grade: 'D'
@@ -595,180 +647,79 @@ export default function EmployeeDetail({ employeeId: propEmployeeId }: EmployeeD
   }, [employeeId]);
 
 
-  // R&D 역량평가 기준에 따른 점수 환산 함수
+  // R&D 역량평가 기준에 따른 점수 환산 함수 (단순화)
   const convertScore = (category: string, rawScore: number): number => {
-    console.log(`🔄 점수 환산 시작: ${category} = ${rawScore}점`);
-    
     if (!rdEvaluationCriteria) {
-      console.log(`❌ R&D 역량평가 기준 없음: ${category} = ${rawScore}점 (원점수 유지)`);
       return rawScore;
     }
     
-    // competencyItems가 있는 경우와 없는 경우 모두 처리
-    const criteriaSource = rdEvaluationCriteria.competencyItems || rdEvaluationCriteria;
-    if (!criteriaSource) {
-      console.log(`❌ R&D 역량평가 기준 소스 없음: ${category} = ${rawScore}점 (원점수 유지)`);
-      return rawScore;
-    }
-
-    const competencyKey = category === '전문기술' ? 'technical_competency' :
-                         category === '프로젝트' ? 'project_experience' :
-                         category === '연구성과' ? 'rd_achievement' :
-                         category === '글로벌' ? 'global_competency' :
-                         category === '기술확산' ? 'knowledge_sharing' :
-                         category === '혁신제안' ? 'innovation_proposal' : null;
-
-    // 키가 없으면 camelCase 대안 키도 확인
-    const altKey = competencyKey === 'technical_competency' ? 'technicalCompetency'
-                  : competencyKey === 'project_experience' ? 'projectExperience'
-                  : competencyKey === 'rd_achievement' ? 'rdAchievement'
-                  : competencyKey === 'global_competency' ? 'globalCompetency'
-                  : competencyKey === 'knowledge_sharing' ? 'knowledgeSharing'
-                  : competencyKey === 'innovation_proposal' ? 'innovationProposal' : null;
-
-    let sourceBlock = competencyKey && criteriaSource[competencyKey]
-      ? criteriaSource[competencyKey]
-      : (altKey && criteriaSource[altKey] ? criteriaSource[altKey] : null);
-
-    if (!competencyKey || !sourceBlock) {
-      // 블록 자체가 없으면 기본 블록 생성(폴백)
-      const defaultsBlock: Record<string, any> = {
-        technical_competency: { scoringRanges: [
-          { min: 80, max: 100, converted: 100 },
-          { min: 60, max: 79, converted: 80 },
-          { min: 40, max: 59, converted: 60 },
-          { min: 0, max: 39, converted: 40 }
-        ]},
-        project_experience: { scoringRanges: [
-          { min: 30, max: 100, converted: 100 },
-          { min: 20, max: 29, converted: 80 },
-          { min: 10, max: 19, converted: 60 },
-          { min: 0, max: 9, converted: 40 }
-        ]},
-        rd_achievement: { scoringRanges: [
-          { min: 40, max: 100, converted: 100 },
-          { min: 25, max: 39, converted: 80 },
-          { min: 10, max: 24, converted: 60 },
-          { min: 0, max: 9, converted: 40 }
-        ]},
-        global_competency: { scoringRanges: [
-          { min: 10, max: 10, converted: 100 },
-          { min: 7, max: 8, converted: 80 },
-          { min: 4, max: 6, converted: 60 },
-          { min: 0, max: 2, converted: 40 }
-        ]},
-        knowledge_sharing: { scoringRanges: [
-          { min: 15, max: 100, converted: 100 },
-          { min: 10, max: 14, converted: 80 },
-          { min: 5, max: 9, converted: 60 },
-          { min: 1, max: 4, converted: 40 }
-        ]},
-        innovation_proposal: { scoringRanges: [
-          { min: 60, max: 100, converted: 100 },
-          { min: 30, max: 59, converted: 80 },
-          { min: 5, max: 29, converted: 60 },
-          { min: 0, max: 4, converted: 40 }
-        ]}
-      };
-      sourceBlock = competencyKey ? defaultsBlock[competencyKey] || null : null;
-      if (!sourceBlock) {
-        console.log(`❌ 역량 키 없음: ${category} = ${rawScore}점 (원점수 유지)`);
-        return rawScore;
-      }
-    }
-
-    let scoringRanges = sourceBlock.scoringRanges as any[];
-    if (!scoringRanges || scoringRanges.length === 0) {
-      // 기본 범위(개요 탭의 초기값과 동일)
-      const defaults: Record<string, any[]> = {
-        technical_competency: [
-          { min: 80, max: 100, converted: 100 },
-          { min: 60, max: 79, converted: 80 },
-          { min: 40, max: 59, converted: 60 },
-          { min: 0, max: 39, converted: 40 }
-        ],
-        project_experience: [
-          { min: 30, max: 100, converted: 100 },
-          { min: 20, max: 29, converted: 80 },
-          { min: 10, max: 19, converted: 60 },
-          { min: 0, max: 9, converted: 40 }
-        ],
-        rd_achievement: [
-          { min: 40, max: 100, converted: 100 },
-          { min: 25, max: 39, converted: 80 },
-          { min: 10, max: 24, converted: 60 },
-          { min: 0, max: 9, converted: 40 }
-        ],
-        global_competency: [
-          { min: 10, max: 10, converted: 100 },
-          { min: 7, max: 8, converted: 80 },
-          { min: 4, max: 6, converted: 60 },
-          { min: 0, max: 2, converted: 40 }
-        ],
-        knowledge_sharing: [
-          { min: 15, max: 100, converted: 100 },
-          { min: 10, max: 14, converted: 80 },
-          { min: 5, max: 9, converted: 60 },
-          { min: 1, max: 4, converted: 40 }
-        ],
-        innovation_proposal: [
-          { min: 60, max: 100, converted: 100 },
-          { min: 30, max: 59, converted: 80 },
-          { min: 5, max: 29, converted: 60 },
-          { min: 0, max: 4, converted: 40 }
-        ]
-      };
-      scoringRanges = competencyKey && competencyKey in defaults ? defaults[competencyKey] || [] : [];
-      if (scoringRanges.length === 0) {
-        console.log(`❌ 점수 범위 없음: ${category} = ${rawScore}점 (원점수 유지)`);
-        return rawScore;
-      }
-    }
-
-    console.log(`📊 ${category} 점수 범위:`, scoringRanges);
-
-    // 원점수가 기준 범위를 벗어나는 경우를 대비해 클램프 처리
-    const minAllowed = Math.min(...scoringRanges.map((r: any) => r.min));
-    const maxAllowed = Math.max(...scoringRanges.map((r: any) => r.max));
-    const clampedScore = Math.max(minAllowed, Math.min(rawScore, maxAllowed));
-    if (clampedScore !== rawScore) {
-      console.log(`🔧 범위 보정: ${category} ${rawScore}점 → ${clampedScore}점 (허용 범위 ${minAllowed}-${maxAllowed})`);
-    }
-
-    // 점수 범위에 따라 환산 (보정된 점수 사용)
-    for (const range of scoringRanges) {
-      if (clampedScore >= range.min && clampedScore <= range.max) {
-        console.log(`✅ ${category}: ${clampedScore}점 → ${range.converted}점 (${range.min}-${range.max} 범위)`);
+    // 카테고리 매핑
+    const competencyKey = {
+      '전문기술': 'technical_competency',
+      '프로젝트': 'project_experience',
+      '연구성과': 'rd_achievement',
+      '글로벌': 'global_competency',
+      '기술확산': 'knowledge_sharing',
+      '혁신제안': 'innovation_proposal'
+    }[category];
+    
+    if (!competencyKey) return rawScore;
+    
+    const criteriaItem = rdEvaluationCriteria[competencyKey];
+    const scoringRanges = criteriaItem?.scoringRanges;
+    
+    if (!scoringRanges || scoringRanges.length === 0) return rawScore;
+    
+    // 정렬 (min 기준 오름차순)
+    const sortedRanges = [...scoringRanges].sort((a: any, b: any) => a.min - b.min);
+    
+    // 범위 내 점수
+    for (const range of sortedRanges) {
+      if (rawScore >= range.min && rawScore <= range.max) {
         return range.converted;
       }
     }
-
-    console.log(`⚠️ 범위 매칭 실패: ${category} = ${clampedScore}점 (원점수 유지)`);
-    return clampedScore;
+    
+    // 범위 밖 처리
+    if (rawScore < sortedRanges[0].min) {
+      return sortedRanges[0].converted;
+    }
+    
+    if (rawScore > sortedRanges[sortedRanges.length - 1].max) {
+      return sortedRanges[sortedRanges.length - 1].converted;
+    }
+    
+    // 범위 사이 빈틈
+    return sortedRanges[0].converted;
   };
 
   // R&D 역량평가 기반 종합능력치 계산
   const calculateOverallSkill = () => {
     if (!rdEvaluation || rdEvaluationLoading) return 0;
     
-    if (!rdEvaluationCriteria) {
-      // 기준이 없으면 원점수 사용
-      return Math.round(rdEvaluation.totalScore || 0);
-    }
-    
-    // R&D 역량평가 기준에 따른 종합점수 계산
-    const tc = convertScore('전문기술', rdEvaluation.scores?.technicalCompetency || 0) / 100 * 25;
-    const pj = convertScore('프로젝트', rdEvaluation.scores?.projectExperience || 0) / 100 * 20;
-    const rd = convertScore('연구성과', rdEvaluation.scores?.rdAchievement || 0) / 100 * 25;
-    const gl = convertScore('글로벌', rdEvaluation.scores?.globalCompetency || 0) / 100 * 10;
-    const ks = convertScore('기술확산', rdEvaluation.scores?.knowledgeSharing || 0) / 100 * 10;
-    const ip = convertScore('혁신제안', rdEvaluation.scores?.innovationProposal || 0) / 100 * 10;
-    
-    const total = tc + pj + rd + gl + ks + ip;
-    return Math.round(total);
+    // 서버에서 이미 계산된 totalScore를 그대로 사용
+    return Math.round(rdEvaluation.totalScore || 0);
   };
   
   const overallSkill = calculateOverallSkill();
+  
+  // 레이더 차트용 점수 변환 함수 (서버의 maxRawScores 기준으로 백분율 계산)
+  const getRadarChartValue = (rawScore: number, competencyKey: string): number => {
+    console.log(`🔍 getRadarChartValue 호출: competencyKey=${competencyKey}, rawScore=${rawScore}`);
+    console.log(`🔍 rdEvaluation:`, rdEvaluation);
+    
+    if (!rdEvaluation?.maxRawScores) {
+      console.log(`⚠️ maxRawScores 없음 - 원점수 반환: ${rawScore}`);
+      return rawScore; // 기준 없으면 원점수 사용
+    }
+    
+    // 서버에서 받은 maxRawScores 사용
+    const maxRawScore = rdEvaluation.maxRawScores[competencyKey as keyof typeof rdEvaluation.maxRawScores] || 100;
+    const result = Math.min((rawScore / maxRawScore) * 100, 100);
+    
+    console.log(`✅ ${competencyKey}: ${rawScore} / ${maxRawScore} * 100 = ${result}%`);
+    return result;
+  };
   
   // 각 역량별 세부 점수 계산 함수들
   const getTechnicalDetails = () => {
@@ -1573,16 +1524,25 @@ export default function EmployeeDetail({ employeeId: propEmployeeId }: EmployeeD
                       {/* R&D 역량 레이더차트 */}
                       <div className="p-2 bg-white rounded border border-slate-200">
                         <p className="text-sm font-semibold mb-2 text-center">R&D 역량 레이더차트:</p>
-                        <SimpleRadarChart
-                          data={[
-                            { name: '전문기술', value: convertScore('전문기술', rdEvaluation?.scores?.technicalCompetency || 0) },
-                            { name: '프로젝트', value: convertScore('프로젝트', rdEvaluation?.scores?.projectExperience || 0) },
-                            { name: '연구성과', value: convertScore('연구성과', rdEvaluation?.scores?.rdAchievement || 0) },
-                            { name: '글로벌', value: convertScore('글로벌', rdEvaluation?.scores?.globalCompetency || 0) },
-                            { name: '기술확산', value: convertScore('기술확산', rdEvaluation?.scores?.knowledgeSharing || 0) },
-                            { name: '혁신제안', value: convertScore('혁신제안', rdEvaluation?.scores?.innovationProposal || 0) }
-                          ]}
-                          size={280}
+                        {rdEvaluationCriteriaLoading || !rdEvaluationCriteria ? (
+                          <div className="flex items-center justify-center" style={{ height: 400 }}>
+                            <p className="text-muted-foreground">평가 기준 로딩 중...</p>
+                          </div>
+                        ) : (
+                          <SimpleRadarChart
+                            data={(() => {
+                              const radarData = [
+                                { name: '전문기술', value: getRadarChartValue(rdEvaluation?.scores?.technicalCompetency || 0, 'technicalCompetency') },
+                                { name: '프로젝트', value: getRadarChartValue(rdEvaluation?.scores?.projectExperience || 0, 'projectExperience') },
+                                { name: '연구성과', value: getRadarChartValue(rdEvaluation?.scores?.rdAchievement || 0, 'rdAchievement') },
+                                { name: '글로벌', value: getRadarChartValue(rdEvaluation?.scores?.globalCompetency || 0, 'globalCompetency') },
+                                { name: '기술확산', value: getRadarChartValue(rdEvaluation?.scores?.knowledgeSharing || 0, 'knowledgeSharing') },
+                                { name: '혁신제안', value: getRadarChartValue(rdEvaluation?.scores?.innovationProposal || 0, 'innovationProposal') }
+                              ];
+                              console.log('📊 레이더 차트 최종 데이터:', radarData);
+                              return radarData;
+                            })()}
+                            size={400}
                           onLabelClick={(label) => {
                             const competencyMap: Record<string, string> = {
                               '전문기술': 'technical_competency',
@@ -1596,6 +1556,7 @@ export default function EmployeeDetail({ employeeId: propEmployeeId }: EmployeeD
                           }}
                           selectedLabel={getCompetencyName(selectedCompetency)}
                         />
+                        )}
                       </div>
                       
                       {/* 선택된 역량의 세부 점수 표시 */}
@@ -1630,52 +1591,15 @@ export default function EmployeeDetail({ employeeId: propEmployeeId }: EmployeeD
                           <span className="text-sm text-muted-foreground">종합 점수</span>
                           <div className="flex items-center gap-2">
                             <span className="font-semibold text-lg">
-                              {(() => {
-                                if (!rdEvaluationCriteria) {
-                                  return (rdEvaluation?.totalScore?.toFixed(1) || 0) + '점';
-                                }
-                                const tc = convertScore('전문기술', rdEvaluation?.scores?.technicalCompetency || 0) / 100 * 25;
-                                const pj = convertScore('프로젝트', rdEvaluation?.scores?.projectExperience || 0) / 100 * 20;
-                                const rd = convertScore('연구성과', rdEvaluation?.scores?.rdAchievement || 0) / 100 * 25;
-                                const gl = convertScore('글로벌', rdEvaluation?.scores?.globalCompetency || 0) / 100 * 10;
-                                const ks = convertScore('기술확산', rdEvaluation?.scores?.knowledgeSharing || 0) / 100 * 10;
-                                const ip = convertScore('혁신제안', rdEvaluation?.scores?.innovationProposal || 0) / 100 * 10;
-                                const total = tc + pj + rd + gl + ks + ip;
-                                return total.toFixed(2) + '점';
-                              })()}
+                              {(rdEvaluation?.totalScore?.toFixed(1) || 0) + '점'}
                             </span>
                             <Badge variant={
-                              (() => {
-                                if (!rdEvaluationCriteria) {
-                                  return rdEvaluation?.grade === 'S' ? 'default' :
-                                         rdEvaluation?.grade === 'A' ? 'default' :
-                                         rdEvaluation?.grade === 'B' ? 'secondary' :
-                                         rdEvaluation?.grade === 'C' ? 'destructive' : 'destructive';
-                                }
-                                const tc = convertScore('전문기술', rdEvaluation?.scores?.technicalCompetency || 0) / 100 * 25;
-                                const pj = convertScore('프로젝트', rdEvaluation?.scores?.projectExperience || 0) / 100 * 20;
-                                const rd = convertScore('연구성과', rdEvaluation?.scores?.rdAchievement || 0) / 100 * 25;
-                                const gl = convertScore('글로벌', rdEvaluation?.scores?.globalCompetency || 0) / 100 * 10;
-                                const ks = convertScore('기술확산', rdEvaluation?.scores?.knowledgeSharing || 0) / 100 * 10;
-                                const ip = convertScore('혁신제안', rdEvaluation?.scores?.innovationProposal || 0) / 100 * 10;
-                                const total = tc + pj + rd + gl + ks + ip;
-                                const grade = total >= 90 ? 'S' : total >= 80 ? 'A' : total >= 70 ? 'B' : total >= 60 ? 'C' : 'D';
-                                return grade === 'S' ? 'default' : grade === 'A' ? 'default' : grade === 'B' ? 'secondary' : grade === 'C' ? 'destructive' : 'destructive';
-                              })()
+                              rdEvaluation?.grade === 'S' ? 'default' :
+                              rdEvaluation?.grade === 'A' ? 'default' :
+                              rdEvaluation?.grade === 'B' ? 'secondary' :
+                              rdEvaluation?.grade === 'C' ? 'destructive' : 'destructive'
                             }>
-                              {(() => {
-                                if (!rdEvaluationCriteria) {
-                                  return rdEvaluation?.grade || 'D';
-                                }
-                                const tc = convertScore('전문기술', rdEvaluation?.scores?.technicalCompetency || 0) / 100 * 25;
-                                const pj = convertScore('프로젝트', rdEvaluation?.scores?.projectExperience || 0) / 100 * 20;
-                                const rd = convertScore('연구성과', rdEvaluation?.scores?.rdAchievement || 0) / 100 * 25;
-                                const gl = convertScore('글로벌', rdEvaluation?.scores?.globalCompetency || 0) / 100 * 10;
-                                const ks = convertScore('기술확산', rdEvaluation?.scores?.knowledgeSharing || 0) / 100 * 10;
-                                const ip = convertScore('혁신제안', rdEvaluation?.scores?.innovationProposal || 0) / 100 * 10;
-                                const total = tc + pj + rd + gl + ks + ip;
-                                return total >= 90 ? 'S' : total >= 80 ? 'A' : total >= 70 ? 'B' : total >= 60 ? 'C' : 'D';
-                              })()}
+                              {rdEvaluation?.grade || 'D'}
                             </Badge>
                           </div>
                         </div>
@@ -2087,7 +2011,7 @@ export default function EmployeeDetail({ employeeId: propEmployeeId }: EmployeeD
                           )}
                         </div>
                         <div className="flex flex-col items-end space-y-2">
-                          <Badge variant="default">{lang.overallLevel}</Badge>
+                          <Badge variant="default">{lang.proficiencyLevel}</Badge>
                         </div>
                       </div>
                     </div>

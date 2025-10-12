@@ -24,6 +24,7 @@ interface RdRadarChartProps {
   height?: number;
   showLegend?: boolean;
   showTooltip?: boolean;
+  criteria: any;  // rdEvaluationCriteria 필수
 }
 
 const RdRadarChart: React.FC<RdRadarChartProps> = ({
@@ -31,72 +32,73 @@ const RdRadarChart: React.FC<RdRadarChartProps> = ({
   selectedEmployees = [],
   height = 400,
   showLegend = true,
-  showTooltip = true
+  showTooltip = true,
+  criteria  // rdEvaluationCriteria 받기
 }) => {
-  // 6대 역량 점수 환산 기준
-  const scoringRanges = {
-    technical_competency: [
-      { min: 80, max: 100, converted: 100 },
-      { min: 60, max: 79, converted: 80 },
-      { min: 40, max: 59, converted: 60 },
-      { min: 0, max: 39, converted: 40 }
-    ],
-    project_experience: [
-      { min: 30, max: 100, converted: 100 },
-      { min: 20, max: 29, converted: 80 },
-      { min: 10, max: 19, converted: 60 },
-      { min: 0, max: 9, converted: 40 }
-    ],
-    rd_achievement: [
-      { min: 40, max: 100, converted: 100 },
-      { min: 25, max: 39, converted: 80 },
-      { min: 10, max: 24, converted: 60 },
-      { min: 0, max: 9, converted: 40 }
-    ],
-    global_competency: [
-      { min: 10, max: 10, converted: 100 },
-      { min: 7, max: 8, converted: 80 },
-      { min: 4, max: 6, converted: 60 },
-      { min: 0, max: 2, converted: 40 }
-    ],
-    knowledge_sharing: [
-      { min: 15, max: 100, converted: 100 },
-      { min: 10, max: 14, converted: 80 },
-      { min: 5, max: 9, converted: 60 },
-      { min: 1, max: 4, converted: 40 }
-    ],
-    innovation_proposal: [
-      { min: 60, max: 100, converted: 100 },
-      { min: 30, max: 59, converted: 80 },
-      { min: 5, max: 29, converted: 60 },
-      { min: 0, max: 4, converted: 40 }
-    ]
-  };
-
-  // 점수 환산 함수
+  // 점수 환산 함수 - criteria의 scoringRanges 사용
   const convertScore = (category: string, rawScore: number): number => {
-    const ranges = scoringRanges[category as keyof typeof scoringRanges];
-    if (!ranges) return rawScore;
+    if (!criteria || !criteria[category]) {
+      console.warn(`⚠️ criteria 없음: ${category}`);
+      return rawScore;
+    }
     
-    for (const range of ranges) {
+    const ranges = criteria[category].scoringRanges;
+    if (!ranges || ranges.length === 0) {
+      console.warn(`⚠️ scoringRanges 없음: ${category}`);
+      return rawScore;
+    }
+    
+    // 정렬 (min 기준 오름차순)
+    const sortedRanges = [...ranges].sort((a: any, b: any) => a.min - b.min);
+    
+    // 범위 내 점수 찾기
+    for (const range of sortedRanges) {
       if (rawScore >= range.min && rawScore <= range.max) {
         return range.converted;
       }
     }
-    return rawScore;
+    
+    // 범위 밖 처리
+    if (rawScore < sortedRanges[0].min) {
+      // 최소 범위 미만
+      return sortedRanges[0].converted;
+    }
+    
+    if (rawScore > sortedRanges[sortedRanges.length - 1].max) {
+      // 최대 범위 초과
+      return sortedRanges[sortedRanges.length - 1].converted;
+    }
+    
+    // 범위 사이 빈틈 (최소값으로)
+    return sortedRanges[0].converted;
   };
 
-  // 데이터 변환 (점수 환산 적용)
-  const chartData = data.map(item => ({
-    name: item.employee.name,
-    '전문 기술 역량': convertScore('technical_competency', item.scores.technicalCompetency),
-    '프로젝트 수행 경험': convertScore('project_experience', item.scores.projectExperience),
-    '연구개발 성과': convertScore('rd_achievement', item.scores.rdAchievement),
-    '글로벌 역량': convertScore('global_competency', item.scores.globalCompetency),
-    '기술 확산 및 자기계발': convertScore('knowledge_sharing', item.scores.knowledgeSharing),
-    '업무개선 및 혁신 제안': convertScore('innovation_proposal', item.scores.innovationProposal),
-    totalScore: item.totalScore
-  }));
+  // 역량 카테고리 정의
+  const categories = [
+    { key: 'technicalCompetency', name: '전문기술', criteriaKey: 'technical_competency' },
+    { key: 'projectExperience', name: '프로젝트', criteriaKey: 'project_experience' },
+    { key: 'rdAchievement', name: '연구성과', criteriaKey: 'rd_achievement' },
+    { key: 'globalCompetency', name: '글로벌', criteriaKey: 'global_competency' },
+    { key: 'knowledgeSharing', name: '기술확산', criteriaKey: 'knowledge_sharing' },
+    { key: 'innovationProposal', name: '혁신제안', criteriaKey: 'innovation_proposal' }
+  ];
+
+  // 역량별로 데이터 구조화
+  const chartData = categories.map(category => {
+    const dataPoint: any = {
+      subject: category.name,  // 축 레이블
+      fullMark: 100  // 최대값 (환산 후 점수는 항상 100 만점)
+    };
+    
+    // 각 직원의 해당 역량 점수 추가
+    data.forEach(item => {
+      const rawScore = item.scores[category.key];
+      const convertedScore = convertScore(category.criteriaKey, rawScore);
+      dataPoint[item.employee.name] = convertedScore;
+    });
+    
+    return dataPoint;
+  });
 
   // 색상 팔레트
   const colors = [
@@ -110,19 +112,8 @@ const RdRadarChart: React.FC<RdRadarChartProps> = ({
         <RadarChart data={chartData} margin={{ top: 20, right: 80, bottom: 20, left: 80 }}>
           <PolarGrid />
           <PolarAngleAxis 
-            dataKey="name" 
+            dataKey="subject" 
             tick={{ fontSize: 12 }}
-            tickFormatter={(value) => {
-              const categories = {
-                '전문 기술 역량': '전문기술',
-                '프로젝트 수행 경험': '프로젝트',
-                '연구개발 성과': '연구성과',
-                '글로벌 역량': '글로벌',
-                '기술 확산 및 자기계발': '기술확산',
-                '업무개선 및 혁신 제안': '혁신제안'
-              };
-              return categories[value] || value;
-            }}
           />
           <PolarRadiusAxis 
             angle={90} 
@@ -131,11 +122,11 @@ const RdRadarChart: React.FC<RdRadarChartProps> = ({
             tickCount={6}
           />
           
-          {chartData.map((item, index) => (
+          {data.map((employee, index) => (
             <Radar
-              key={item.name}
-              name={item.name}
-              dataKey={item.name}
+              key={employee.employee.id}
+              name={employee.employee.name}
+              dataKey={employee.employee.name}
               stroke={colors[index % colors.length]}
               fill={colors[index % colors.length]}
               fillOpacity={0.1}

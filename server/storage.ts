@@ -302,14 +302,17 @@ export class MemStorage implements IStorage {
 
   private saveData() {
     try {
-      // 기존 파일에서 departments와 teams 데이터 보존
+      // 1. 기존 파일 전체 로드
       let existingData = {};
       if (existsSync(this.dataFile)) {
         const fileContent = readFileSync(this.dataFile, 'utf8');
         existingData = JSON.parse(fileContent);
       }
       
+      // 2. Storage가 관리하는 필드만 업데이트 (기존 데이터는 모두 보존)
       const data = {
+        ...existingData,  // 기존 데이터 전체 보존 (rdEvaluationCriteria, detailedCriteria 등 포함)
+        // Storage가 관리하는 필드만 덮어쓰기
         employees: Object.fromEntries(this.employees),
         trainingHistory: Object.fromEntries(this.trainingHistory),
         certifications: Object.fromEntries(this.certifications),
@@ -322,15 +325,11 @@ export class MemStorage implements IStorage {
         projects: Object.fromEntries(this.projects),
         trainingHours: Object.fromEntries(this.trainingHours),
         teamEmployees: Object.fromEntries(this.teamEmployees),
-        viewState: this.viewState,
-        // 기존 데이터에서 departments와 teams 보존
-        departments: existingData.departments || [],
-        teams: existingData.teams || [],
-        proposals: existingData.proposals || {}
+        viewState: this.viewState
       };
       
       writeFileSync(this.dataFile, JSON.stringify(data, null, 2));
-      console.log('💾 데이터 파일 저장 완료');
+      console.log('💾 데이터 파일 저장 완료 - 모든 기존 필드 보존됨');
     } catch (error) {
       console.error('❌ 데이터 파일 저장 실패:', error);
     }

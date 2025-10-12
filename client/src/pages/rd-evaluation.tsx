@@ -71,6 +71,8 @@ export default function RdEvaluation() {
   const [stats, setStats] = useState<RdEvaluationStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  const [criteria, setCriteria] = useState<any>(null);
+  const [criteriaLoading, setCriteriaLoading] = useState(true);
   
   // 모달 상태
   const [isEvaluationModalOpen, setIsEvaluationModalOpen] = useState(false);
@@ -83,6 +85,24 @@ export default function RdEvaluation() {
     loadEvaluations();
     loadStats();
   }, [selectedYear]);
+
+  // 평가 기준 로드
+  useEffect(() => {
+    const loadCriteria = async () => {
+      try {
+        const response = await fetch('/api/rd-evaluations/criteria');
+        const data = await response.json();
+        setCriteria(data.rdEvaluationCriteria);
+        console.log('✅ 평가 기준 로드 완료:', data.rdEvaluationCriteria);
+      } catch (error) {
+        console.error('❌ 평가 기준 로드 실패:', error);
+      } finally {
+        setCriteriaLoading(false);
+      }
+    };
+    
+    loadCriteria();
+  }, []);
 
   const loadEvaluations = async () => {
     try {
@@ -363,18 +383,25 @@ export default function RdEvaluation() {
             </CardHeader>
             <CardContent>
               <div className="h-96">
-                <RdRadarChart 
-                  data={evaluations.map(evaluation => ({
-                    employee: {
-                      id: evaluation.employeeId,
-                      name: evaluation.employeeName,
-                      department: evaluation.department
-                    },
-                    scores: evaluation.scores,
-                    totalScore: evaluation.totalScore
-                  }))}
-                  height={400}
-                />
+                {!criteriaLoading && criteria ? (
+                  <RdRadarChart 
+                    data={evaluations.map(evaluation => ({
+                      employee: {
+                        id: evaluation.employeeId,
+                        name: evaluation.employeeName,
+                        department: evaluation.department
+                      },
+                      scores: evaluation.scores,
+                      totalScore: evaluation.totalScore
+                    }))}
+                    height={400}
+                    criteria={criteria}
+                  />
+                ) : (
+                  <div className="flex items-center justify-center h-full">
+                    <p className="text-muted-foreground">평가 기준 로딩 중...</p>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -388,18 +415,25 @@ export default function RdEvaluation() {
             </CardHeader>
             <CardContent>
               <div className="h-96">
-                <RdRadarChart 
-                  data={evaluations.slice(0, 5).map(evaluation => ({
-                    employee: {
-                      id: evaluation.employeeId,
-                      name: evaluation.employeeName,
-                      department: evaluation.department
-                    },
-                    scores: evaluation.scores,
-                    totalScore: evaluation.totalScore
-                  }))}
-                  height={400}
-                />
+                {!criteriaLoading && criteria ? (
+                  <RdRadarChart 
+                    data={evaluations.slice(0, 5).map(evaluation => ({
+                      employee: {
+                        id: evaluation.employeeId,
+                        name: evaluation.employeeName,
+                        department: evaluation.department
+                      },
+                      scores: evaluation.scores,
+                      totalScore: evaluation.totalScore
+                    }))}
+                    height={400}
+                    criteria={criteria}
+                  />
+                ) : (
+                  <div className="flex items-center justify-center h-full">
+                    <p className="text-muted-foreground">평가 기준 로딩 중...</p>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>

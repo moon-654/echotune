@@ -42,84 +42,18 @@ export default function RdEvaluationCriteriaModal({ isOpen, onClose }: RdEvaluat
   const [newItemName, setNewItemName] = useState("");
   const [newItemScore, setNewItemScore] = useState(0);
 
-  // 6대 역량별 상세 설정 (동적 관리) - 서버에서 로드
-  const [detailedCriteria, setDetailedCriteria] = useState({});
+  // 6대 역량별 상세 설정 (서버에서 로드)
+  const [detailedCriteria, setDetailedCriteria] = useState<any>({});
 
-  // 6대 역량 항목 관리 (동적) - 요청된 기준에 맞게 수정
-  const [competencyItems, setCompetencyItems] = useState({
-    technical_competency: { 
-      name: "전문기술", 
-      weight: 25, 
-      description: "전문 기술 역량",
-      maxScore: 25,
-      scoringRanges: [
-        { min: 80, max: 100, converted: 100, label: "80점↑ → 100점" },
-        { min: 60, max: 79, converted: 80, label: "60-79점 → 80점" },
-        { min: 40, max: 59, converted: 60, label: "40-59점 → 60점" },
-        { min: 0, max: 39, converted: 40, label: "40점↓ → 40점" }
-      ]
-    },
-    project_experience: { 
-      name: "프로젝트", 
-      weight: 20, 
-      description: "프로젝트 수행 경험",
-      maxScore: 20,
-      scoringRanges: [
-        { min: 30, max: 100, converted: 100, label: "30점↑ → 100점" },
-        { min: 20, max: 29, converted: 80, label: "20-29점 → 80점" },
-        { min: 10, max: 19, converted: 60, label: "10-19점 → 60점" },
-        { min: 0, max: 9, converted: 40, label: "10점↓ → 40점" }
-      ]
-    },
-    rd_achievement: { 
-      name: "연구성과", 
-      weight: 25, 
-      description: "연구개발 성과",
-      maxScore: 25,
-      scoringRanges: [
-        { min: 40, max: 100, converted: 100, label: "40점↑ → 100점" },
-        { min: 25, max: 39, converted: 80, label: "25-39점 → 80점" },
-        { min: 10, max: 24, converted: 60, label: "10-24점 → 60점" },
-        { min: 0, max: 9, converted: 40, label: "10점↓ → 40점" }
-      ]
-    },
-    global_competency: { 
-      name: "글로벌", 
-      weight: 10, 
-      description: "글로벌 역량",
-      maxScore: 10,
-      scoringRanges: [
-        { min: 10, max: 10, converted: 100, label: "10점 → 100점" },
-        { min: 7, max: 8, converted: 80, label: "7-8점 → 80점" },
-        { min: 4, max: 6, converted: 60, label: "4-6점 → 60점" },
-        { min: 0, max: 2, converted: 40, label: "2점 → 40점" }
-      ]
-    },
-    knowledge_sharing: { 
-      name: "기술확산", 
-      weight: 10, 
-      description: "기술 확산 및 자기계발",
-      maxScore: 10,
-      scoringRanges: [
-        { min: 15, max: 100, converted: 100, label: "15점↑ → 100점" },
-        { min: 10, max: 14, converted: 80, label: "10-14점 → 80점" },
-        { min: 5, max: 9, converted: 60, label: "5-9점 → 60점" },
-        { min: 1, max: 4, converted: 40, label: "1-4점 → 40점" }
-      ]
-    },
-    innovation_proposal: { 
-      name: "혁신제안", 
-      weight: 10, 
-      description: "업무개선 및 혁신 제안",
-      maxScore: 10,
-      scoringRanges: [
-        { min: 60, max: 100, converted: 100, label: "60점↑ → 100점" },
-        { min: 30, max: 59, converted: 80, label: "30-59점 → 80점" },
-        { min: 5, max: 29, converted: 60, label: "5-29점 → 60점" },
-        { min: 0, max: 4, converted: 40, label: "5점↓ → 40점" }
-      ]
+  // 6대 역량 항목 관리 (서버에서 로드)
+  const [competencyItems, setCompetencyItems] = useState<any>({});
+
+  // 모달 열릴 때 자동 로드
+  useEffect(() => {
+    if (open) {
+      handleLoadCriteria();
     }
-  });
+  }, [open]);
 
   // 편집 시작
   const handleEdit = (key: string) => {
@@ -194,70 +128,26 @@ export default function RdEvaluationCriteriaModal({ isOpen, onClose }: RdEvaluat
       if (response.ok) {
         const data = await response.json();
         
-        // 서버에서 받은 기준을 안전하게 병합
-        if (data.rdEvaluationCriteria) {
-          const serverCriteria = data.rdEvaluationCriteria;
-          const mergedCriteria = { ...competencyItems };
-          
-          // 서버 데이터가 유효한 경우에만 병합
-          for (const [key, serverValue] of Object.entries(serverCriteria)) {
-            if (mergedCriteria[key] && serverValue && typeof serverValue === 'object') {
-              // 필수 필드가 있는지 확인
-              if (serverValue.name && serverValue.weight !== undefined && serverValue.maxScore !== undefined) {
-                mergedCriteria[key] = { ...mergedCriteria[key], ...serverValue };
-              }
-            }
-          }
-          
-          setCompetencyItems(mergedCriteria);
+        console.log('✅ 서버 데이터 로드:', data);
+        
+        // rdEvaluationCriteria 직접 교체 (빈 객체 병합 제거)
+        if (data.rdEvaluationCriteria && Object.keys(data.rdEvaluationCriteria).length > 0) {
+          setCompetencyItems(data.rdEvaluationCriteria);
+          console.log('✅ competencyItems 설정 완료:', data.rdEvaluationCriteria);
+        } else {
+          console.warn('⚠️ 서버에 rdEvaluationCriteria 없음');
         }
         
-        // 상세 기준 처리
+        // detailedCriteria 직접 교체
         if (data.detailedCriteria && Object.keys(data.detailedCriteria).length > 0) {
           setDetailedCriteria(data.detailedCriteria);
+          console.log('✅ detailedCriteria 설정 완료');
         } else {
-          // 서버에 데이터가 없으면 기본값 설정
-          const defaultDetailedCriteria = {
-            technical_competency: {
-              education: { 박사: 30, 석사: 20, 학사: 10, 전문대: 5 },
-              experience: { "15년 이상": 50, "10년 이상": 40, "5년 이상": 30, "5년 미만": 20 },
-              certifications: { 기술사: 20, 기사: 10, 산업기사: 5, 기타: 3 }
-            },
-            project_experience: {
-              leadership: { "Project Leader": 15, "핵심 멤버": 10, "일반 멤버": 5 },
-              count: { "3개 이상": 30, "2개": 20, "1개": 10 }
-            },
-            rd_achievement: {
-              patents: { 등록: 20, 출원: 5 },
-              publications: { "SCI(E)급": 25, "국내 학술지": 10 },
-              awards: { 국제: 15, 국가: 10, 산업: 5 }
-            },
-            global_competency: {
-              "영어 TOEIC": { "950-990": 10, "900-949": 8, "800-899": 6, "700-799": 4, "700미만": 2 },
-              "영어 TOEFL": { "113-120": 10, "105-112": 8, "90-104": 6, "70-89": 4, "70미만": 2 },
-              "영어 IELTS": { "8.5-9.0": 10, "7.5-8.4": 8, "6.5-7.4": 6, "5.5-6.4": 4, "5.5미만": 2 },
-              "영어 TEPS": { "526-600": 10, "453-525": 8, "387-452": 6, "327-386": 4, "327미만": 2 },
-              "일본어 JLPT": { "N1": 10, "N2": 7, "N3": 4, "N4": 2, "N5": 1 },
-              "일본어 JPT": { "900-990": 8, "800-899": 6, "700-799": 4, "700미만": 2 },
-              "중국어 HSK": { "6급": 10, "5급": 8, "4급": 6, "3급": 4, "2급": 2, "1급": 1 },
-              "중국어 TOCFL": { "Band C Level 6": 10, "Band C Level 5": 8, "Band B Level 4": 6, "Band B Level 3": 4, "Band A Level 2": 2, "Band A Level 1": 1 }
-            },
-            knowledge_sharing: {
-              training: { "40시간 이상": 5, "20시간 이상": 3, "10시간 이상": 2 },
-              certifications: { "신규 취득": 5 },
-              mentoring: { "멘토링 1명": 3 },
-              instructor: { "강의 1회": 5, "강의 2회": 10, "강의 3회 이상": 15 }
-            },
-            innovation_proposal: {
-              awards: { 최우수상: 80, 우수상: 60, 장려상: 40 },
-              adoption: { 채택: 5 }
-            }
-          };
-          setDetailedCriteria(defaultDetailedCriteria);
+          console.warn('⚠️ 서버에 detailedCriteria 없음');
         }
       }
     } catch (error) {
-      console.error("로드 오류:", error);
+      console.error("❌ 로드 오류:", error);
       alert("기준 로드 중 오류가 발생했습니다.");
     } finally {
       setLoading(false);

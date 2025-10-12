@@ -1445,8 +1445,8 @@
     }
   },
   "projects": {
-    "37e80929-609f-4c5e-9f8f-411b1356acad": {
-      "id": "37e80929-609f-4c5e-9f8f-411b1356acad",
+    "f3e3d9f5-c079-4a97-869f-47acd0159e6b": {
+      "id": "f3e3d9f5-c079-4a97-869f-47acd0159e6b",
       "employeeId": "ef202e24-47a6-434d-ae9a-3a47c87b64be",
       "projectName": "테스트 프로젝트1",
       "role": "project_leader",
@@ -1459,19 +1459,8 @@
       "budget": 0,
       "client": "",
       "notes": "",
-      "createdAt": "2025-10-12T00:05:26.105Z",
-      "updatedAt": "2025-10-12T00:05:26.105Z"
-    },
-    "712e15a1-1cb9-4b83-941c-f17b4813bdb3": {
-      "id": "712e15a1-1cb9-4b83-941c-f17b4813bdb3",
-      "employeeId": "ef202e24-47a6-434d-ae9a-3a47c87b64be",
-      "projectName": "테스트 프로젝트2",
-      "role": "project_leader",
-      "status": "completed",
-      "startDate": "2025-07-06T15:00:00.000Z",
-      "endDate": "2025-10-07T15:00:00.000Z",
-      "createdAt": "2025-10-12T00:05:26.112Z",
-      "updatedAt": "2025-10-12T00:05:26.112Z"
+      "createdAt": "2025-10-11T23:56:34.423Z",
+      "updatedAt": "2025-10-11T23:56:34.423Z"
     }
   },
   "trainingHours": {
@@ -2004,7 +1993,7 @@
       "name": "프로젝트",
       "weight": 20,
       "description": "프로젝트 수행 경험",
-      "maxScore": 30,
+      "maxScore": 20,
       "scoringRanges": [
         {
           "min": 30,
@@ -2036,7 +2025,7 @@
       "name": "연구성과",
       "weight": 25,
       "description": "연구개발 성과",
-      "maxScore": 40,
+      "maxScore": 25,
       "scoringRanges": [
         {
           "min": 40,
@@ -2100,7 +2089,7 @@
       "name": "기술확산",
       "weight": 10,
       "description": "기술 확산 및 자기계발",
-      "maxScore": 15,
+      "maxScore": 10,
       "scoringRanges": [
         {
           "min": 15,
@@ -2132,7 +2121,7 @@
       "name": "혁신제안",
       "weight": 10,
       "description": "업무개선 및 혁신 제안",
-      "maxScore": 60,
+      "maxScore": 10,
       "scoringRanges": [
         {
           "min": 60,

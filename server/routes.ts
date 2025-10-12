@@ -2877,7 +2877,8 @@ app.put("/api/employees/:id", async (req, res) => {
         }
       };
 
-      // 서버 측 기본 상세 기준 정의
+      // ⚠️ 폴백용 기본 상세 기준 (data.json에 저장된 값이 없을 경우에만 사용)
+      // 사용자가 UI에서 설정한 값이 항상 우선됩니다.
       const defaultDetailedCriteria = {
         technical_competency: {
           education: { 박사: 30, 석사: 20, 학사: 10, 전문대: 5 },
@@ -3079,7 +3080,8 @@ app.put("/api/employees/:id", async (req, res) => {
         data = JSON.parse(fileContent);
       }
       
-      // 기본 상세 기준 (data.json에 저장된 것이 없을 경우)
+      // ⚠️ 폴백용 기본 상세 기준 (data.json에 저장된 값이 없을 경우에만 사용)
+      // 사용자가 UI에서 설정한 값이 항상 우선됩니다.
       const defaultDetailedCriteria = {
         technical_competency: {
           education: { 박사: 30, 석사: 20, 학사: 10, 전문대: 5 },
@@ -3176,6 +3178,9 @@ app.put("/api/employees/:id", async (req, res) => {
       );
       
       console.log(`✅ R&D 역량평가 결과:`, result);
+      console.log(`📊 scores 상세:`, result.scores);
+      console.log(`🎯 totalScore: ${result.totalScore}`);
+      console.log(`📈 grade: ${result.grade}`);
       res.json(result);
     } catch (error) {
       console.error("❌ R&D 역량평가 테스트 오류:", error);
