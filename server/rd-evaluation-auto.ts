@@ -142,19 +142,78 @@ export async function calculateAutoRdEvaluation(employeeId: string, evaluationYe
     const tcMaxScore = rdEvaluationCriteria?.technical_competency?.maxScore || 100;
     scores.technicalCompetency = Math.min(technicalScore, tcMaxScore);
     
-    // 2. 프로젝트 수행 경험 계산
+    // 2. 프로젝트 수행 경험 계산 - 완전 동적 처리
     let projectScore = 0;
     if (relatedData.projects && relatedData.projects.length > 0) {
-      const leaderCount = relatedData.projects.filter((p: any) => p.role === 'PL' || p.role === 'Project Leader').length;
-      const memberCount = relatedData.projects.length - leaderCount;
+      // detailedCriteria에서 프로젝트 점수 기준 로드
+      const projectCriteria = detailedCriteria?.project_experience || {};
+      const roleMapping = projectCriteria.roleMapping || {};
+      const leadershipScores = projectCriteria.leadership || {};
+      const countBonus = projectCriteria.count || {};
       
-      projectScore += leaderCount * 15; // PL당 15점
-      projectScore += memberCount * 5;  // 멤버당 5점
+      // 기본 roleMapping (사용자가 설정하지 않은 경우)
+      const defaultRoleMapping = {
+        "project_leader": "Project Leader",
+        "PL": "Project Leader",
+        "lead": "Project Leader",
+        "core_member": "핵심 멤버",
+        "member": "일반 멤버"
+      };
       
-      // 프로젝트 개수에 따른 추가 점수
-      if (relatedData.projects.length >= 3) projectScore += 30;
-      else if (relatedData.projects.length >= 2) projectScore += 20;
-      else if (relatedData.projects.length >= 1) projectScore += 10;
+      const finalRoleMapping = Object.keys(roleMapping).length > 0 ? roleMapping : defaultRoleMapping;
+      
+      // 역할별 점수 매핑 함수 - 완전 동적
+      const getRoleScore = (role: string): number => {
+        // 1. 정확히 매핑된 역할이 있으면 사용
+        if (finalRoleMapping[role]) {
+          const mappedRole = finalRoleMapping[role];
+          return leadershipScores[mappedRole] || 0;
+        }
+        
+        // 2. roleMapping에 없으면 직접 leadership에서 찾기
+        if (leadershipScores[role]) {
+          return leadershipScores[role];
+        }
+        
+        // 3. 부분 매칭 시도 (소문자 변환하여 비교)
+        const roleLower = role.toLowerCase();
+        for (const [key, value] of Object.entries(finalRoleMapping)) {
+          if (key.toLowerCase() === roleLower) {
+            return leadershipScores[value as string] || 0;
+          }
+        }
+        
+        // 4. 기본값 - leadership의 마지막 항목 또는 0
+        const defaultRole = Object.keys(leadershipScores).pop();
+        return defaultRole ? leadershipScores[defaultRole] : 0;
+      };
+      
+      // 프로젝트별 점수 계산 (역할에 따라)
+      relatedData.projects.forEach((p: any) => {
+        projectScore += getRoleScore(p.role);
+      });
+      
+      // 개수 보너스 - 완전 동적 처리
+      const count = relatedData.projects.length;
+      
+      // countBonus 객체를 파싱하여 규칙 생성
+      const bonusRules = Object.entries(countBonus).map(([key, score]) => {
+        const isOrMore = key.includes("이상");
+        const numMatch = key.match(/(\d+)/);
+        const threshold = numMatch ? parseInt(numMatch[1]) : 0;
+        return { threshold, score: score as number, isOrMore };
+      }).sort((a, b) => b.threshold - a.threshold); // 큰 숫자부터 정렬
+      
+      // 조건에 맞는 첫 번째 보너스 적용
+      for (const rule of bonusRules) {
+        if (rule.isOrMore && count >= rule.threshold) {
+          projectScore += rule.score;
+          break;
+        } else if (!rule.isOrMore && count === rule.threshold) {
+          projectScore += rule.score;
+          break;
+        }
+      }
     }
     
     // 원점수 저장

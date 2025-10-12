@@ -1445,11 +1445,11 @@
     }
   },
   "projects": {
-    "37e80929-609f-4c5e-9f8f-411b1356acad": {
-      "id": "37e80929-609f-4c5e-9f8f-411b1356acad",
+    "ef552be4-67d5-4572-874e-f4de6965d835": {
+      "id": "ef552be4-67d5-4572-874e-f4de6965d835",
       "employeeId": "ef202e24-47a6-434d-ae9a-3a47c87b64be",
       "projectName": "테스트 프로젝트1",
-      "role": "project_leader",
+      "role": "Project Leader",
       "status": "completed",
       "startDate": "2021-01-01T00:00:00.000Z",
       "endDate": "2021-03-03T00:00:00.000Z",
@@ -1459,19 +1459,42 @@
       "budget": 0,
       "client": "",
       "notes": "",
-      "createdAt": "2025-10-12T00:05:26.105Z",
-      "updatedAt": "2025-10-12T00:05:26.105Z"
+      "createdAt": "2025-10-12T05:31:29.886Z",
+      "updatedAt": "2025-10-12T05:31:29.886Z"
     },
-    "712e15a1-1cb9-4b83-941c-f17b4813bdb3": {
-      "id": "712e15a1-1cb9-4b83-941c-f17b4813bdb3",
+    "1b04d620-e242-4be6-9e67-c1bdeaf9dc95": {
+      "id": "1b04d620-e242-4be6-9e67-c1bdeaf9dc95",
       "employeeId": "ef202e24-47a6-434d-ae9a-3a47c87b64be",
       "projectName": "테스트 프로젝트2",
-      "role": "project_leader",
+      "role": "핵심 멤버",
       "status": "completed",
       "startDate": "2025-07-06T15:00:00.000Z",
       "endDate": "2025-10-07T15:00:00.000Z",
-      "createdAt": "2025-10-12T00:05:26.112Z",
-      "updatedAt": "2025-10-12T00:05:26.112Z"
+      "description": "",
+      "technologies": "",
+      "teamSize": 0,
+      "budget": 0,
+      "client": "",
+      "notes": "",
+      "createdAt": "2025-10-12T05:31:29.891Z",
+      "updatedAt": "2025-10-12T05:31:29.891Z"
+    },
+    "50e0aae1-5bee-4194-bf26-d6a40616d340": {
+      "id": "50e0aae1-5bee-4194-bf26-d6a40616d340",
+      "employeeId": "ef202e24-47a6-434d-ae9a-3a47c87b64be",
+      "projectName": "테스트 프로젝트3",
+      "role": "일반 멤버",
+      "status": "completed",
+      "startDate": "2021-01-10T00:00:00.000Z",
+      "endDate": "2025-10-05T15:00:00.000Z",
+      "description": "",
+      "technologies": "",
+      "teamSize": 0,
+      "budget": 0,
+      "client": "",
+      "notes": "",
+      "createdAt": "2025-10-12T05:31:29.896Z",
+      "updatedAt": "2025-10-12T05:31:29.896Z"
     }
   },
   "trainingHours": {
@@ -2004,31 +2027,31 @@
       "name": "프로젝트",
       "weight": 20,
       "description": "프로젝트 수행 경험",
-      "maxScore": 30,
+      "maxScore": 60,
       "scoringRanges": [
         {
-          "min": 30,
+          "min": 60,
           "max": 100,
           "converted": 100,
-          "label": "30점↑ → 100점"
+          "label": "60점↑ → 100점"
         },
         {
-          "min": 20,
-          "max": 29,
+          "min": 30,
+          "max": 59,
           "converted": 80,
-          "label": "20-29점 → 80점"
+          "label": "30-59점 → 80점"
         },
         {
-          "min": 10,
-          "max": 19,
+          "min": 5,
+          "max": 29,
           "converted": 60,
-          "label": "10-19점 → 60점"
+          "label": "5-29점 → 60점"
         },
         {
           "min": 0,
-          "max": 9,
+          "max": 5,
           "converted": 40,
-          "label": "10점↓ → 40점"
+          "label": "5점↓ → 40점"
         }
       ]
     },
@@ -2186,12 +2209,23 @@
       "leadership": {
         "Project Leader": 15,
         "핵심 멤버": 10,
-        "일반 멤버": 5
+        "일반 멤버": 5,
+        "추가되는지 확인": 1
       },
       "count": {
         "3개 이상": 30,
         "2개": 20,
         "1개": 10
+      },
+      "roleMapping": {
+        "project_leader": "Project Leader",
+        "PL": "Project Leader",
+        "lead": "Project Leader",
+        "core_member": "핵심 멤버",
+        "핵심멤버": "핵심 멤버",
+        "member": "일반 멤버",
+        "일반멤버": "일반 멤버",
+        "developer": "일반 멤버"
       }
     },
     "rd_achievement": {

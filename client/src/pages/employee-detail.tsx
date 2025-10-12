@@ -347,6 +347,12 @@ export default function EmployeeDetail({ employeeId: propEmployeeId }: EmployeeD
           // competencyItems가 있는 경우 그것을 사용, 없으면 전체 데이터 사용
           const rawFinal = criteriaData?.competencyItems || criteriaData;
           
+          // detailedCriteria도 함께 저장
+          const finalData = {
+            ...rawFinal,
+            detailedCriteria: data.detailedCriteria
+          };
+          
           // 키 정규화: camelCase/snake_case/중첩 모두 지원
           const normalizeKeys = (src: any) => {
             if (!src || typeof src !== 'object') return null;
@@ -370,7 +376,12 @@ export default function EmployeeDetail({ employeeId: propEmployeeId }: EmployeeD
             }
             return Object.keys(result).length > 0 ? result : src;
           };
-          const finalCriteriaData = normalizeKeys(rawFinal);
+          const finalCriteriaData = normalizeKeys(finalData);
+          
+          // detailedCriteria가 사라지지 않도록 명시적으로 추가
+          if (data.detailedCriteria) {
+            finalCriteriaData.detailedCriteria = data.detailedCriteria;
+          }
           
           setRdEvaluationCriteria(finalCriteriaData);
         } else {
@@ -681,13 +692,13 @@ export default function EmployeeDetail({ employeeId: propEmployeeId }: EmployeeD
     return result;
   };
   
-  // 각 역량별 세부 점수 계산 함수들
+  // 각 역량별 세부 점수 계산 함수들 (서버 로직과 일치)
   const getTechnicalDetails = () => {
     if (!employee) return [];
     
     const details: Array<{label: string, value: string, score: number}> = [];
     
-    // 학위 점수
+    // 학위 점수 (서버 로직과 동일)
     let educationScore = 0;
     if (employee.education === 'bachelor') educationScore = 10;
     else if (employee.education === 'master') educationScore = 20;
@@ -701,7 +712,7 @@ export default function EmployeeDetail({ employeeId: propEmployeeId }: EmployeeD
       });
     }
     
-    // 경력 점수
+    // 경력 점수 (서버 로직과 동일)
     const hireDate = employee.hireDate ? new Date(employee.hireDate) : null;
     const inCompanyYears = hireDate ? ((Date.now() - hireDate.getTime()) / (1000 * 60 * 60 * 24 * 365)) : 0;
     const prevYears = Number(employee.previousExperienceYears || 0);
@@ -720,13 +731,26 @@ export default function EmployeeDetail({ employeeId: propEmployeeId }: EmployeeD
       score: experienceScore
     });
     
-    // 자격증 점수
-    const certScore = certifications.length * 5; // 간단한 계산
-    if (certScore > 0) {
+    // 자격증 점수 (서버 로직과 동일)
+    const getCertificationPoint = (cert: any): number => {
+      const name = (`${cert.name || ''}`).toLowerCase();
+      const level = (`${cert.level || ''}`).toLowerCase();
+      if (name.includes('기술사') || level.includes('expert')) return 20;
+      if ((name.includes('기사') && !name.includes('산업기사')) || level.includes('advanced')) return 10;
+      if (name.includes('산업기사') || level.includes('intermediate')) return 5;
+      return 3;
+    };
+    
+    let totalCertScore = 0;
+    certifications.forEach(cert => {
+      totalCertScore += getCertificationPoint(cert);
+    });
+    
+    if (totalCertScore > 0) {
       details.push({
         label: '자격증',
         value: `${certifications.length}개`,
-        score: certScore
+        score: totalCertScore
       });
     }
     
@@ -736,32 +760,105 @@ export default function EmployeeDetail({ employeeId: propEmployeeId }: EmployeeD
   const getProjectDetails = () => {
     const details: Array<{label: string, value: string, score: number}> = [];
     
-    const totalProjects = projects.length;
-    const plProjects = projects.filter(p => p.role === 'PL' || p.role === 'Project Leader').length;
-    const coreProjects = projects.filter(p => p.role === '핵심 멤버').length;
-    
-    if (totalProjects > 0) {
-      details.push({
-        label: '프로젝트 수',
-        value: `${totalProjects}개`,
-        score: totalProjects * 10
-      });
+    if (!projects || projects.length === 0) {
+      return details;
     }
     
-    if (plProjects > 0) {
-      details.push({
-        label: 'PL 역할',
-        value: `${plProjects}개`,
-        score: plProjects * 15
-      });
-    }
+    // detailedCriteria에서 프로젝트 점수 기준 로드
+    const projectCriteria = rdEvaluationCriteria?.detailedCriteria?.project_experience || {};
+    const roleMapping = projectCriteria.roleMapping || {};
+    const leadershipScores = projectCriteria.leadership || {};
+    const countBonus = projectCriteria.count || {};
     
-    if (coreProjects > 0) {
-      details.push({
-        label: '핵심 멤버',
-        value: `${coreProjects}개`,
-        score: coreProjects * 10
-      });
+    // 기본 roleMapping (사용자가 설정하지 않은 경우)
+    const defaultRoleMapping = {
+      "project_leader": "Project Leader",
+      "PL": "Project Leader",
+      "lead": "Project Leader",
+      "core_member": "핵심 멤버",
+      "member": "일반 멤버"
+    };
+    
+    const finalRoleMapping = Object.keys(roleMapping).length > 0 ? roleMapping : defaultRoleMapping;
+    
+    // 역할별 점수 매핑 함수 - 서버와 동일한 로직
+    const getRoleScore = (role: string): number => {
+      // 1. 정확히 매핑된 역할이 있으면 사용
+      if (finalRoleMapping[role]) {
+        const mappedRole = finalRoleMapping[role];
+        return leadershipScores[mappedRole] || 0;
+      }
+      
+      // 2. roleMapping에 없으면 직접 leadership에서 찾기
+      if (leadershipScores[role]) {
+        return leadershipScores[role];
+      }
+      
+      // 3. 부분 매칭 시도 (소문자 변환하여 비교)
+      const roleLower = role.toLowerCase();
+      for (const [key, value] of Object.entries(finalRoleMapping)) {
+        if (key.toLowerCase() === roleLower) {
+          return leadershipScores[value as string] || 0;
+        }
+      }
+      
+      // 4. 기본값 - leadership의 마지막 항목 또는 0
+      const defaultRole = Object.keys(leadershipScores).pop();
+      return defaultRole ? leadershipScores[defaultRole] : 0;
+    };
+    
+    // 역할별 점수 계산 및 표시
+    const roleScores: {[key: string]: {count: number, score: number}} = {};
+    
+    projects.forEach((p: any) => {
+      const roleScore = getRoleScore(p.role);
+      const mappedRole = finalRoleMapping[p.role] || p.role;
+      
+      if (!roleScores[mappedRole]) {
+        roleScores[mappedRole] = { count: 0, score: roleScore };
+      }
+      roleScores[mappedRole].count++;
+    });
+    
+    // 역할별 세부 점수 표시
+    Object.entries(roleScores).forEach(([role, data]) => {
+      if (data.count > 0) {
+        details.push({
+          label: role,
+          value: `${data.count}개`,
+          score: data.count * data.score
+        });
+      }
+    });
+    
+    // 개수 보너스 - 완전 동적 처리
+    const count = projects.length;
+    
+    // countBonus 객체를 파싱하여 규칙 생성
+    const bonusRules = Object.entries(countBonus).map(([key, score]) => {
+      const isOrMore = key.includes("이상");
+      const numMatch = key.match(/(\d+)/);
+      const threshold = numMatch ? parseInt(numMatch[1]) : 0;
+      return { threshold, score: score as number, isOrMore };
+    }).sort((a, b) => b.threshold - a.threshold); // 큰 숫자부터 정렬
+    
+    // 조건에 맞는 첫 번째 보너스 적용
+    for (const rule of bonusRules) {
+      if (rule.isOrMore && count >= rule.threshold) {
+        details.push({
+          label: '프로젝트 보너스',
+          value: `${count}개`,
+          score: rule.score
+        });
+        break;
+      } else if (!rule.isOrMore && count === rule.threshold) {
+        details.push({
+          label: '프로젝트 보너스',
+          value: `${count}개`,
+          score: rule.score
+        });
+        break;
+      }
     }
     
     return details;
@@ -770,11 +867,12 @@ export default function EmployeeDetail({ employeeId: propEmployeeId }: EmployeeD
   const getRdAchievementDetails = () => {
     const details: Array<{label: string, value: string, score: number}> = [];
     
+    // 서버 로직과 동일한 계산
     if (patents.length > 0) {
       details.push({
         label: '특허',
         value: `${patents.length}건`,
-        score: patents.length * 10
+        score: patents.length * 10  // 서버: 특허당 10점
       });
     }
     
@@ -782,7 +880,7 @@ export default function EmployeeDetail({ employeeId: propEmployeeId }: EmployeeD
       details.push({
         label: '논문',
         value: `${publications.length}편`,
-        score: publications.length * 15
+        score: publications.length * 15  // 서버: 논문당 15점
       });
     }
     
@@ -790,7 +888,7 @@ export default function EmployeeDetail({ employeeId: propEmployeeId }: EmployeeD
       details.push({
         label: '수상',
         value: `${awards.length}건`,
-        score: awards.length * 20
+        score: awards.length * 20  // 서버: 수상당 20점
       });
     }
     
@@ -800,10 +898,12 @@ export default function EmployeeDetail({ employeeId: propEmployeeId }: EmployeeD
   const getGlobalDetails = () => {
     const details: Array<{label: string, value: string, score: number}> = [];
     
+    // 서버 로직과 동일한 계산 (간소화된 버전)
     languages.forEach(lang => {
       let score = 0;
       if (lang.language === 'English' && lang.testType === 'TOEIC') {
         const scoreValue = lang.score || 0;
+        // 서버의 detailedCriteria 기준에 맞춰 점수 계산 (간소화)
         if (scoreValue >= 950) score = 10;
         else if (scoreValue >= 900) score = 8;
         else if (scoreValue >= 800) score = 6;
@@ -818,7 +918,7 @@ export default function EmployeeDetail({ employeeId: propEmployeeId }: EmployeeD
       } else if (lang.language === 'Japanese' && lang.testType === 'JLPT') {
         // testLevel이 있으면 우선 사용 (N1, N2 등)
         if (lang.testLevel) {
-          // testLevel에 따른 점수 계산 (N1=10, N2=7, N3=4, N4=2, N5=1)
+          // testLevel에 따른 점수 계산 (서버 로직과 동일)
           const levelScores: {[key: string]: number} = {
             'N1': 10, 'N2': 7, 'N3': 4, 'N4': 2, 'N5': 1
           };
@@ -830,7 +930,7 @@ export default function EmployeeDetail({ employeeId: propEmployeeId }: EmployeeD
             score: score
           });
         } else {
-          // testLevel이 없으면 proficiencyLevel 사용 (기존 방식)
+          // testLevel이 없으면 proficiencyLevel 사용
           if (lang.proficiencyLevel === 'advanced') score = 10;
           else if (lang.proficiencyLevel === 'intermediate') score = 7;
           else if (lang.proficiencyLevel === 'beginner') score = 4;
@@ -842,7 +942,7 @@ export default function EmployeeDetail({ employeeId: propEmployeeId }: EmployeeD
           });
         }
       } else if (lang.language === 'Chinese' && lang.testType === 'HSK' && lang.testLevel) {
-        // 중국어 HSK 등급 표시
+        // 중국어 HSK 등급 표시 (서버 로직과 동일)
         const levelScores: {[key: string]: number} = {
           '6급': 10, '5급': 8, '4급': 6, '3급': 4, '2급': 2, '1급': 1
         };
@@ -862,8 +962,11 @@ export default function EmployeeDetail({ employeeId: propEmployeeId }: EmployeeD
   const getKnowledgeSharingDetails = () => {
     const details: Array<{label: string, value: string, score: number}> = [];
     
-    // 교육이수
-    const studentTrainings = trainings.filter(t => t.status === 'completed');
+    // 교육이수 (서버 로직과 동일 - 수강생 역할만)
+    const studentTrainings = trainings.filter(t => 
+      t.status === 'completed' && 
+      (t.instructorRole === null || t.instructorRole === undefined)
+    );
     const totalHours = studentTrainings.reduce((sum, t) => sum + (t.duration || 0), 0);
     let educationScore = 0;
     if (totalHours >= 40) educationScore = 5;
@@ -878,7 +981,7 @@ export default function EmployeeDetail({ employeeId: propEmployeeId }: EmployeeD
       });
     }
     
-    // 신규자격증
+    // 신규자격증 (서버 로직과 동일 - 평가 기간 내 발급)
     const currentYear = new Date().getFullYear();
     const newCerts = certifications.filter(cert => {
       if (!cert.issueDate) return false;
@@ -889,27 +992,29 @@ export default function EmployeeDetail({ employeeId: propEmployeeId }: EmployeeD
     });
     
     if (newCerts.length > 0) {
+      const newCertScore = Math.min(newCerts.length * 5, 25); // 서버: 최대 25점
       details.push({
         label: '신규자격증',
         value: `${newCerts.length}개`,
-        score: newCerts.length * 5
+        score: newCertScore
       });
     }
     
-    // 멘토링
+    // 멘토링 (서버 로직과 동일)
     const mentoringCount = trainings.filter(t => 
       t.status === 'completed' && t.instructorRole === 'mentor'
     ).length;
     
     if (mentoringCount > 0) {
+      const mentoringScore = Math.min(mentoringCount * 3, 15); // 서버: 최대 15점
       details.push({
         label: '멘토링',
         value: `${mentoringCount}회`,
-        score: mentoringCount * 3
+        score: mentoringScore
       });
     }
     
-    // 강의
+    // 강의 (서버 로직과 동일)
     const lectureCount = trainings.filter(t => 
       t.status === 'completed' && t.instructorRole === 'instructor'
     ).length;
@@ -933,21 +1038,13 @@ export default function EmployeeDetail({ employeeId: propEmployeeId }: EmployeeD
   const getInnovationDetails = () => {
     const details: Array<{label: string, value: string, score: number}> = [];
     
+    // 서버 로직과 동일한 계산
     if (proposals.length > 0) {
       details.push({
         label: '제안 제출',
         value: `${proposals.length}건`,
-        score: proposals.length * 10
+        score: proposals.length * 10  // 서버: 제안당 10점
       });
-      
-      const approvedCount = proposals.filter(p => p.status === 'approved' || p.status === 'implemented').length;
-      if (approvedCount > 0) {
-        details.push({
-          label: '제안 채택',
-          value: `${approvedCount}건`,
-          score: approvedCount * 20
-        });
-      }
     }
     
     return details;
@@ -964,6 +1061,20 @@ export default function EmployeeDetail({ employeeId: propEmployeeId }: EmployeeD
       case 'innovation_proposal': return getInnovationDetails();
       default: return [];
     }
+  };
+
+  // 세부 점수 합계가 rawScores와 일치하는지 검증
+  const validateDetailScores = (competency: string) => {
+    if (!rdEvaluation?.rawScores) return true;
+    
+    const details = getCompetencyDetails(competency);
+    const calculatedTotal = details.reduce((sum, detail) => sum + detail.score, 0);
+    
+    const competencyKey = competency.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase()) as keyof typeof rdEvaluation.rawScores;
+    const serverRawScore = rdEvaluation.rawScores[competencyKey];
+    
+    // 5점 이내 차이는 허용 (날짜 필터링 등으로 인한 미세한 차이)
+    return Math.abs(calculatedTotal - serverRawScore) <= 5;
   };
   
   // 역량 이름 매핑
@@ -1527,6 +1638,11 @@ export default function EmployeeDetail({ employeeId: propEmployeeId }: EmployeeD
                           <p className="text-xs text-gray-500">
                             레이더차트의 라벨을 클릭하여 다른 역량의 세부 점수를 확인할 수 있습니다.
                           </p>
+                          {!validateDetailScores(selectedCompetency) && (
+                            <p className="text-xs text-orange-600 mt-1">
+                              ⚠️ 세부 점수 합계가 서버 원점수와 다를 수 있습니다.
+                            </p>
+                          )}
                         </div>
                         <div className="grid grid-cols-2 gap-2 text-xs">
                           {getCompetencyDetails(selectedCompetency).map((detail, index) => (
@@ -1543,6 +1659,14 @@ export default function EmployeeDetail({ employeeId: propEmployeeId }: EmployeeD
                             </div>
                           )}
                         </div>
+                        {/* 원점수 표시 */}
+                        {rdEvaluation?.rawScores && (
+                          <div className="mt-2 pt-2 border-t border-gray-200">
+                            <div className="text-xs text-gray-600">
+                              서버 원점수: {rdEvaluation.rawScores[selectedCompetency.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase()) as keyof typeof rdEvaluation.rawScores]}점
+                            </div>
+                          </div>
+                        )}
                       </div>
                       
                       <div className="space-y-2">

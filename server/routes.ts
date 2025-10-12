@@ -1129,15 +1129,15 @@ app.put("/api/employees/:id", async (req, res) => {
   app.get('/api/rd-evaluation-criteria', async (req, res) => {
     try {
       
-      // 파일에서 기준 조회
-      const criteriaPath = path.join(__dirname, '..', 'data', 'rd-evaluation-criteria.json');
+      // data.json에서 직접 기준 조회
+      const dataPath = path.join(process.cwd(), 'data.json');
+      const dataContent = fs.readFileSync(dataPath, 'utf8');
+      const data = JSON.parse(dataContent);
       
-      let criteria;
-      if (fs.existsSync(criteriaPath)) {
-        // 저장된 기준이 있으면 로드
-        const fileContent = fs.readFileSync(criteriaPath, 'utf8');
-        criteria = JSON.parse(fileContent);
-      } else {
+      // detailedCriteria에서 기준 추출
+      let criteria = data.detailedCriteria || {};
+      
+      if (Object.keys(criteria).length === 0) {
         // 기본 설정 반환
         criteria = {
           global_competency: {
@@ -1257,6 +1257,8 @@ app.put("/api/employees/:id", async (req, res) => {
       
       res.json({
         success: true,
+        rdEvaluationCriteria: data.rdEvaluationCriteria || {},
+        detailedCriteria: data.detailedCriteria || {},
         criteria: criteria,
         languageTests: languageTests
       });

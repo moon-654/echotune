@@ -51,51 +51,40 @@ export default function ProjectEditModal({ employeeId, isOpen, onClose }: Projec
   
   // 수정 중인 데이터
   const [editFormData, setEditFormData] = useState<ProjectFormData | null>(null);
-  const [roleOptions, setRoleOptions] = useState<Array<{ value: string; label: string; points?: number }>>([
-    { value: 'project_leader', label: 'Project Leader', points: 15 },
-    { value: 'core_member', label: '핵심 멤버', points: 10 },
-    { value: 'member', label: '일반 멤버', points: 5 }
-  ]);
+  const [roleOptions, setRoleOptions] = useState<Array<{ value: string; label: string; points?: number }>>([]);
 
-  // R&D 상세설정의 프로젝트 리더십 기준과 연동
+  // R&D 상세설정의 프로젝트 리더십 기준과 연동 - 동적 로드
   useEffect(() => {
     if (!isOpen) return;
     const loadProjectRoleCriteria = async () => {
       try {
-        const res = await fetch('/api/rd-evaluations/criteria');
-        if (!res.ok) return;
-        const json = await res.json();
-        const criteria = json.criteria || json.rdEvaluationCriteria || {};
-        const items = criteria.competencyItems || criteria;
-        const projectBlock = items.project_experience || items.projectExperience || {};
-        // 가능한 경로들을 순회하며 역할 배열 찾기
-        const candidates: any[] = [];
-        const pushIfArray = (x: any) => { if (Array.isArray(x)) candidates.push(...x); };
-        pushIfArray(projectBlock.roles);
-        pushIfArray(projectBlock.leadership);
-        pushIfArray(projectBlock.detailedCriteria?.roles);
-        pushIfArray(projectBlock.detailedCriteria?.leadership);
-        // 객체 map 형태일 수도 있음 { 'Project Leader': 15, '핵심 멤버': 10, ... }
-        const asObject = projectBlock.roles || projectBlock.leadership || projectBlock.detailedCriteria?.roles || projectBlock.detailedCriteria?.leadership;
-        const parsed: Array<{ value: string; label: string; points?: number }> = [];
-        if (candidates.length > 0) {
-          candidates.forEach((it: any) => {
-            const label = it.label || it.name || it.title || it.key || '';
-            const val = (it.value || label || '').toString().trim().toLowerCase().replace(/\s+/g, '_');
-            parsed.push({ value: val || label, label: label || val, points: it.points || it.score || it.value });
-          });
-        } else if (asObject && typeof asObject === 'object') {
-          Object.keys(asObject).forEach(k => {
-            const v = asObject[k];
-            const val = k.toString().trim().toLowerCase().replace(/\s+/g, '_');
-            parsed.push({ value: val, label: k, points: typeof v === 'number' ? v : undefined });
-          });
+        const response = await fetch('/api/rd-evaluation-criteria');
+        
+        if (!response.ok) {
+          console.error('❌ API 응답 실패:', response.status);
+          return;
         }
-        if (parsed.length > 0) {
-          setRoleOptions(parsed);
-        }
-      } catch (e) {
-        // 무시: 폴백 옵션 사용
+        
+        const criteria = await response.json();
+        const leadership = criteria?.detailedCriteria?.project_experience?.leadership || {};
+        
+        // leadership 객체의 키들을 역할 옵션으로 변환
+        const roleOptions = Object.keys(leadership).map(role => ({
+          value: role, // 키를 그대로 사용 (예: "추가되는지 확인")
+          label: role, // 표시명도 키와 동일
+          points: leadership[role] // 점수
+        }));
+        
+        setRoleOptions(roleOptions);
+      } catch (error) {
+        console.error('❌ 역할 옵션 로드 실패:', error);
+        // 폴백: 기본 옵션 사용
+        const fallbackOptions = [
+          { value: 'project_leader', label: 'Project Leader', points: 15 },
+          { value: 'core_member', label: '핵심 멤버', points: 10 },
+          { value: 'member', label: '일반 멤버', points: 5 }
+        ];
+        setRoleOptions(fallbackOptions);
       }
     };
     loadProjectRoleCriteria();
@@ -305,9 +294,13 @@ export default function ProjectEditModal({ employeeId, isOpen, onClose }: Projec
                       <SelectValue placeholder="역할 선택" />
                     </SelectTrigger>
                     <SelectContent>
-                      {roleOptions.map(opt => (
-                        <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
-                      ))}
+                      {roleOptions.length === 0 ? (
+                        <SelectItem value="loading" disabled>로딩 중...</SelectItem>
+                      ) : (
+                        roleOptions.map(opt => (
+                          <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                        ))
+                      )}
                     </SelectContent>
                   </Select>
                 </div>
