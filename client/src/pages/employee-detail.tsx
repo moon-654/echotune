@@ -2389,43 +2389,6 @@ export default function EmployeeDetail({ employeeId: propEmployeeId }: EmployeeD
           };
           loadProposals();
         }}
-        onSave={async (data) => {
-          try {
-            const response = await fetch('/api/proposals', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify(data),
-            });
-
-
-            if (response.ok) {
-              const result = await response.json();
-              
-              // 제안제도 데이터 새로고침
-              const loadProposals = async () => {
-                try {
-                  const response = await fetch(`/api/proposals?employeeId=${employeeId}`);
-                  if (response.ok) {
-                    const data = await response.json();
-                    setProposals(data);
-                  }
-                } catch (error) {
-                  console.error('제안제도 데이터 로드 오류:', error);
-                }
-              };
-              loadProposals();
-            } else {
-              const errorData = await response.json();
-              console.error('❌ 제안제도 저장 실패:', response.status, errorData);
-              throw new Error(`제안제도 저장 실패: ${response.status}`);
-            }
-          } catch (error) {
-            console.error('❌ 제안제도 저장 오류:', error);
-            throw error;
-          }
-        }}
       />
     </div>
   );

@@ -1869,6 +1869,48 @@ app.put("/api/employees/:id", async (req, res) => {
     }
   });
 
+  // 제안제도 삭제 API (특정 직원의 모든 제안 삭제)
+  app.delete("/api/proposals", async (req, res) => {
+    try {
+      const { employeeId } = req.query;
+      
+      if (!employeeId) {
+        return res.status(400).json({ error: "employeeId is required" });
+      }
+      
+      const dataPath = path.join(process.cwd(), 'data.json');
+      
+      if (!fs.existsSync(dataPath)) {
+        return res.json({ success: true, deletedCount: 0 });
+      }
+      
+      const fileContent = fs.readFileSync(dataPath, 'utf8');
+      const data = JSON.parse(fileContent);
+      
+      if (!data.proposals) {
+        return res.json({ success: true, deletedCount: 0 });
+      }
+      
+      // 해당 직원의 제안들만 삭제
+      const proposalsToDelete = Object.keys(data.proposals).filter(
+        key => data.proposals[key].employeeId === employeeId
+      );
+      
+      proposalsToDelete.forEach(key => {
+        delete data.proposals[key];
+      });
+      
+      // 파일 저장
+      fs.writeFileSync(dataPath, JSON.stringify(data, null, 2));
+      console.log(`✅ ${employeeId} 직원의 제안제도 ${proposalsToDelete.length}개 삭제 완료`);
+      
+      res.json({ success: true, deletedCount: proposalsToDelete.length });
+    } catch (error) {
+      console.error("❌ 제안제도 삭제 오류:", error);
+      res.status(500).json({ error: "제안제도를 삭제할 수 없습니다." });
+    }
+  });
+
   // Skill Calculation routes
   app.get("/api/skill-calculations", async (req, res) => {
     try {

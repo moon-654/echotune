@@ -240,6 +240,7 @@ export interface LanguageFormData {
 }
 
 export interface ProposalFormData {
+  id?: number; // 수정/삭제를 위한 ID
   employeeId: string;
   title: string;
   description: string;
