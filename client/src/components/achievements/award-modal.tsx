@@ -29,7 +29,11 @@ export default function AwardModal({ isOpen, onClose, onSuccess, award }: AwardM
   const [selectedEmployee, setSelectedEmployee] = useState<any>(null);
   const [employees, setEmployees] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
-  const [categories, setCategories] = useState<any>({});
+  const [categories, setCategories] = useState<any>({ 
+    patentStatus: [], 
+    publicationLevels: [], 
+    awardLevels: [] 
+  });
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [showSearchResults, setShowSearchResults] = useState(false);
@@ -245,7 +249,7 @@ export default function AwardModal({ isOpen, onClose, onSuccess, award }: AwardM
                     <SelectValue placeholder="수상 등급을 선택하세요" />
                   </SelectTrigger>
                   <SelectContent>
-                    {categories.awardLevels?.map((level: string) => (
+                    {(categories.awardLevels || []).map((level: string) => (
                       <SelectItem key={level} value={level}>
                         {level}
                       </SelectItem>

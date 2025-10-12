@@ -3144,10 +3144,14 @@ app.put("/api/employees/:id", async (req, res) => {
       // 성과관리 등록용 카테고리 추출 (각 메뉴에 맞는 항목만)
       const categories = {
         // 특허 등록용: 특허 상태만 (등록/출원)
-        patentStatus: Object.keys(detailedCriteria.rd_achievement?.patents || {}),
+        patentStatus: Array.isArray(Object.keys(detailedCriteria.rd_achievement?.patents || {})) 
+          ? Object.keys(detailedCriteria.rd_achievement?.patents || {})
+          : [],
         
         // 논문 등록용: 논문 등급만 (SCI(E)급, 국내 학술지)
-        publicationLevels: Object.keys(detailedCriteria.rd_achievement?.publications || {}),
+        publicationLevels: Array.isArray(Object.keys(detailedCriteria.rd_achievement?.publications || {}))
+          ? Object.keys(detailedCriteria.rd_achievement?.publications || {})
+          : [],
         
         // 수상 등록용: 실제 사용하는 수상 등급 (국제, 국가, 산업, 사내)
         awardLevels: ["국제", "국가", "산업", "사내"]

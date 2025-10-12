@@ -25,7 +25,11 @@ export default function AchievementsEditModal({ employeeId, isOpen, onClose }: A
   const [awards, setAwards] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [categories, setCategories] = useState<any>({});
+  const [categories, setCategories] = useState<any>({ 
+    patentStatus: [], 
+    publicationLevels: [], 
+    awardLevels: [] 
+  });
   const [employeeInfo, setEmployeeInfo] = useState<any>(null);
   
   // 삭제 확인 대화상자 상태
@@ -137,7 +141,7 @@ export default function AchievementsEditModal({ employeeId, isOpen, onClose }: A
       const response = await fetch('/api/achievements/categories');
       if (response.ok) {
         const data = await response.json();
-        setCategories(data);
+        setCategories(data.categories || {});
       }
     } catch (error) {
       console.error('카테고리 로드 오류:', error);
@@ -155,17 +159,17 @@ export default function AchievementsEditModal({ employeeId, isOpen, onClose }: A
 
         if (patentsResponse.ok) {
           const patentsData = await patentsResponse.json();
-        setPatents(patentsData);
+          setPatents(Array.isArray(patentsData) ? patentsData : []);
         }
 
         if (publicationsResponse.ok) {
           const publicationsData = await publicationsResponse.json();
-        setPublications(publicationsData);
-      }
+          setPublications(Array.isArray(publicationsData) ? publicationsData : []);
+        }
 
-      if (awardsResponse.ok) {
-        const awardsData = await awardsResponse.json();
-        setAwards(awardsData);
+        if (awardsResponse.ok) {
+          const awardsData = await awardsResponse.json();
+          setAwards(Array.isArray(awardsData) ? awardsData : []);
         }
       } catch (error) {
       console.error('성과 데이터 로드 오류:', error);
@@ -227,7 +231,13 @@ export default function AchievementsEditModal({ employeeId, isOpen, onClose }: A
   // 수정 관련 핸들러
   const handleEditClick = (type: string, item: any) => {
     setEditingItem({ type, id: item.id });
-    setEditFormData({ ...item });
+    const normalizedItem = {
+      ...item,
+      inventors: Array.isArray(item.inventors) ? item.inventors : [],
+      authors: Array.isArray(item.authors) ? item.authors : [],
+      teamMembers: Array.isArray(item.teamMembers) ? item.teamMembers : []
+    };
+    setEditFormData(normalizedItem);
   };
 
   const handleEditSave = async (type: string, id: string) => {
@@ -542,7 +552,7 @@ export default function AchievementsEditModal({ employeeId, isOpen, onClose }: A
                     {/* 검색 결과 */}
                     {showSearchResults && searchResults.length > 0 && (
                       <div className="border rounded-md bg-white shadow-lg max-h-40 overflow-y-auto z-10">
-                        {searchResults.map((employee) => (
+                        {(searchResults || []).map((employee) => (
                           <div
                             key={employee.id}
                             className="p-2 hover:bg-gray-100 cursor-pointer border-b last:border-b-0"
@@ -560,7 +570,7 @@ export default function AchievementsEditModal({ employeeId, isOpen, onClose }: A
                   
                   {/* 선택된 발명자 목록 */}
                   <div className="flex flex-wrap gap-2 mt-2">
-                    {formData.patent.inventors.map((inventor, index) => (
+                    {(formData.patent.inventors || []).map((inventor, index) => (
                       <Badge key={index} variant="secondary" className="flex items-center space-x-1">
                         <span>{inventor}</span>
                         <button
@@ -615,7 +625,7 @@ export default function AchievementsEditModal({ employeeId, isOpen, onClose }: A
                   <p className="text-muted-foreground text-center py-4">등록된 특허가 없습니다.</p>
                 ) : (
                   <div className="space-y-2">
-                    {patents.map((patent, index) => (
+                    {(patents || []).map((patent, index) => (
                       <div key={index} className="p-4 border rounded-lg">
                         {editingItem && editingItem.type === 'patent' && editingItem.id === patent.id ? (
                           // 수정 모드 - 편집 폼
@@ -678,7 +688,7 @@ export default function AchievementsEditModal({ employeeId, isOpen, onClose }: A
                             <div className="space-y-2">
                               <Label>발명자 목록</Label>
                               <div className="flex flex-wrap gap-2">
-                                {editFormData?.inventors?.map((inventor: string, idx: number) => (
+                                {(editFormData?.inventors || []).map((inventor: string, idx: number) => (
                                   <Badge key={idx} variant="secondary" className="flex items-center space-x-1">
                                     <span>{inventor}</span>
                                     <button
@@ -889,7 +899,7 @@ export default function AchievementsEditModal({ employeeId, isOpen, onClose }: A
                     {/* 검색 결과 */}
                     {showSearchResults && searchResults.length > 0 && (
                       <div className="border rounded-md bg-white shadow-lg max-h-40 overflow-y-auto z-10">
-                        {searchResults.map((employee) => (
+                        {(searchResults || []).map((employee) => (
                           <div
                             key={employee.id}
                             className="p-2 hover:bg-gray-100 cursor-pointer border-b last:border-b-0"
@@ -907,7 +917,7 @@ export default function AchievementsEditModal({ employeeId, isOpen, onClose }: A
                   
                   {/* 선택된 저자 목록 */}
                   <div className="flex flex-wrap gap-2 mt-2">
-                    {formData.publication.authors.map((author, index) => (
+                    {(formData.publication.authors || []).map((author, index) => (
                       <Badge key={index} variant="secondary" className="flex items-center space-x-1">
                         <span>{author}</span>
                         <button
@@ -962,7 +972,7 @@ export default function AchievementsEditModal({ employeeId, isOpen, onClose }: A
                   <p className="text-muted-foreground text-center py-4">등록된 논문이 없습니다.</p>
                 ) : (
                   <div className="space-y-2">
-                    {publications.map((publication, index) => (
+                    {(publications || []).map((publication, index) => (
                       <div key={index} className="p-4 border rounded-lg">
                         {editingItem && editingItem.type === 'publication' && editingItem.id === publication.id ? (
                           // 수정 모드 - 편집 폼
@@ -1035,7 +1045,7 @@ export default function AchievementsEditModal({ employeeId, isOpen, onClose }: A
                             <div className="space-y-2">
                               <Label>저자 목록</Label>
                               <div className="flex flex-wrap gap-2">
-                                {editFormData?.authors?.map((author: string, idx: number) => (
+                                {(editFormData?.authors || []).map((author: string, idx: number) => (
                                   <Badge key={idx} variant="secondary" className="flex items-center space-x-1">
                                     <span>{author}</span>
                                     <button
@@ -1232,7 +1242,7 @@ export default function AchievementsEditModal({ employeeId, isOpen, onClose }: A
                     {/* 검색 결과 */}
                     {showSearchResults && searchResults.length > 0 && (
                       <div className="border rounded-md bg-white shadow-lg max-h-40 overflow-y-auto z-10">
-                        {searchResults.map((employee) => (
+                        {(searchResults || []).map((employee) => (
                           <div
                             key={employee.id}
                             className="p-2 hover:bg-gray-100 cursor-pointer border-b last:border-b-0"
@@ -1250,7 +1260,7 @@ export default function AchievementsEditModal({ employeeId, isOpen, onClose }: A
                   
                   {/* 선택된 팀 멤버 목록 */}
                   <div className="flex flex-wrap gap-2 mt-2">
-                    {formData.award.teamMembers.map((member, index) => (
+                    {(formData.award.teamMembers || []).map((member, index) => (
                       <Badge key={index} variant="secondary" className="flex items-center space-x-1">
                         <span>{member}</span>
                         <button
@@ -1305,7 +1315,7 @@ export default function AchievementsEditModal({ employeeId, isOpen, onClose }: A
                   <p className="text-muted-foreground text-center py-4">등록된 수상이 없습니다.</p>
                 ) : (
                   <div className="space-y-2">
-                    {awards.map((award, index) => (
+                    {(awards || []).map((award, index) => (
                       <div key={index} className="p-4 border rounded-lg">
                         {editingItem && editingItem.type === 'award' && editingItem.id === award.id ? (
                           // 수정 모드 - 편집 폼
@@ -1368,7 +1378,7 @@ export default function AchievementsEditModal({ employeeId, isOpen, onClose }: A
                             <div className="space-y-2">
                               <Label>팀 멤버 목록</Label>
                               <div className="flex flex-wrap gap-2">
-                                {editFormData?.teamMembers?.map((member: string, idx: number) => (
+                                {(editFormData?.teamMembers || []).map((member: string, idx: number) => (
                                   <Badge key={idx} variant="secondary" className="flex items-center space-x-1">
                                     <span>{member}</span>
                                     <button

@@ -1229,13 +1229,17 @@
       "id": "ccda652f-9696-4c0f-8f9e-08c236bfebcd",
       "employeeId": "ef202e24-47a6-434d-ae9a-3a47c87b64be",
       "title": "테스트특허",
-      "status": "pending",
+      "status": "registered",
       "applicationNumber": "",
       "patentNumber": "",
-      "inventors": "문현진",
+      "inventors": [],
       "description": "",
       "createdAt": "2025-10-04T11:02:48.051Z",
-      "updatedAt": "2025-10-04T11:02:48.051Z"
+      "updatedAt": "2025-10-12T08:59:00.526Z",
+      "authors": [],
+      "teamMembers": [],
+      "applicationDate": "2023-06-12",
+      "registrationDate": "2025-10-06"
     },
     "afa13c52-3002-4351-a5df-ad2a6e38031f": {
       "id": "afa13c52-3002-4351-a5df-ad2a6e38031f",
