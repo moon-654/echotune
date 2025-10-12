@@ -60,8 +60,12 @@ export const certifications = pgTable("certifications", {
   category: text("category").notNull(), // "technical", "language", "safety", "management"
   level: text("level"), // "basic", "intermediate", "advanced", "expert"
   score: real("score"),
+  scoreAtAcquisition: real("score_at_acquisition"), // 취득 시점에 부여된 점수 (영구 보존)
+  scoringCriteriaVersion: text("scoring_criteria_version"), // 점수 계산 시 사용된 기준 버전
+  useFixedScore: boolean("use_fixed_score").default(true), // true면 고정 점수 사용, false면 현행 기준 재계산
   isActive: boolean("is_active").default(true),
-  createdAt: timestamp("created_at").default(sql`now()`)
+  createdAt: timestamp("created_at").default(sql`now()`),
+  updatedAt: timestamp("updated_at").default(sql`now()`)
 });
 
 export const languages = pgTable("languages", {
@@ -225,7 +229,10 @@ export const insertTrainingHistorySchema = createInsertSchema(trainingHistory).o
   instructorRole: z.enum(["instructor", "mentor"]).optional().nullable()
 });
 
-export const insertCertificationSchema = createInsertSchema(certifications).omit({
+export const insertCertificationSchema = createInsertSchema(certifications, {
+  issueDate: z.coerce.date().optional().nullable(),
+  expiryDate: z.coerce.date().optional().nullable(),
+}).omit({
   id: true,
   createdAt: true
 });

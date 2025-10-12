@@ -2,6 +2,32 @@ import { storage } from "./storage";
 import fs from "fs";
 import path from "path";
 
+// 자격증 점수 자동 계산 함수 (detailedCriteria 기반)
+export function calculateCertificationScore(cert: any, detailedCriteria: any): number {
+  // detailedCriteria에서 자격증 점수 기준 로드
+  const certCriteria = detailedCriteria?.technical_competency?.certifications || {};
+  
+  // 자격증명으로 직접 매칭
+  const certName = cert.name || '';
+  if (certCriteria[certName]) {
+    return certCriteria[certName];
+  }
+  
+  // level로 매칭
+  const certLevel = cert.level || '';
+  if (certCriteria[certLevel]) {
+    return certCriteria[certLevel];
+  }
+  
+  // 기본 하드코딩 로직 (fallback)
+  const name = certName.toLowerCase();
+  const level = certLevel.toLowerCase();
+  if (name.includes('기술사') || level.includes('expert')) return 20;
+  if ((name.includes('기사') && !name.includes('산업기사')) || level.includes('advanced')) return 10;
+  if (name.includes('산업기사') || level.includes('intermediate')) return 5;
+  return 3;
+}
+
 // 점수 환산 함수 (scoringRanges 적용)
 function convertScore(
   competencyKey: string, 
@@ -120,15 +146,37 @@ export async function calculateAutoRdEvaluation(employeeId: string, evaluationYe
     else if (totalYears >= 5) technicalScore += 30;
     else technicalScore += 20;
     
-    // 자격증 점수 (상세 기준 반영: 기술사 20, 기사 10, 산업기사 5, 기타 3)
+    // 자격증 점수 계산 (detailedCriteria 기반)
     const getCertificationPoint = (cert: any): number => {
-      const name = (`${cert.name || ''}`).toLowerCase();
-      const level = (`${cert.level || ''}`).toLowerCase();
+      // scoreAtAcquisition이 있으면 우선 사용 (영구 반영)
+      if (cert.useFixedScore && cert.scoreAtAcquisition !== null && cert.scoreAtAcquisition !== undefined) {
+        return cert.scoreAtAcquisition;
+      }
+      
+      // detailedCriteria에서 자격증 점수 기준 로드
+      const certCriteria = detailedCriteria?.technical_competency?.certifications || {};
+      
+      // 자격증명으로 직접 매칭
+      const certName = cert.name || '';
+      if (certCriteria[certName]) {
+        return certCriteria[certName];
+      }
+      
+      // level로 매칭
+      const certLevel = cert.level || '';
+      if (certCriteria[certLevel]) {
+        return certCriteria[certLevel];
+      }
+      
+      // 기본 하드코딩 로직 (fallback)
+      const name = certName.toLowerCase();
+      const level = certLevel.toLowerCase();
       if (name.includes('기술사') || level.includes('expert')) return 20;
       if ((name.includes('기사') && !name.includes('산업기사')) || level.includes('advanced')) return 10;
       if (name.includes('산업기사') || level.includes('intermediate')) return 5;
       return 3;
     };
+    
     if (relatedData.certifications?.length) {
       for (const cert of relatedData.certifications) {
         technicalScore += getCertificationPoint(cert);
@@ -492,11 +540,10 @@ async function getRelatedData(employeeId: string, startDate?: string, endDate?: 
       
       // 각 데이터 타입별로 필터링
       if (data.certifications) {
-        let certifications = Object.values(data.certifications).filter((item: any) => 
+        // 자격증은 기간 필터 영향 없이 영구 반영 (누적 영구 반영)
+        results.certifications = Object.values(data.certifications).filter((item: any) => 
           item.employeeId === employeeId && item.isActive
         );
-        // 자격증은 발급일 기준으로 필터링
-        results.certifications = filterByDateRange(certifications, 'issueDate', startDate, endDate);
       }
       
       if (data.languages) {

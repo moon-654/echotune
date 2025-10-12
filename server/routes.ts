@@ -15,6 +15,18 @@ import {
 } from "@shared/schema";
 import { setupRdEvaluationRoutes } from "./rd-evaluation-routes";
 import { setupAchievementsRoutes } from "./achievements-routes";
+import { calculateCertificationScore } from "./rd-evaluation-auto";
+
+// Helper function to load detailedCriteria from data.json
+function loadDetailedCriteria(): any {
+  const dataPath = path.join(process.cwd(), 'data.json');
+  if (fs.existsSync(dataPath)) {
+    const fileContent = fs.readFileSync(dataPath, 'utf8');
+    const data = JSON.parse(fileContent);
+    return data.detailedCriteria || {};
+  }
+  return {};
+}
 
 // Helper function to parse Excel dates
 function parseExcelDate(cellValue: any): string | null {
@@ -492,7 +504,21 @@ app.put("/api/employees/:id", async (req, res) => {
   app.post("/api/certifications", async (req, res) => {
     try {
       const certificationData = insertCertificationSchema.parse(req.body);
-      const certification = await storage.createCertification(certificationData);
+      
+      // 자격증 점수 자동 계산 및 저장
+      const detailedCriteria = loadDetailedCriteria();
+      const calculatedScore = calculateCertificationScore(certificationData, detailedCriteria);
+      
+      // scoreAtAcquisition, scoringCriteriaVersion, useFixedScore 설정
+      const enhancedCertificationData = {
+        ...certificationData,
+        scoreAtAcquisition: calculatedScore,
+        scoringCriteriaVersion: new Date().toISOString().split('T')[0], // YYYY-MM-DD 형식
+        useFixedScore: true,
+        updatedAt: new Date()
+      };
+      
+      const certification = await storage.createCertification(enhancedCertificationData);
       res.status(201).json(certification);
     } catch (error) {
       res.status(400).json({ error: "Invalid certification data" });
@@ -501,11 +527,59 @@ app.put("/api/employees/:id", async (req, res) => {
 
   app.put("/api/certifications/:id", async (req, res) => {
     try {
+      console.log('🔍 PUT /api/certifications/:id 호출:', {
+        id: req.params.id,
+        body: req.body
+      });
+      
       const certificationData = insertCertificationSchema.partial().parse(req.body);
-      const certification = await storage.updateCertification(req.params.id, certificationData);
+      console.log('🔍 파싱된 데이터:', certificationData);
+      
+    // 자격증 정보가 변경된 경우 점수 재계산
+    if (certificationData.name || certificationData.level || certificationData.category) {
+      // ✅ 기존 데이터 가져오기
+      const existing = await storage.getCertification(req.params.id);
+      
+      // ✅ 기존 데이터와 새 데이터 merge
+      const mergedData = {
+        ...existing,
+        ...certificationData
+      };
+      
+      const detailedCriteria = loadDetailedCriteria();
+      const calculatedScore = calculateCertificationScore(mergedData, detailedCriteria);
+      
+      console.log('🔍 계산된 점수:', calculatedScore);
+      
+      const enhancedCertificationData = {
+        ...certificationData,
+        score: calculatedScore,                    // ✅ score 업데이트
+        scoreAtAcquisition: calculatedScore,       // ✅ scoreAtAcquisition 업데이트
+        scoringCriteriaVersion: new Date().toISOString().split('T')[0],
+        updatedAt: new Date()
+      };
+      
+      console.log('🔍 점수 재계산 포함 데이터:', enhancedCertificationData);
+      
+      const certification = await storage.updateCertification(req.params.id, enhancedCertificationData);
+      console.log('✅ 저장 완료:', certification);
       res.json(certification);
+    } else {
+      // 자격증 정보 변경 없으면 기존 점수 유지
+      const enhancedCertificationData = {
+        ...certificationData,
+        updatedAt: new Date()
+      };
+      
+      console.log('🔍 점수 재계산 없이 데이터:', enhancedCertificationData);
+      
+      const certification = await storage.updateCertification(req.params.id, enhancedCertificationData);
+      console.log('✅ 저장 완료:', certification);
+      res.json(certification);
+    }
     } catch (error) {
-      res.status(400).json({ error: "Failed to update certification" });
+      console.error('❌ PUT /api/certifications/:id 오류:', error);
+      res.status(400).json({ error: "Failed to update certification", details: error });
     }
   });
 

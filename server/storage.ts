@@ -741,16 +741,29 @@ export class MemStorage implements IStorage {
   }
 
   async updateCertification(id: string, certification: Partial<InsertCertification>): Promise<Certification> {
+    console.log('🔍 storage.updateCertification 호출:', { id, certification });
+    
     const existing = this.certifications.get(id);
-    if (!existing) throw new Error('Certification not found');
+    if (!existing) {
+      console.error('❌ 자격증을 찾을 수 없습니다:', id);
+      throw new Error('Certification not found');
+    }
+    
+    console.log('🔍 기존 자격증:', existing);
     
     const updated: Certification = {
       ...existing,
       ...certification,
       updatedAt: new Date()
     };
+    
+    console.log('🔍 업데이트된 자격증:', updated);
+    
     this.certifications.set(id, updated);
+    console.log('🔍 saveData() 호출 시작');
     this.saveData(); // 데이터 저장
+    console.log('✅ saveData() 완료');
+    
     return updated;
   }
 

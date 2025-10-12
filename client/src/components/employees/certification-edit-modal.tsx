@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,6 +19,7 @@ interface CertificationEditModalProps {
 }
 
 interface CertificationFormData {
+  id?: string;  // 기존 자격증은 ID 있음, 새 자격증은 undefined
   name: string;
   issuer: string;
   issueDate?: Date;
@@ -27,10 +28,14 @@ interface CertificationFormData {
   category: 'technical' | 'language' | 'safety' | 'management' | 'other';
   level?: 'basic' | 'intermediate' | 'advanced' | 'expert';
   score?: number;
+  scoreAtAcquisition?: number;
+  scoringCriteriaVersion?: string;
+  useFixedScore?: boolean;
   isActive: boolean;
-  description?: string;
-  certificateUrl?: string;
-  notes?: string;
+  verificationUrl?: string;
+  _isNew?: boolean;      // 새로 추가된 자격증 표시
+  _isModified?: boolean; // 수정된 자격증 표시
+  _isDeleted?: boolean;  // 삭제 예정 자격증 표시
 }
 
 export default function CertificationEditModal({ employeeId, isOpen, onClose }: CertificationEditModalProps) {
@@ -46,6 +51,7 @@ export default function CertificationEditModal({ employeeId, isOpen, onClose }: 
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [criteria, setCriteria] = useState<any>(null);
+  const [deletedIds, setDeletedIds] = useState<string[]>([]); // 삭제된 자격증 ID 추적
   
   // 수정 모드 상태
   const [editingItem, setEditingItem] = useState<{
@@ -66,6 +72,7 @@ export default function CertificationEditModal({ employeeId, isOpen, onClose }: 
         if (response.ok) {
           const data = await response.json();
           const formattedCertifications = data.map((cert: Certification) => ({
+            id: cert.id,  // ← ID 추가
             name: cert.name,
             issuer: cert.issuer,
             issueDate: cert.issueDate ? new Date(cert.issueDate) : undefined,
@@ -74,10 +81,13 @@ export default function CertificationEditModal({ employeeId, isOpen, onClose }: 
             category: cert.category as 'technical' | 'language' | 'safety' | 'management' | 'other',
             level: cert.level as 'basic' | 'intermediate' | 'advanced' | 'expert' | undefined,
             score: cert.score || undefined,
+            scoreAtAcquisition: cert.scoreAtAcquisition || undefined,
+            scoringCriteriaVersion: cert.scoringCriteriaVersion || undefined,
+            useFixedScore: cert.useFixedScore !== undefined ? cert.useFixedScore : true,
             isActive: cert.isActive,
-            description: cert.description || '',
-            certificateUrl: cert.verificationUrl || '',
-            notes: cert.notes || ''
+            verificationUrl: cert.verificationUrl || '',
+            _isNew: false,      // ← 기존 자격증은 false
+            _isModified: false  // ← 초기값 false
           }));
           setCertifications(formattedCertifications);
         } else {
@@ -99,6 +109,7 @@ export default function CertificationEditModal({ employeeId, isOpen, onClose }: 
     if (!isOpen) {
       setEditingItem(null);
       setEditFormData(null);
+      setDeletedIds([]);  // ← 삭제 목록 초기화 추가
     }
   }, [isOpen]);
 
@@ -110,9 +121,11 @@ export default function CertificationEditModal({ employeeId, isOpen, onClose }: 
         const res = await fetch('/api/rd-evaluations/criteria');
         if (res.ok) {
           const data = await res.json();
-          const criteriaData = data.criteria || data.rdEvaluationCriteria;
-          const finalCriteria = criteriaData?.competencyItems || criteriaData;
-          setCriteria(finalCriteria || null);
+          console.log('🔍 R&D 평가 기준 로드:', data);
+          
+          // ✅ detailedCriteria에서 자격증 기준 추출
+          const detailedCriteria = data.detailedCriteria;
+          setCriteria(detailedCriteria);  // detailedCriteria 전체 저장
         }
       } catch (e) {
         console.warn('자격증 기준 로드 실패(무시 가능):', e);
@@ -122,13 +135,44 @@ export default function CertificationEditModal({ employeeId, isOpen, onClose }: 
     loadCriteria();
   }, [isOpen]);
 
-  // 기준 템플릿 매핑 (기준 데이터가 없을 시 기본값 사용)
-  const certificationTemplates: Array<{key: string; label: string; category: CertificationFormData['category']; level: CertificationFormData['level']; score: number; description: string;}> = [
-    { key: 'gisulsa', label: '기술사', category: 'technical', level: 'expert', score: 20, description: 'R&D 상세기준(기술사) 자동 적용' },
-    { key: 'gisa', label: '기사', category: 'technical', level: 'advanced', score: 10, description: 'R&D 상세기준(기사) 자동 적용' },
-    { key: 'sanupgisa', label: '산업기사', category: 'technical', level: 'intermediate', score: 5, description: 'R&D 상세기준(산업기사) 자동 적용' },
-    { key: 'etc', label: '기타', category: 'technical', level: 'basic', score: 3, description: 'R&D 상세기준(기타) 자동 적용' },
-  ];
+  // ✅ R&D 평가 기준에서 동적으로 템플릿 생성
+  const certificationTemplates = useMemo(() => {
+    // detailedCriteria.technical_competency.certifications에서 가져오기
+    const certifications = criteria?.technical_competency?.certifications;
+    
+    if (certifications && typeof certifications === 'object') {
+      return Object.entries(certifications).map(([label, score]) => {
+        // label을 level로 매핑
+        let level: 'basic' | 'intermediate' | 'advanced' | 'expert' = 'basic';
+        if (label === '기술사') level = 'expert';
+        else if (label === '기사') level = 'advanced';
+        else if (label === '산업기사') level = 'intermediate';
+        else level = 'basic';
+        
+        return {
+          key: label,  // '기사'
+          label: label,  // '기사'
+          category: 'technical' as const,
+          level: level,
+          score: Number(score)
+        };
+      });
+    }
+    
+    // ✅ 기본값 (R&D 기준 로드 실패 시)
+    return [
+      { key: '기술사', label: '기술사', category: 'technical' as const, level: 'expert' as const, score: 20 },
+      { key: '기사', label: '기사', category: 'technical' as const, level: 'advanced' as const, score: 10 },
+      { key: '산업기사', label: '산업기사', category: 'technical' as const, level: 'intermediate' as const, score: 5 },
+      { key: '기타', label: '기타', category: 'technical' as const, level: 'basic' as const, score: 3 },
+    ];
+  }, [criteria]);
+
+  // level을 템플릿 key로 변환
+  const getLevelTemplateKey = (level?: string): string | undefined => {
+    const template = certificationTemplates.find(t => t.level === level);
+    return template?.key;
+  };
 
   const applyTemplateToNew = (templateKey: string) => {
     const t = certificationTemplates.find(x => x.key === templateKey);
@@ -137,8 +181,7 @@ export default function CertificationEditModal({ employeeId, isOpen, onClose }: 
       ...newCertification,
       category: t.category,
       level: t.level,
-      score: t.score,
-      description: t.description
+      score: t.score
     });
   };
 
@@ -148,13 +191,14 @@ export default function CertificationEditModal({ employeeId, isOpen, onClose }: 
     updateCertification(index, 'category', t.category);
     updateCertification(index, 'level', t.level);
     updateCertification(index, 'score', t.score);
-    const currentDesc = certifications[index]?.description || '';
-    updateCertification(index, 'description', currentDesc ? currentDesc : t.description);
   };
 
   const addNewCertification = () => {
     if (newCertification.name.trim()) {
-      setCertifications([...certifications, { ...newCertification }]);
+      setCertifications([...certifications, { 
+        ...newCertification,
+        _isNew: true  // ← 새 자격증 표시
+      }]);
       setNewCertification({
         name: '',
         issuer: '',
@@ -165,12 +209,24 @@ export default function CertificationEditModal({ employeeId, isOpen, onClose }: 
   };
 
   const removeCertification = (index: number) => {
+    const cert = certifications[index];
+    
+    // 기존 자격증이면 삭제 목록에 추가
+    if (cert.id && !cert._isNew) {
+      setDeletedIds([...deletedIds, cert.id]);
+    }
+    
+    // 목록에서 제거
     setCertifications(certifications.filter((_, i) => i !== index));
   };
 
   const updateCertification = (index: number, field: keyof CertificationFormData, value: any) => {
     const updatedCertifications = [...certifications];
-    updatedCertifications[index] = { ...updatedCertifications[index], [field]: value };
+    updatedCertifications[index] = { 
+      ...updatedCertifications[index], 
+      [field]: value,
+      _isModified: !updatedCertifications[index]._isNew // 기존 자격증만 수정 표시
+    };
     setCertifications(updatedCertifications);
   };
 
@@ -183,24 +239,93 @@ export default function CertificationEditModal({ employeeId, isOpen, onClose }: 
   const handleEditSave = async (index: number) => {
     if (!editFormData) return;
     
+    console.log('🔍 handleEditSave 시작:', { index, editFormData });
+    
     setIsSaving(true);
     try {
-      const updatedCertifications = [...certifications];
-      updatedCertifications[index] = editFormData;
-      setCertifications(updatedCertifications);
+      const cert = certifications[index];
+      console.log('🔍 현재 자격증:', cert);
       
-      setEditingItem(null);
-      setEditFormData(null);
+      // 새 자격증: 로컬 state만 업데이트 (나중에 일괄 저장)
+      if (cert._isNew) {
+        console.log('✅ 새 자격증 - 로컬 저장만');
+        const updatedCertifications = [...certifications];
+        updatedCertifications[index] = editFormData;
+        setCertifications(updatedCertifications);
+        
+        setEditingItem(null);
+        setEditFormData(null);
+        
+        toast({
+          title: "성공",
+          description: "자격증이 수정되었습니다. 하단 저장 버튼을 눌러주세요.",
+        });
+        return;
+      }
       
-      toast({
-        title: "성공",
-        description: "자격증이 수정되었습니다.",
-      });
+      // 기존 자격증: 즉시 PUT API 호출하여 DB에 저장
+      if (cert.id) {
+        console.log('🔍 기존 자격증 - API 호출 준비:', cert.id);
+        
+        const certificationData = {
+          name: editFormData.name,
+          issuer: editFormData.issuer,
+          issueDate: editFormData.issueDate?.toISOString(),
+          expiryDate: editFormData.expiryDate?.toISOString(),
+          credentialId: editFormData.credentialId,
+          verificationUrl: editFormData.verificationUrl,
+          category: editFormData.category,
+          level: editFormData.level,
+          score: editFormData.score,
+          isActive: editFormData.isActive
+        };
+        
+        console.log('🔍 전송할 데이터:', certificationData);
+
+        const response = await fetch(`/api/certifications/${cert.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(certificationData)
+        });
+
+        console.log('🔍 API 응답 상태:', response.status, response.statusText);
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('❌ API 오류 응답:', errorText);
+          throw new Error(`Failed to update certification: ${response.status} - ${errorText}`);
+        }
+        
+        const responseData = await response.json();
+        console.log('✅ API 성공 응답:', responseData);
+        
+        // ✅ 수정: 서버 응답 데이터로 로컬 state 업데이트
+        const updatedCertifications = [...certifications];
+        updatedCertifications[index] = {
+          ...responseData,  // ✅ 서버에서 계산된 모든 데이터 사용
+          // Date 객체로 변환
+          issueDate: responseData.issueDate ? new Date(responseData.issueDate) : undefined,
+          expiryDate: responseData.expiryDate ? new Date(responseData.expiryDate) : undefined,
+          _isNew: false,
+          _isModified: false
+        };
+        setCertifications(updatedCertifications);
+        
+        setEditingItem(null);
+        setEditFormData(null);
+        
+        toast({
+          title: "✅ 저장 완료",
+          description: "자격증이 즉시 저장되었습니다.",
+        });
+      } else {
+        console.warn('⚠️ cert.id가 없습니다:', cert);
+      }
     } catch (error) {
-      console.error('자격증 수정 오류:', error);
+      console.error('❌ 자격증 수정 오류:', error);
       toast({
         title: "오류",
-        description: "자격증 수정에 실패했습니다.",
+        description: error instanceof Error ? error.message : "자격증 수정에 실패했습니다.",
         variant: "destructive",
       });
     } finally {
@@ -216,14 +341,19 @@ export default function CertificationEditModal({ employeeId, isOpen, onClose }: 
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      
-      // 기존 자격증 삭제
-      const deleteResponse = await fetch(`/api/certifications?employeeId=${employeeId}`, {
-        method: 'DELETE'
-      });
+      // 1. 삭제된 자격증 처리
+      for (const id of deletedIds) {
+        const response = await fetch(`/api/certifications/${id}`, {
+          method: 'DELETE'
+        });
+        if (!response.ok) {
+          throw new Error(`Failed to delete certification: ${id}`);
+        }
+      }
 
-      // 새 자격증들 저장
-      for (const certification of certifications) {
+      // 2. 새로 추가된 자격증 처리 (POST)
+      const newCerts = certifications.filter(c => c._isNew);
+      for (const certification of newCerts) {
         const certificationData: InsertCertification = {
           employeeId,
           name: certification.name,
@@ -231,13 +361,13 @@ export default function CertificationEditModal({ employeeId, isOpen, onClose }: 
           issueDate: certification.issueDate?.toISOString(),
           expiryDate: certification.expiryDate?.toISOString(),
           credentialId: certification.credentialId,
+          verificationUrl: certification.verificationUrl,
           category: certification.category,
           level: certification.level,
           score: certification.score,
           isActive: certification.isActive
         };
 
-        
         const response = await fetch('/api/certifications', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -245,8 +375,15 @@ export default function CertificationEditModal({ employeeId, isOpen, onClose }: 
         });
 
         if (!response.ok) {
-          throw new Error(`Failed to save certification: ${certification.name}`);
+          throw new Error(`Failed to create certification: ${certification.name}`);
         }
+      }
+
+      // 3. 수정된 자격증 처리 제거 (인라인에서 이미 저장됨)
+      // 수정된 자격증이 있다면 경고 (이론적으로는 없어야 함)
+      const modifiedCerts = certifications.filter(c => c._isModified && !c._isNew && c.id);
+      if (modifiedCerts.length > 0) {
+        console.warn('아직 저장되지 않은 수정사항:', modifiedCerts);
       }
 
       toast({
@@ -254,12 +391,15 @@ export default function CertificationEditModal({ employeeId, isOpen, onClose }: 
         description: "자격증 정보가 저장되었습니다.",
       });
       
+      // 삭제 목록 초기화
+      setDeletedIds([]);
+      
       onClose();
     } catch (error) {
       console.error('🔍 자격증 저장 오류:', error);
       toast({
         title: "오류",
-        description: "자격증 정보 저장에 실패했습니다.",
+        description: error instanceof Error ? error.message : "자격증 정보 저장에 실패했습니다.",
         variant: "destructive",
       });
     } finally {
@@ -292,7 +432,7 @@ export default function CertificationEditModal({ employeeId, isOpen, onClose }: 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="template">기준 선택</Label>
-                  <Select onValueChange={(v) => applyTemplateToNew(v)}>
+                  <Select onValueChange={(v) => applyTemplateToNew(v)} value={getLevelTemplateKey(newCertification.level)}>
                     <SelectTrigger>
                       <SelectValue placeholder="R&D 상세기준 선택" />
                     </SelectTrigger>
@@ -396,32 +536,12 @@ export default function CertificationEditModal({ employeeId, isOpen, onClose }: 
                 </div>
               </div>
               <div>
-                <Label htmlFor="description">설명</Label>
-                <Textarea
-                  id="description"
-                  value={newCertification.description}
-                  onChange={(e) => setNewCertification({ ...newCertification, description: e.target.value })}
-                  placeholder="자격증에 대한 상세 설명"
-                  rows={3}
-                />
-              </div>
-              <div>
-                <Label htmlFor="certificateUrl">자격증 URL</Label>
+                <Label htmlFor="verificationUrl">자격증 URL</Label>
                 <Input
-                  id="certificateUrl"
-                  value={newCertification.certificateUrl}
-                  onChange={(e) => setNewCertification({ ...newCertification, certificateUrl: e.target.value })}
+                  id="verificationUrl"
+                  value={newCertification.verificationUrl}
+                  onChange={(e) => setNewCertification({ ...newCertification, verificationUrl: e.target.value })}
                   placeholder="예: https://example.com/certificate.pdf"
-                />
-              </div>
-              <div>
-                <Label htmlFor="notes">메모</Label>
-                <Textarea
-                  id="notes"
-                  value={newCertification.notes}
-                  onChange={(e) => setNewCertification({ ...newCertification, notes: e.target.value })}
-                  placeholder="추가 정보나 메모"
-                  rows={2}
                 />
               </div>
               <Button onClick={addNewCertification} className="w-full">
@@ -445,18 +565,20 @@ export default function CertificationEditModal({ employeeId, isOpen, onClose }: 
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                               <Label>기준 선택</Label>
-                              <Select onValueChange={(v) => {
-                                const t = certificationTemplates.find(x => x.key === v);
-                                if (t) {
-                                  setEditFormData(prev => ({
-                                    ...prev,
-                                    category: t.category,
-                                    level: t.level,
-                                    score: t.score,
-                                    description: t.description
-                                  }));
-                                }
-                              }}>
+                              <Select 
+                                onValueChange={(v) => {
+                                  const t = certificationTemplates.find(x => x.key === v);
+                                  if (t) {
+                                    setEditFormData(prev => ({
+                                      ...prev,
+                                      category: t.category,
+                                      level: t.level,
+                                      score: t.score
+                                    }));
+                                  }
+                                }}
+                                value={getLevelTemplateKey(editFormData.level)}
+                              >
                                 <SelectTrigger>
                                   <SelectValue placeholder="R&D 상세기준 선택" />
                                 </SelectTrigger>
@@ -555,29 +677,11 @@ export default function CertificationEditModal({ employeeId, isOpen, onClose }: 
                               />
                             </div>
                             <div className="md:col-span-2">
-                              <Label>설명</Label>
-                              <Textarea
-                                value={editFormData?.description || ''}
-                                onChange={(e) => setEditFormData(prev => ({ ...prev, description: e.target.value }))}
-                                placeholder="자격증에 대한 상세 설명"
-                                rows={3}
-                              />
-                            </div>
-                            <div className="md:col-span-2">
                               <Label>자격증 URL</Label>
                               <Input
-                                value={editFormData?.certificateUrl || ''}
-                                onChange={(e) => setEditFormData(prev => ({ ...prev, certificateUrl: e.target.value }))}
+                                value={editFormData?.verificationUrl || ''}
+                                onChange={(e) => setEditFormData(prev => ({ ...prev, verificationUrl: e.target.value }))}
                                 placeholder="예: https://example.com/certificate.pdf"
-                              />
-                            </div>
-                            <div className="md:col-span-2">
-                              <Label>메모</Label>
-                              <Textarea
-                                value={editFormData?.notes || ''}
-                                onChange={(e) => setEditFormData(prev => ({ ...prev, notes: e.target.value }))}
-                                placeholder="추가 정보나 메모"
-                                rows={2}
                               />
                             </div>
                           </div>
@@ -613,7 +717,8 @@ export default function CertificationEditModal({ employeeId, isOpen, onClose }: 
                             <div className="text-sm text-muted-foreground">
                               {certification.issueDate && `발급: ${format(certification.issueDate, 'yyyy-MM-dd')}`}
                               {certification.expiryDate && ` • 만료: ${format(certification.expiryDate, 'yyyy-MM-dd')}`}
-                              {certification.score && ` • 점수: ${certification.score}`}
+                              {certification.scoreAtAcquisition && ` • 취득시점 점수: ${certification.scoreAtAcquisition}점`}
+                              {certification.scoringCriteriaVersion && ` (${certification.scoringCriteriaVersion} 기준)`}
                             </div>
                           </div>
                           <div className="flex space-x-2">
