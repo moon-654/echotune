@@ -51,15 +51,12 @@ export default function TrainingTable({ trainings }: TrainingTableProps) {
   };
 
   const handleViewTraining = (trainingId: string) => {
-    console.log("View training:", trainingId);
   };
 
   const handleEditTraining = (trainingId: string) => {
-    console.log("Edit training:", trainingId);
   };
 
   const handleDeleteTraining = (trainingId: string) => {
-    console.log("Delete training:", trainingId);
   };
 
   return (

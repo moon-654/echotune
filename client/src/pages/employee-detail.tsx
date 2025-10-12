@@ -257,10 +257,6 @@ export default function EmployeeDetail({ employeeId: propEmployeeId }: EmployeeD
         
         if (response.ok) {
           const data = await response.json();
-          console.log('🔍 R&D 평가 데이터 수신:', data);
-          console.log('📊 scores:', data.scores);
-          console.log('🎯 totalScore:', data.totalScore);
-          console.log('📈 grade:', data.grade);
           setRdEvaluation(data);
         } else {
           // 기본값 설정
@@ -336,27 +332,17 @@ export default function EmployeeDetail({ employeeId: propEmployeeId }: EmployeeD
 
   // R&D 역량평가 기준 데이터 로드
   useEffect(() => {
-    console.log('🚀 useEffect 실행: R&D 역량평가 기준 로드');
-    console.log('🚀 현재 rdEvaluationCriteria 상태:', rdEvaluationCriteria);
     
     const loadRdEvaluationCriteria = async () => {
       try {
-        console.log('🔍 R&D 역량평가 기준 데이터 로드 시작');
-        console.log('🔍 API URL: /api/rd-evaluations/criteria');
         
         const response = await fetch('/api/rd-evaluations/criteria');
-        console.log('🔍 API 응답 상태:', response.status);
-        console.log('🔍 API 응답 헤더:', response.headers);
         
         if (response.ok) {
           const data = await response.json();
-          console.log('🔍 R&D 역량평가 기준 데이터 로드 성공:', data);
           
           // 응답 구조에 따라 데이터 추출 (criteria 또는 rdEvaluationCriteria)
           const criteriaData = data.criteria || data.rdEvaluationCriteria;
-          console.log('🔍 rdEvaluationCriteria 내용:', criteriaData);
-          console.log('🔍 rdEvaluationCriteria 타입:', typeof criteriaData);
-          console.log('🔍 rdEvaluationCriteria 키들:', criteriaData ? Object.keys(criteriaData) : 'null');
           
           // competencyItems가 있는 경우 그것을 사용, 없으면 전체 데이터 사용
           const rawFinal = criteriaData?.competencyItems || criteriaData;
@@ -385,15 +371,9 @@ export default function EmployeeDetail({ employeeId: propEmployeeId }: EmployeeD
             return Object.keys(result).length > 0 ? result : src;
           };
           const finalCriteriaData = normalizeKeys(rawFinal);
-          console.log('🔍 최종 기준 데이터:', finalCriteriaData);
-          console.log('🔍 최종 기준 데이터 타입:', typeof finalCriteriaData);
-          console.log('🔍 최종 기준 데이터 키들:', finalCriteriaData ? Object.keys(finalCriteriaData) : 'null');
           
           setRdEvaluationCriteria(finalCriteriaData);
         } else {
-          console.log('❌ R&D 역량평가 기준 데이터 없음, 상태:', response.status);
-          const errorText = await response.text();
-          console.log('❌ 에러 응답 내용:', errorText);
           setRdEvaluationCriteria(null);
         }
       } catch (error) {
@@ -404,15 +384,11 @@ export default function EmployeeDetail({ employeeId: propEmployeeId }: EmployeeD
       }
     };
 
-    console.log('🚀 loadRdEvaluationCriteria 함수 호출');
     loadRdEvaluationCriteria();
   }, []);
 
   // R&D 역량평가 기준 상태 변화 감지
   useEffect(() => {
-    console.log('🔄 rdEvaluationCriteria 상태 변화:', rdEvaluationCriteria);
-    console.log('🔄 rdEvaluationCriteria 타입:', typeof rdEvaluationCriteria);
-    console.log('🔄 rdEvaluationCriteria 키들:', rdEvaluationCriteria ? Object.keys(rdEvaluationCriteria) : 'null');
   }, [rdEvaluationCriteria]);
 
   // 실제 프로젝트 데이터 상태 관리
@@ -475,7 +451,6 @@ export default function EmployeeDetail({ employeeId: propEmployeeId }: EmployeeD
   useEffect(() => {
     const loadAchievements = async () => {
       try {
-        console.log('🔍 성과 데이터 로드 시작:', employeeId);
         
         const { startDate, endDate } = getDateRange();
         const params = new URLSearchParams();
@@ -490,7 +465,6 @@ export default function EmployeeDetail({ employeeId: propEmployeeId }: EmployeeD
 
         if (patentsResponse.ok) {
           const patentsData = await patentsResponse.json();
-          console.log('🔍 특허 데이터 로드 성공:', patentsData);
           setPatents(patentsData);
         } else {
           setPatents([]);
@@ -498,7 +472,6 @@ export default function EmployeeDetail({ employeeId: propEmployeeId }: EmployeeD
 
         if (publicationsResponse.ok) {
           const publicationsData = await publicationsResponse.json();
-          console.log('🔍 논문 데이터 로드 성공:', publicationsData);
           setPublications(publicationsData);
         } else {
           setPublications([]);
@@ -559,7 +532,6 @@ export default function EmployeeDetail({ employeeId: propEmployeeId }: EmployeeD
   useEffect(() => {
     const loadAwards = async () => {
       try {
-        console.log('🔍 수상 데이터 로드 시작:', employeeId);
         const { startDate, endDate } = getDateRange();
         const params = new URLSearchParams();
         if (startDate) params.append('startDate', startDate.toISOString().split('T')[0]);
@@ -568,10 +540,8 @@ export default function EmployeeDetail({ employeeId: propEmployeeId }: EmployeeD
         const response = await fetch(`/api/awards?employeeId=${employeeId}&${params.toString()}`);
         if (response.ok) {
           const data = await response.json();
-          console.log('🔍 수상 데이터 로드 성공:', data);
           setAwards(data);
         } else {
-          console.log('🔍 수상 데이터 없음');
           setAwards([]);
         }
       } catch (error) {
@@ -591,7 +561,6 @@ export default function EmployeeDetail({ employeeId: propEmployeeId }: EmployeeD
   useEffect(() => {
     const loadCertifications = async () => {
       try {
-        console.log('🔍 자격증 데이터 로드 시작:', employeeId);
         const { startDate, endDate } = getDateRange();
         const params = new URLSearchParams();
         if (startDate) params.append('startDate', startDate.toISOString().split('T')[0]);
@@ -600,10 +569,8 @@ export default function EmployeeDetail({ employeeId: propEmployeeId }: EmployeeD
         const response = await fetch(`/api/certifications?employeeId=${employeeId}&${params.toString()}`);
         if (response.ok) {
           const data = await response.json();
-          console.log('🔍 자격증 데이터 로드 성공:', data);
           setCertifications(data);
         } else {
-          console.log('🔍 자격증 데이터 없음');
           setCertifications([]);
         }
       } catch (error) {
@@ -623,14 +590,11 @@ export default function EmployeeDetail({ employeeId: propEmployeeId }: EmployeeD
   useEffect(() => {
     const loadLanguages = async () => {
       try {
-        console.log('🔍 어학능력 데이터 로드 시작:', employeeId);
         const response = await fetch(`/api/language-skills?employeeId=${employeeId}`);
         if (response.ok) {
           const data = await response.json();
-          console.log('🔍 어학능력 데이터 로드 성공:', data);
           setLanguages(data);
         } else {
-          console.log('🔍 어학능력 데이터 없음');
           setLanguages([]);
         }
       } catch (error) {
@@ -705,11 +669,8 @@ export default function EmployeeDetail({ employeeId: propEmployeeId }: EmployeeD
   
   // 레이더 차트용 점수 변환 함수 (서버의 maxRawScores 기준으로 백분율 계산)
   const getRadarChartValue = (rawScore: number, competencyKey: string): number => {
-    console.log(`🔍 getRadarChartValue 호출: competencyKey=${competencyKey}, rawScore=${rawScore}`);
-    console.log(`🔍 rdEvaluation:`, rdEvaluation);
     
     if (!rdEvaluation?.maxRawScores) {
-      console.log(`⚠️ maxRawScores 없음 - 원점수 반환: ${rawScore}`);
       return rawScore; // 기준 없으면 원점수 사용
     }
     
@@ -717,7 +678,6 @@ export default function EmployeeDetail({ employeeId: propEmployeeId }: EmployeeD
     const maxRawScore = rdEvaluation.maxRawScores[competencyKey as keyof typeof rdEvaluation.maxRawScores] || 100;
     const result = Math.min((rawScore / maxRawScore) * 100, 100);
     
-    console.log(`✅ ${competencyKey}: ${rawScore} / ${maxRawScore} * 100 = ${result}%`);
     return result;
   };
   
@@ -1539,7 +1499,6 @@ export default function EmployeeDetail({ employeeId: propEmployeeId }: EmployeeD
                                 { name: '기술확산', value: getRadarChartValue(rdEvaluation?.scores?.knowledgeSharing || 0, 'knowledgeSharing') },
                                 { name: '혁신제안', value: getRadarChartValue(rdEvaluation?.scores?.innovationProposal || 0, 'innovationProposal') }
                               ];
-                              console.log('📊 레이더 차트 최종 데이터:', radarData);
                               return radarData;
                             })()}
                             size={400}
@@ -2308,7 +2267,6 @@ export default function EmployeeDetail({ employeeId: propEmployeeId }: EmployeeD
         }}
         onSave={async (data) => {
           try {
-            console.log('🔧 제안제도 저장 요청 데이터:', data);
             const response = await fetch('/api/proposals', {
               method: 'POST',
               headers: {
@@ -2317,12 +2275,9 @@ export default function EmployeeDetail({ employeeId: propEmployeeId }: EmployeeD
               body: JSON.stringify(data),
             });
 
-            console.log('🔧 제안제도 저장 응답 상태:', response.status);
-            console.log('🔧 제안제도 저장 응답 헤더:', response.headers);
 
             if (response.ok) {
               const result = await response.json();
-              console.log('✅ 제안제도 저장 성공:', result);
               
               // 제안제도 데이터 새로고침
               const loadProposals = async () => {

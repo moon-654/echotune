@@ -62,14 +62,11 @@ export default function OrgChartComponent({
       targetEmployee?: Employee;
     }) => {
       // D3.js 시스템이 처리하므로 여기서는 아무것도 하지 않음
-      console.log('⚠️ React updateEmployeeMutation 비활성화 - D3.js 시스템 사용 중');
       return Promise.resolve({ id: employeeId, message: 'D3.js 시스템에서 처리됨' });
     },
     onSuccess: () => {
-      console.log('⚠️ React mutation onSuccess 비활성화');
     },
     onError: () => {
-      console.log('⚠️ React mutation onError 비활성화');
     }
   });
 
@@ -106,7 +103,6 @@ export default function OrgChartComponent({
     e.preventDefault();
     
     // D3.js 드래그 앤 드롭 시스템이 활성화되어 있으므로 React 시스템 비활성화
-    console.log('⚠️ React 드래그 앤 드롭 시스템 비활성화 - D3.js 시스템 사용 중');
     
     if (!draggedEmployee || draggedEmployee.id === targetEmployeeId) {
       setDraggedEmployee(null);

@@ -543,9 +543,6 @@ export class MemStorage implements IStorage {
   }
 
   async updateEmployee(id: string, updates: Partial<InsertEmployee>): Promise<Employee> {
-    console.log('🗃️ Storage.updateEmployee 호출됨');
-    console.log('🆔 업데이트할 ID:', id);
-    console.log('📝 업데이트 데이터:', updates);
     
     const existing = this.employees.get(id);
     if (!existing) {
@@ -553,7 +550,6 @@ export class MemStorage implements IStorage {
       throw new Error(`Employee ${id} not found`);
     }
     
-    console.log('👤 기존 직원 데이터:', existing);
     
     const updated: Employee = {
       ...existing,
@@ -561,14 +557,11 @@ export class MemStorage implements IStorage {
       updatedAt: new Date()
     };
     
-    console.log('🔄 업데이트된 직원 데이터:', updated);
     
     this.employees.set(id, updated);
-    console.log('✅ Storage에 저장 완료');
     
     // 저장 후 검증
     const saved = this.employees.get(id);
-    console.log('🔍 저장 후 검증:', saved);
     
     return updated;
   }

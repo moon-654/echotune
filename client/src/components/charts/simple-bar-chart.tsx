@@ -8,7 +8,6 @@ interface SimpleBarChartProps {
 }
 
 export default function SimpleBarChart({ data }: SimpleBarChartProps) {
-  console.log('🔍 SimpleBarChart 렌더링:', data);
   
   if (!data || data.length === 0) {
     return <div className="p-4 text-center text-gray-500">데이터가 없습니다</div>;

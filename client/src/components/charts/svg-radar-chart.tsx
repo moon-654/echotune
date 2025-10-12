@@ -16,11 +16,9 @@ export default function SvgRadarChart({
   className = "",
   size = 300
 }: SvgRadarChartProps) {
-  console.log('🔍 SvgRadarChart 렌더링:', { data, className, size });
   
   // 데이터가 없거나 빈 배열인 경우
   if (!data || data.length === 0) {
-    console.log('🔍 데이터가 없어서 빈 상태 표시');
     return (
       <div className={`flex items-center justify-center h-full ${className}`}>
         <div className="text-center text-muted-foreground">

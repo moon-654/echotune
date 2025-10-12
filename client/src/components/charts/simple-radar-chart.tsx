@@ -13,7 +13,6 @@ interface SimpleRadarChartProps {
 }
 
 export default function SimpleRadarChart({ data, size = 300, onLabelClick, selectedLabel }: SimpleRadarChartProps) {
-  console.log('🔍 SimpleRadarChart 렌더링:', data);
   
   if (!data || data.length === 0) {
     return <div className="p-4 text-center text-gray-500">데이터가 없습니다</div>;

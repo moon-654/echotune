@@ -93,7 +93,6 @@ export default function RdEvaluation() {
         const response = await fetch('/api/rd-evaluations/criteria');
         const data = await response.json();
         setCriteria(data.rdEvaluationCriteria);
-        console.log('✅ 평가 기준 로드 완료:', data.rdEvaluationCriteria);
       } catch (error) {
         console.error('❌ 평가 기준 로드 실패:', error);
       } finally {

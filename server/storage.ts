@@ -183,20 +183,15 @@ export class MemStorage implements IStorage {
 
   private loadData() {
     try {
-      console.log('📁 데이터 파일 경로:', this.dataFile);
-      console.log('📁 파일 존재 여부:', existsSync(this.dataFile));
       
       if (existsSync(this.dataFile)) {
-        console.log('📁 기존 데이터 파일 로드 중...');
         const data = JSON.parse(readFileSync(this.dataFile, 'utf8'));
-        console.log('📁 로드된 데이터 키:', Object.keys(data));
         
         // Load employees
         if (data.employees) {
           Object.entries(data.employees).forEach(([id, employee]) => {
             this.employees.set(id, employee as Employee);
           });
-          console.log(`✅ ${this.employees.size}명의 직원 데이터 로드 완료`);
         }
         
         // Load other data if exists
@@ -211,7 +206,6 @@ export class MemStorage implements IStorage {
           Object.entries(data.certifications).forEach(([id, item]) => {
             this.certifications.set(id, item as Certification);
           });
-          console.log(`✅ ${this.certifications.size}개의 자격증 데이터 로드 완료`);
         }
         
         // Load languages
@@ -219,7 +213,6 @@ export class MemStorage implements IStorage {
           Object.entries(data.languages).forEach(([id, item]) => {
             this.languages.set(id, item as Language);
           });
-          console.log(`✅ ${this.languages.size}개의 어학능력 데이터 로드 완료`);
         }
         
         // Load skills
@@ -269,7 +262,6 @@ export class MemStorage implements IStorage {
           Object.entries(data.trainingHours).forEach(([id, item]) => {
             this.trainingHours.set(id, item as TrainingHours);
           });
-          console.log(`✅ ${this.trainingHours.size}개의 교육 시간 데이터 로드 완료`);
         }
         
         // Load team employees
@@ -277,26 +269,21 @@ export class MemStorage implements IStorage {
           Object.entries(data.teamEmployees).forEach(([id, item]) => {
             this.teamEmployees.set(id, item as TeamEmployees);
           });
-          console.log(`✅ ${this.teamEmployees.size}개의 팀 인원 데이터 로드 완료`);
         }
         
         // Load view state if exists
         if (data.viewState) {
           this.viewState = data.viewState;
-          console.log('✅ 보기 상태 로드 완료');
         }
         
-        console.log('📁 데이터 파일에서 로드 완료');
         return;
       } else {
-        console.log('📁 데이터 파일이 존재하지 않음');
       }
     } catch (error) {
       console.error('❌ 데이터 파일 로드 실패:', error);
     }
     
     // Initialize with sample data if no file exists
-    console.log('📁 샘플 데이터로 초기화...');
     this.initializeSampleData();
   }
 
@@ -329,7 +316,6 @@ export class MemStorage implements IStorage {
       };
       
       writeFileSync(this.dataFile, JSON.stringify(data, null, 2));
-      console.log('💾 데이터 파일 저장 완료 - 모든 기존 필드 보존됨');
     } catch (error) {
       console.error('❌ 데이터 파일 저장 실패:', error);
     }
@@ -650,23 +636,17 @@ export class MemStorage implements IStorage {
     
     // 파일에 영구 저장
     this.saveData();
-    console.log('💾 새 직원 데이터 파일에 저장 완료');
     
     return newEmployee;
   }
 
   async updateEmployee(id: string, employee: Partial<InsertEmployee>): Promise<Employee> {
-    console.log('🗃️ Storage.updateEmployee 호출됨');
-    console.log('🆔 업데이트할 ID:', id);
-    console.log('📝 업데이트 데이터:', employee);
     
     const existing = this.employees.get(id);
     if (!existing) {
-      console.error('❌ 직원을 찾을 수 없음:', id);
       throw new Error(`Employee ${id} not found`);
     }
     
-    console.log('👤 기존 직원 데이터:', existing);
     
     const updated: Employee = {
       ...existing,
@@ -674,18 +654,12 @@ export class MemStorage implements IStorage {
       updatedAt: new Date()
     };
     
-    console.log('🔄 업데이트된 직원 데이터:', updated);
     
     this.employees.set(id, updated);
-    console.log('✅ Storage에 저장 완료');
     
     // 파일에 영구 저장
     this.saveData();
-    console.log('💾 파일에 영구 저장 완료');
     
-    // 저장 후 검증
-    const saved = this.employees.get(id);
-    console.log('🔍 저장 후 검증:', saved);
     
     return updated;
   }
@@ -1187,7 +1161,6 @@ export class MemStorage implements IStorage {
     try {
       this.viewState = viewState;
       this.saveData();
-      console.log('✅ 보기 상태 저장 완료:', viewState);
     } catch (error) {
       console.error('❌ 보기 상태 저장 중 오류:', error);
       throw error;

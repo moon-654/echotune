@@ -69,7 +69,6 @@ export default function RdEmployeesModal({
       }
       const data = await response.json();
       setRdEmployees(data.employees || []);
-      console.log('📊 R&D 인원 데이터 로드:', data);
     } catch (error) {
       console.error('R&D 인원 데이터 로드 오류:', error);
       toast({

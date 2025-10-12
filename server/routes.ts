@@ -155,7 +155,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/save-view-state", async (req, res) => {
     try {
       const viewState = req.body;
-      console.log('💾 보기 상태 저장 요청:', viewState);
       
       // 보기 상태를 storage에 저장
       storage.saveViewState(viewState);
@@ -179,7 +178,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/load-view-state", async (req, res) => {
     try {
       const viewState = storage.getViewState();
-      console.log('📂 보기 상태 불러오기:', viewState);
       
       res.json({ 
         success: true, 
@@ -201,7 +199,6 @@ app.put("/api/employees/:id", async (req, res) => {
     const existingEmployee = await storage.getEmployee(req.params.id);
     
     if (!existingEmployee) {
-      console.log('❌ 직원을 찾을 수 없음:', req.params.id);
       return res.status(404).json({ error: "Employee not found" });
     }
     
@@ -223,11 +220,9 @@ app.put("/api/employees/:id", async (req, res) => {
     
     // 날짜 필드들을 Date 객체로 변환
     if (cleanedBody.birthDate && typeof cleanedBody.birthDate === 'string') {
-      console.log('📅 birthDate 문자열을 Date 객체로 변환:', cleanedBody.birthDate, '->', new Date(cleanedBody.birthDate));
       cleanedBody.birthDate = new Date(cleanedBody.birthDate);
     }
     if (cleanedBody.hireDate && typeof cleanedBody.hireDate === 'string') {
-      console.log('📅 hireDate 문자열을 Date 객체로 변환:', cleanedBody.hireDate, '->', new Date(cleanedBody.hireDate));
       cleanedBody.hireDate = new Date(cleanedBody.hireDate);
     }
     
@@ -295,7 +290,6 @@ app.put("/api/employees/:id", async (req, res) => {
 
   app.post("/api/training", async (req, res) => {
     try {
-      console.log("Training POST request body:", JSON.stringify(req.body, null, 2));
       const trainingData = insertTrainingHistorySchema.parse(req.body);
       const training = await storage.createTrainingHistory(trainingData);
       res.status(201).json(training);
@@ -316,7 +310,6 @@ app.put("/api/employees/:id", async (req, res) => {
         return res.status(400).json({ error: "파일이 없습니다." });
       }
 
-      console.log("Processing uploaded file:", req.file.originalname);
       
       let workbook: XLSX.WorkBook;
       
@@ -426,7 +419,6 @@ app.put("/api/employees/:id", async (req, res) => {
       const errorCount = results.filter(r => !r.success).length;
       const errors = results.filter(r => !r.success).map(r => ({ row: r.row, message: r.error || "알 수 없는 오류" }));
 
-      console.log(`Upload completed: ${successCount} success, ${errorCount} errors`);
 
       res.status(200).json({
         success: errorCount === 0,
@@ -644,19 +636,16 @@ app.put("/api/employees/:id", async (req, res) => {
   app.delete("/api/skills", async (req, res) => {
     try {
       const employeeId = req.query.employeeId as string;
-      console.log('🔍 직원 스킬 전체 삭제:', { employeeId });
       if (!employeeId) {
         return res.status(400).json({ error: "Employee ID is required" });
       }
       
       const skills = await storage.getSkillsByEmployee(employeeId);
-      console.log('🔍 삭제할 스킬 목록:', skills);
       
       for (const skill of skills) {
         await storage.deleteSkill(skill.id);
       }
       
-      console.log('🔍 직원 스킬 전체 삭제 완료');
       res.json({ success: true, deletedCount: skills.length });
     } catch (error) {
       console.error('🔍 직원 스킬 전체 삭제 오류:', error);
@@ -724,7 +713,6 @@ app.put("/api/employees/:id", async (req, res) => {
             await storage.updateTrainingHours(existingData.id, {
               hours: existingData.hours + (training.duration || 0)
             });
-            console.log(`🔄 교육시간 자동 업데이트: ${teamName} - ${training.type || '기타'} (+${training.duration || 0}시간)`);
           } else {
             // 새 데이터 생성
             await storage.createTrainingHours({
@@ -734,7 +722,6 @@ app.put("/api/employees/:id", async (req, res) => {
               hours: training.duration || 0,
               description: `${teamName} ${training.type || '기타'} 교육시간 (자동생성)`
             });
-            console.log(`🔄 교육시간 자동 생성: ${teamName} - ${training.type || '기타'} (${training.duration || 0}시간)`);
           }
         }
       } catch (autoConvertError) {
@@ -860,19 +847,16 @@ app.put("/api/employees/:id", async (req, res) => {
   app.delete("/api/projects", async (req, res) => {
     try {
       const employeeId = req.query.employeeId as string;
-      console.log('🔍 직원 프로젝트 전체 삭제:', { employeeId });
       if (!employeeId) {
         return res.status(400).json({ error: "Employee ID is required" });
       }
       
       const projects = await storage.getProjectsByEmployee(employeeId);
-      console.log('🔍 삭제할 프로젝트 목록:', projects);
       
       for (const project of projects) {
         await storage.deleteProject(project.id);
       }
       
-      console.log('🔍 직원 프로젝트 전체 삭제 완료');
       res.json({ success: true, deletedCount: projects.length });
     } catch (error) {
       console.error('🔍 직원 프로젝트 전체 삭제 오류:', error);
@@ -950,19 +934,16 @@ app.put("/api/employees/:id", async (req, res) => {
   app.delete("/api/patents", async (req, res) => {
     try {
       const employeeId = req.query.employeeId as string;
-      console.log('🔍 직원 특허 전체 삭제:', { employeeId });
       if (!employeeId) {
         return res.status(400).json({ error: "Employee ID is required" });
       }
       
       const patents = await storage.getPatentsByEmployee(employeeId);
-      console.log('🔍 삭제할 특허 목록:', patents);
       
       for (const patent of patents) {
         await storage.deletePatent(patent.id);
       }
       
-      console.log('🔍 직원 특허 전체 삭제 완료');
       res.json({ success: true, deletedCount: patents.length });
     } catch (error) {
       console.error('🔍 직원 특허 전체 삭제 오류:', error);
@@ -1040,19 +1021,16 @@ app.put("/api/employees/:id", async (req, res) => {
   app.delete("/api/publications", async (req, res) => {
     try {
       const employeeId = req.query.employeeId as string;
-      console.log('🔍 직원 논문 전체 삭제:', { employeeId });
       if (!employeeId) {
         return res.status(400).json({ error: "Employee ID is required" });
       }
       
       const publications = await storage.getPublicationsByEmployee(employeeId);
-      console.log('🔍 삭제할 논문 목록:', publications);
       
       for (const publication of publications) {
         await storage.deletePublication(publication.id);
       }
       
-      console.log('🔍 직원 논문 전체 삭제 완료');
       res.json({ success: true, deletedCount: publications.length });
     } catch (error) {
       console.error('🔍 직원 논문 전체 삭제 오류:', error);
@@ -1130,19 +1108,16 @@ app.put("/api/employees/:id", async (req, res) => {
   app.delete("/api/awards", async (req, res) => {
     try {
       const employeeId = req.query.employeeId as string;
-      console.log('🔍 직원 수상 전체 삭제:', { employeeId });
       if (!employeeId) {
         return res.status(400).json({ error: "Employee ID is required" });
       }
       
       const awards = await storage.getAwardsByEmployee(employeeId);
-      console.log('🔍 삭제할 수상 목록:', awards);
       
       for (const award of awards) {
         await storage.deleteAward(award.id);
       }
       
-      console.log('🔍 직원 수상 전체 삭제 완료');
       res.json({ success: true, deletedCount: awards.length });
     } catch (error) {
       console.error('🔍 직원 수상 전체 삭제 오류:', error);
@@ -1153,7 +1128,6 @@ app.put("/api/employees/:id", async (req, res) => {
   // R&D Evaluation Criteria Management routes
   app.get('/api/rd-evaluation-criteria', async (req, res) => {
     try {
-      console.log('🔍 R&D 역량평가 기준 조회 요청');
       
       // 파일에서 기준 조회
       const criteriaPath = path.join(__dirname, '..', 'data', 'rd-evaluation-criteria.json');
@@ -1163,7 +1137,6 @@ app.put("/api/employees/:id", async (req, res) => {
         // 저장된 기준이 있으면 로드
         const fileContent = fs.readFileSync(criteriaPath, 'utf8');
         criteria = JSON.parse(fileContent);
-        console.log('✅ 저장된 R&D 역량평가 기준 로드:', criteria);
       } else {
         // 기본 설정 반환
         criteria = {
@@ -1281,7 +1254,6 @@ app.put("/api/employees/:id", async (req, res) => {
         });
       }
       
-      console.log('📝 반환할 언어 시험 설정:', languageTests);
       
       res.json({
         success: true,
@@ -1303,7 +1275,6 @@ app.put("/api/employees/:id", async (req, res) => {
     try {
       const { criteria, updateEmployeeForms } = req.body;
       
-      console.log('🔧 R&D 역량평가 기준 저장 요청:', { criteria, updateEmployeeForms });
       
       // 1. R&D 역량평가 기준을 파일에 저장
       const criteriaPath = path.join(__dirname, '..', 'data', 'rd-evaluation-criteria.json');
@@ -1316,11 +1287,9 @@ app.put("/api/employees/:id", async (req, res) => {
       
       // 기준 저장
       fs.writeFileSync(criteriaPath, JSON.stringify(criteria, null, 2));
-      console.log('✅ R&D 역량평가 기준 저장 완료:', criteriaPath);
       
       // 2. 직원 정보 입력 폼 업데이트가 요청된 경우
       if (updateEmployeeForms) {
-        console.log('🔄 직원 정보 입력 폼 업데이트 시작');
         
         // 글로벌 역량 설정에서 언어 시험 정보 추출
         const globalCompetency = criteria.global_competency || {};
@@ -1417,7 +1386,6 @@ app.put("/api/employees/:id", async (req, res) => {
           });
         }
         
-        console.log('📝 생성된 언어 시험 설정:', languageTests);
         
         // TODO: 이 설정을 클라이언트의 언어 입력 폼에 반영
         // 방법 1: 클라이언트에서 이 API를 호출하여 설정을 가져오도록 함
@@ -1449,7 +1417,6 @@ app.put("/api/employees/:id", async (req, res) => {
   // Departments and Teams routes
   app.get("/api/departments", async (req, res) => {
     try {
-      console.log('🔍 부서 목록 조회 요청');
       
       // data.json에서 부서 데이터 로드
       const dataPath = path.join(process.cwd(), 'data.json');
@@ -1461,7 +1428,6 @@ app.put("/api/employees/:id", async (req, res) => {
         departments = data.departments || [];
       }
       
-      console.log('✅ 부서 데이터 로드 완료:', departments.length, '개');
       res.json(departments);
     } catch (error) {
       console.error("부서 조회 오류:", error);
@@ -1472,7 +1438,6 @@ app.put("/api/employees/:id", async (req, res) => {
   app.post("/api/departments", async (req, res) => {
     try {
       const { code, name } = req.body;
-      console.log('🔧 부서 추가 요청:', { code, name });
       
       const dataPath = path.join(process.cwd(), 'data.json');
       
@@ -1503,7 +1468,6 @@ app.put("/api/employees/:id", async (req, res) => {
       
       // 파일 저장
       fs.writeFileSync(dataPath, JSON.stringify(data, null, 2));
-      console.log('✅ 부서 추가 완료:', code);
       
       res.json({ success: true, data: newDepartment });
     } catch (error) {
@@ -1516,7 +1480,6 @@ app.put("/api/employees/:id", async (req, res) => {
     try {
       const { code } = req.params;
       const { name } = req.body;
-      console.log('🔧 부서 수정 요청:', { code, name });
       
       const dataPath = path.join(process.cwd(), 'data.json');
       
@@ -1543,7 +1506,6 @@ app.put("/api/employees/:id", async (req, res) => {
       
       // 파일 저장
       fs.writeFileSync(dataPath, JSON.stringify(data, null, 2));
-      console.log('✅ 부서 수정 완료:', code);
       
       res.json({ success: true, data: data.departments[departmentIndex] });
     } catch (error) {
@@ -1555,7 +1517,6 @@ app.put("/api/employees/:id", async (req, res) => {
   app.delete("/api/departments/:code", async (req, res) => {
     try {
       const { code } = req.params;
-      console.log('🔧 부서 삭제 요청:', code);
       
       const dataPath = path.join(process.cwd(), 'data.json');
       
@@ -1583,7 +1544,6 @@ app.put("/api/employees/:id", async (req, res) => {
       
       // 파일 저장
       fs.writeFileSync(dataPath, JSON.stringify(data, null, 2));
-      console.log('✅ 부서 삭제 완료:', code);
       
       res.json({ success: true });
     } catch (error) {
@@ -1595,7 +1555,6 @@ app.put("/api/employees/:id", async (req, res) => {
   app.get("/api/teams", async (req, res) => {
     try {
       const { departmentCode } = req.query;
-      console.log('🔍 팀 목록 조회 요청:', { departmentCode });
       
       // data.json에서 팀 데이터 로드
       const dataPath = path.join(process.cwd(), 'data.json');
@@ -1612,7 +1571,6 @@ app.put("/api/employees/:id", async (req, res) => {
         }
       }
       
-      console.log('✅ 팀 데이터 로드 완료:', teams.length, '개');
       res.json(teams);
     } catch (error) {
       console.error("팀 조회 오류:", error);
@@ -1623,7 +1581,6 @@ app.put("/api/employees/:id", async (req, res) => {
   app.post("/api/teams", async (req, res) => {
     try {
       const { code, name, departmentCode } = req.body;
-      console.log('🔧 팀 추가 요청:', { code, name, departmentCode });
       
       const dataPath = path.join(process.cwd(), 'data.json');
       
@@ -1655,7 +1612,6 @@ app.put("/api/employees/:id", async (req, res) => {
       
       // 파일 저장
       fs.writeFileSync(dataPath, JSON.stringify(data, null, 2));
-      console.log('✅ 팀 추가 완료:', code);
       
       res.json({ success: true, data: newTeam });
     } catch (error) {
@@ -1668,7 +1624,6 @@ app.put("/api/employees/:id", async (req, res) => {
     try {
       const { code } = req.params;
       const { name, departmentCode } = req.body;
-      console.log('🔧 팀 수정 요청:', { code, name, departmentCode });
       
       const dataPath = path.join(process.cwd(), 'data.json');
       
@@ -1696,7 +1651,6 @@ app.put("/api/employees/:id", async (req, res) => {
       
       // 파일 저장
       fs.writeFileSync(dataPath, JSON.stringify(data, null, 2));
-      console.log('✅ 팀 수정 완료:', code);
       
       res.json({ success: true, data: data.teams[teamIndex] });
     } catch (error) {
@@ -1708,7 +1662,6 @@ app.put("/api/employees/:id", async (req, res) => {
   app.delete("/api/teams/:code", async (req, res) => {
     try {
       const { code } = req.params;
-      console.log('🔧 팀 삭제 요청:', code);
       
       const dataPath = path.join(process.cwd(), 'data.json');
       
@@ -1731,7 +1684,6 @@ app.put("/api/employees/:id", async (req, res) => {
       
       // 파일 저장
       fs.writeFileSync(dataPath, JSON.stringify(data, null, 2));
-      console.log('✅ 팀 삭제 완료:', code);
       
       res.json({ success: true });
     } catch (error) {
@@ -1744,7 +1696,6 @@ app.put("/api/employees/:id", async (req, res) => {
   app.get("/api/proposals", async (req, res) => {
     try {
       const { employeeId, startDate, endDate } = req.query;
-      console.log('🔍 제안제도 조회 요청:', { employeeId, startDate, endDate });
       
       // data.json에서 제안제도 데이터 로드
       const dataPath = path.join(process.cwd(), 'data.json');

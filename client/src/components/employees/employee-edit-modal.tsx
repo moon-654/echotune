@@ -58,10 +58,6 @@ export default function EmployeeEditModal({ employee, isOpen, onClose }: Employe
           ]);
           setDepartments(deptData);
           setTeams(teamData);
-          console.log('🔍 부서/팀 데이터 로드:', {
-            departments: deptData,
-            teams: teamData
-          });
         } catch (error) {
           console.error('부서/팀 데이터 로드 실패:', error);
         } finally {
@@ -75,13 +71,6 @@ export default function EmployeeEditModal({ employee, isOpen, onClose }: Employe
   // 직원 데이터를 폼에 로드
   useEffect(() => {
     if (employee) {
-      console.log('🔍 직원 데이터 로드:', {
-        name: employee.name,
-        departmentCode: employee.departmentCode,
-        department: employee.department,
-        teamCode: employee.teamCode,
-        team: employee.team
-      });
       
       // 팀 매칭 로직 개선 (팀 데이터가 있을 때만)
       let matchedTeamCode = employee.teamCode;
@@ -92,17 +81,7 @@ export default function EmployeeEditModal({ employee, isOpen, onClose }: Employe
         );
         if (matchedTeam) {
           matchedTeamCode = matchedTeam.code;
-          console.log('✅ 팀 매칭 성공:', {
-            teamName: employee.team,
-            departmentCode: employee.departmentCode,
-            matchedTeamCode: matchedTeam.code
-          });
         } else {
-          console.log('❌ 팀 매칭 실패:', {
-            teamName: employee.team,
-            departmentCode: employee.departmentCode,
-            availableTeams: teams.filter(t => t.departmentCode === employee.departmentCode)
-          });
         }
       }
 
@@ -149,7 +128,6 @@ export default function EmployeeEditModal({ employee, isOpen, onClose }: Employe
   // 팀 데이터가 로드된 후 직원 데이터 재초기화
   useEffect(() => {
     if (employee && teams.length > 0) {
-      console.log('🔄 팀 데이터 로드 후 직원 데이터 재초기화');
       
       // 팀 매칭 로직
       let matchedTeamCode = employee.teamCode;
@@ -159,7 +137,6 @@ export default function EmployeeEditModal({ employee, isOpen, onClose }: Employe
         );
         if (matchedTeam) {
           matchedTeamCode = matchedTeam.code;
-          console.log('✅ 팀 매칭 성공 (재초기화):', matchedTeam.code);
         }
       }
 
@@ -181,12 +158,6 @@ export default function EmployeeEditModal({ employee, isOpen, onClose }: Employe
     mutationFn: async (data: Partial<InsertEmployee>) => {
       if (!employee) throw new Error("No employee selected");
       
-      console.log('🚀 API 호출 시작:', {
-        url: `/api/employees/${employee.id}`,
-        method: 'PUT',
-        data: data
-      });
-      
       const response = await fetch(`/api/employees/${employee.id}`, {
         method: 'PUT',
         headers: {
@@ -195,8 +166,6 @@ export default function EmployeeEditModal({ employee, isOpen, onClose }: Employe
         body: JSON.stringify(data)
       });
 
-      console.log('📡 API 응답 상태:', response.status);
-      console.log('📡 API 응답 헤더:', Object.fromEntries(response.headers.entries()));
 
       if (!response.ok) {
         const errorText = await response.text();
@@ -205,11 +174,9 @@ export default function EmployeeEditModal({ employee, isOpen, onClose }: Employe
       }
 
       const result = await response.json();
-      console.log('✅ API 성공 응답:', result);
       return result;
     },
     onSuccess: (data) => {
-      console.log('🎉 직원 수정 성공:', data);
       queryClient.invalidateQueries({ queryKey: ['/api/employees'] });
       toast({
         title: "직원 수정 완료",
@@ -428,17 +395,14 @@ export default function EmployeeEditModal({ employee, isOpen, onClose }: Employe
                 <Select 
                   value={selectedDepartment} 
                   onValueChange={(value) => {
-                    console.log('🏢 부서 선택:', { value, departments });
                     setSelectedDepartment(value);
                     const dept = departments.find(d => d.code === value);
-                    console.log('🏢 선택된 부서:', dept);
                     if (dept) {
                       setFormData(prev => ({
                         ...prev,
                         departmentCode: dept.code,
                         department: dept.name
                       }));
-                      console.log('🏢 부서 정보 업데이트:', { departmentCode: dept.code, department: dept.name });
                     }
                   }}
                 >
@@ -460,24 +424,20 @@ export default function EmployeeEditModal({ employee, isOpen, onClose }: Employe
                 <Select 
                   value={formData.teamCode || "none"} 
                   onValueChange={(value) => {
-                    console.log('👥 팀 선택:', { value, teams });
                     if (value === "none") {
                       setFormData(prev => ({
                         ...prev,
                         teamCode: null,
                         team: null
                       }));
-                      console.log('👥 팀 정보 제거');
                     } else {
                       const team = teams.find(t => t.code === value);
-                      console.log('👥 선택된 팀:', team);
                       if (team) {
                         setFormData(prev => ({
                           ...prev,
                           teamCode: team.code,
                           team: team.name
                         }));
-                        console.log('👥 팀 정보 업데이트:', { teamCode: team.code, team: team.name });
                       }
                     }
                   }}

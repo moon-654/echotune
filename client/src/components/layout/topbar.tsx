@@ -17,7 +17,6 @@ export default function TopBar() {
 
   const handleExportData = () => {
     // TODO: Implement data export functionality
-    console.log("Exporting data...");
   };
 
   return (

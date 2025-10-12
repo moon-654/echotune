@@ -165,9 +165,7 @@ export class DepartmentTeamManager {
   // 모든 부서 목록
   static async getAllDepartments(): Promise<Department[]> {
     try {
-      console.log('🔍 부서 목록 API 호출 시작');
       const response = await fetch('/api/departments');
-      console.log('📡 부서 목록 API 응답:', response.status, response.statusText);
       
       if (!response.ok) {
         const errorText = await response.text();
@@ -176,12 +174,10 @@ export class DepartmentTeamManager {
       }
       
       const data = await response.json();
-      console.log('✅ 부서 목록 데이터:', data);
       // 배열이 아닌 경우 빈 배열 반환
       return Array.isArray(data) ? data : [];
     } catch (error) {
       console.error('❌ 부서 목록 조회 실패:', error);
-      console.log('🔄 기본 부서 데이터 사용');
       return DEFAULT_DEPARTMENTS;
     }
   }
@@ -189,9 +185,7 @@ export class DepartmentTeamManager {
   // 모든 팀 목록
   static async getAllTeams(): Promise<Team[]> {
     try {
-      console.log('🔍 팀 목록 API 호출 시작');
       const response = await fetch('/api/teams');
-      console.log('📡 팀 목록 API 응답:', response.status, response.statusText);
       
       if (!response.ok) {
         const errorText = await response.text();
@@ -200,12 +194,10 @@ export class DepartmentTeamManager {
       }
       
       const data = await response.json();
-      console.log('✅ 팀 목록 데이터:', data);
       // 배열이 아닌 경우 빈 배열 반환
       return Array.isArray(data) ? data : [];
     } catch (error) {
       console.error('❌ 팀 목록 조회 실패:', error);
-      console.log('🔄 기본 팀 데이터 사용');
       return DEFAULT_TEAMS;
     }
   }

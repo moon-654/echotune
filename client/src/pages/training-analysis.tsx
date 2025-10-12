@@ -81,7 +81,6 @@ export default function TrainingAnalysis() {
       }
       
       const result = await response.json();
-      console.log('교육시간 변환 결과:', result);
       
       // 데이터 새로고침
       refetchAnalysis();
@@ -147,7 +146,6 @@ export default function TrainingAnalysis() {
 
   const handleExportData = () => {
     // 데이터 내보내기 로직
-    console.log('데이터 내보내기');
   };
 
   if (isLoadingTrainingHours) {

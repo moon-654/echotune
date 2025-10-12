@@ -48,7 +48,6 @@ const loadLanguageTestsFromRdEvaluation = async () => {
       const data = await response.json();
       if (data.languageTests) {
         LANGUAGE_TESTS = data.languageTests;
-        console.log('🔄 R&D 역량평가 설정에서 언어 시험 정보 로드:', LANGUAGE_TESTS);
       }
     }
   } catch (error) {

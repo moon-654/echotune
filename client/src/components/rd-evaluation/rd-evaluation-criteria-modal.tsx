@@ -128,12 +128,10 @@ export default function RdEvaluationCriteriaModal({ isOpen, onClose }: RdEvaluat
       if (response.ok) {
         const data = await response.json();
         
-        console.log('✅ 서버 데이터 로드:', data);
         
         // rdEvaluationCriteria 직접 교체 (빈 객체 병합 제거)
         if (data.rdEvaluationCriteria && Object.keys(data.rdEvaluationCriteria).length > 0) {
           setCompetencyItems(data.rdEvaluationCriteria);
-          console.log('✅ competencyItems 설정 완료:', data.rdEvaluationCriteria);
         } else {
           console.warn('⚠️ 서버에 rdEvaluationCriteria 없음');
         }
@@ -141,7 +139,6 @@ export default function RdEvaluationCriteriaModal({ isOpen, onClose }: RdEvaluat
         // detailedCriteria 직접 교체
         if (data.detailedCriteria && Object.keys(data.detailedCriteria).length > 0) {
           setDetailedCriteria(data.detailedCriteria);
-          console.log('✅ detailedCriteria 설정 완료');
         } else {
           console.warn('⚠️ 서버에 detailedCriteria 없음');
         }

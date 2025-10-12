@@ -12,7 +12,6 @@ function convertScore(
   const scoringRanges = criteriaItem?.scoringRanges;
   
   if (!scoringRanges || scoringRanges.length === 0) {
-    console.log(`⚠️ ${competencyKey}: scoringRanges 없음, 원점수 ${rawScore}점 반환`);
     return rawScore;
   }
   
@@ -20,23 +19,19 @@ function convertScore(
   
   for (const range of sortedRanges) {
     if (rawScore >= range.min && rawScore <= range.max) {
-      console.log(`✅ ${competencyKey}: ${rawScore}점 → ${range.converted}점 (${range.min}-${range.max})`);
       return range.converted;
     }
   }
   
   // 범위 밖 처리
   if (rawScore < sortedRanges[0].min) {
-    console.log(`⚠️ ${competencyKey}: ${rawScore}점 < 최소값 → ${sortedRanges[0].converted}점`);
     return sortedRanges[0].converted;
   }
   if (rawScore > sortedRanges[sortedRanges.length - 1].max) {
     const last = sortedRanges[sortedRanges.length - 1];
-    console.log(`⚠️ ${competencyKey}: ${rawScore}점 > 최대값 → ${last.converted}점`);
     return last.converted;
   }
   
-  console.log(`⚠️ ${competencyKey}: ${rawScore}점 범위 빈틈 → ${sortedRanges[0].converted}점`);
   return sortedRanges[0].converted;
 }
 
@@ -60,9 +55,6 @@ export async function calculateAutoRdEvaluation(employeeId: string, evaluationYe
       // R&D 역량평가 기준 로드
       if (data.rdEvaluationCriteria) {
         rdEvaluationCriteria = data.rdEvaluationCriteria;
-        console.log('🔍 R&D 역량평가 기준 로드:', rdEvaluationCriteria);
-        console.log('📋 기준 키들:', Object.keys(rdEvaluationCriteria));
-        console.log('⚖️ 가중치들:', Object.entries(rdEvaluationCriteria).map(([key, value]: [string, any]) => `${key}: ${value.weight}%`));
       } else {
         console.error('❌ rdEvaluationCriteria 없음!');
       }
@@ -70,7 +62,6 @@ export async function calculateAutoRdEvaluation(employeeId: string, evaluationYe
       // detailedCriteria 로드
       if (data.detailedCriteria) {
         detailedCriteria = data.detailedCriteria;
-        console.log('🔍 detailedCriteria 로드:', detailedCriteria);
       }
     }
     
@@ -111,7 +102,6 @@ export async function calculateAutoRdEvaluation(employeeId: string, evaluationYe
     };
     
     // 각 역량별 점수 계산 (수동으로 계산)
-    console.log('🔍 관련 데이터:', relatedData);
     
     // 1. 전문기술 역량 계산
     let technicalScore = 0;
@@ -151,7 +141,6 @@ export async function calculateAutoRdEvaluation(employeeId: string, evaluationYe
     // maxScore 적용
     const tcMaxScore = rdEvaluationCriteria?.technical_competency?.maxScore || 100;
     scores.technicalCompetency = Math.min(technicalScore, tcMaxScore);
-    console.log(`🔧 전문기술: 원점수 ${technicalScore}점 → maxScore ${tcMaxScore}점 제한 → ${scores.technicalCompetency}점`);
     
     // 2. 프로젝트 수행 경험 계산
     let projectScore = 0;
@@ -174,7 +163,6 @@ export async function calculateAutoRdEvaluation(employeeId: string, evaluationYe
     // maxScore 적용
     const pjMaxScore = rdEvaluationCriteria?.project_experience?.maxScore || 100;
     scores.projectExperience = Math.min(projectScore, pjMaxScore);
-    console.log(`📁 프로젝트: 원점수 ${projectScore}점 → maxScore ${pjMaxScore}점 제한 → ${scores.projectExperience}점`);
     
     // 3. 연구개발 성과 계산
     let rdScore = 0;
@@ -194,7 +182,6 @@ export async function calculateAutoRdEvaluation(employeeId: string, evaluationYe
     // maxScore 적용
     const rdMaxScore = rdEvaluationCriteria?.rd_achievement?.maxScore || 100;
     scores.rdAchievement = Math.min(rdScore, rdMaxScore);
-    console.log(`📊 연구성과: 원점수 ${rdScore}점 → maxScore ${rdMaxScore}점 제한 → ${scores.rdAchievement}점`);
     
     // 4. 글로벌 역량 계산
     let globalScore = 0;
@@ -255,7 +242,6 @@ export async function calculateAutoRdEvaluation(employeeId: string, evaluationYe
     // maxScore 적용
     const globalMaxScore = rdEvaluationCriteria?.global_competency?.maxScore || 10;
     scores.globalCompetency = Math.min(globalScore, globalMaxScore);
-    console.log(`🌏 글로벌: 원점수 ${globalScore}점 → maxScore ${globalMaxScore}점 제한 → ${scores.globalCompetency}점`);
     
     // 5. 기술 확산 및 자기계발 계산
     let knowledgeScore = 0;
@@ -311,15 +297,7 @@ export async function calculateAutoRdEvaluation(employeeId: string, evaluationYe
     // maxScore 적용
     const ksMaxScore = rdEvaluationCriteria?.knowledge_sharing?.maxScore || 100;
     scores.knowledgeSharing = Math.min(knowledgeScore, ksMaxScore);
-    console.log(`📚 기술확산: 원점수 ${knowledgeScore}점 → maxScore ${ksMaxScore}점 제한 → ${scores.knowledgeSharing}점`);
     
-    // 기술확산 상세 로깅
-    console.log('📚 기술확산 상세:');
-    console.log(`  trainingHistory 개수: ${relatedData.trainingHistory?.length || 0}`);
-    console.log(`  교육 이수 시간: ${knowledgeScore}점`);
-    console.log(`  멘토링: ${mentoringCount}회`);
-    console.log(`  강의: ${lectureCount}회`);
-    console.log(`  최종: ${scores.knowledgeSharing}점`);
     
     // 6. 업무개선 및 혁신 제안 계산
     let innovationScore = 0;
@@ -333,13 +311,7 @@ export async function calculateAutoRdEvaluation(employeeId: string, evaluationYe
     // maxScore 적용
     const ipMaxScore = rdEvaluationCriteria?.innovation_proposal?.maxScore || 100;
     scores.innovationProposal = Math.min(innovationScore, ipMaxScore);
-    console.log(`💡 혁신제안: 원점수 ${innovationScore}점 → maxScore ${ipMaxScore}점 제한 → ${scores.innovationProposal}점`);
     
-    // 혁신제안 상세 로깅
-    console.log('💡 혁신제안 상세:');
-    console.log(`  proposals 개수: ${relatedData.proposals?.length || 0}`);
-    console.log(`  제안당 10점 × ${relatedData.proposals?.length || 0}건 = ${innovationScore}점`);
-    console.log(`  최종: ${scores.innovationProposal}점`);
     
     // 상세 설명 생성
     const totalYearsText = (Math.round(totalYears * 10) / 10).toFixed(1);
@@ -393,14 +365,6 @@ export async function calculateAutoRdEvaluation(employeeId: string, evaluationYe
       (convertedScores.ks * weights.ks) +
       (convertedScores.ip * weights.ip);
 
-    console.log('🎯 종합 점수 계산:');
-    console.log(`  전문기술: ${scores.technicalCompetency}점 → ${convertedScores.tc}점 (×${weights.tc} = ${(convertedScores.tc * weights.tc).toFixed(2)})`);
-    console.log(`  프로젝트: ${scores.projectExperience}점 → ${convertedScores.pj}점 (×${weights.pj} = ${(convertedScores.pj * weights.pj).toFixed(2)})`);
-    console.log(`  연구성과: ${scores.rdAchievement}점 → ${convertedScores.rd}점 (×${weights.rd} = ${(convertedScores.rd * weights.rd).toFixed(2)})`);
-    console.log(`  글로벌: ${scores.globalCompetency}점 → ${convertedScores.gl}점 (×${weights.gl} = ${(convertedScores.gl * weights.gl).toFixed(2)})`);
-    console.log(`  기술확산: ${scores.knowledgeSharing}점 → ${convertedScores.ks}점 (×${weights.ks} = ${(convertedScores.ks * weights.ks).toFixed(2)})`);
-    console.log(`  혁신제안: ${scores.innovationProposal}점 → ${convertedScores.ip}점 (×${weights.ip} = ${(convertedScores.ip * weights.ip).toFixed(2)})`);
-    console.log(`  총점: ${totalScore.toFixed(2)}점`);
     
     // 등급 계산
     const grade = getGrade(totalScore);
@@ -636,9 +600,7 @@ function getGrade(score: number): string {
 
 // 1. 전문기술 최대값 계산
 function calculateTechnicalMax(detailedCriteria: any): number {
-  console.log('🔍 calculateTechnicalMax - detailedCriteria:', detailedCriteria);
   const criteria = detailedCriteria?.technical_competency || {};
-  console.log('🔍 calculateTechnicalMax - criteria:', criteria);
   let maxScore = 0;
   
   // 학력 최대값
@@ -659,7 +621,6 @@ function calculateTechnicalMax(detailedCriteria: any): number {
     maxScore += Math.max(...certScores) * 5; // 100 (기술사 20×5)
   }
   
-  console.log('🔍 calculateTechnicalMax - maxScore:', maxScore);
   return maxScore || 100; // 기본값
 }
 
