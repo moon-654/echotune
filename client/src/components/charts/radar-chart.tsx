@@ -1,42 +1,14 @@
-import { useMemo } from "react";
-import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, Legend } from "recharts";
+import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer } from "recharts";
 
 interface RadarChartProps {
-  data: any[];
-  dataKey: string;
-  nameKey: string;
+  data: Array<{
+    competency: string;
+    score: number;
+  }>;
   className?: string;
 }
 
-const colors = [
-  "#3b82f6", // blue
-  "#10b981", // green
-  "#f59e0b", // yellow
-  "#ef4444", // red
-  "#8b5cf6", // purple
-  "#06b6d4", // cyan
-];
-
-export default function SkillRadarChart({ data, dataKey, nameKey, className }: RadarChartProps) {
-  const chartData = useMemo(() => {
-    if (!data || data.length === 0) return [];
-    
-    // Transform data for radar chart
-    const skillKeys = Object.keys(data[0][dataKey] || {});
-    
-    return skillKeys.map(skill => {
-      const dataPoint: any = { skill };
-      data.forEach((item, index) => {
-        dataPoint[item[nameKey]] = item[dataKey][skill] || 0;
-      });
-      return dataPoint;
-    });
-  }, [data, dataKey, nameKey]);
-
-  const dataKeys = useMemo(() => {
-    return data?.map(item => item[nameKey]) || [];
-  }, [data, nameKey]);
-
+export default function RadarChart({ data, className }: RadarChartProps) {
   if (!data || data.length === 0) {
     return (
       <div className={`flex items-center justify-center h-full ${className}`}>
@@ -51,28 +23,28 @@ export default function SkillRadarChart({ data, dataKey, nameKey, className }: R
   return (
     <div className={className} data-testid="radar-chart">
       <ResponsiveContainer width="100%" height="100%">
-        <RadarChart data={chartData}>
-          <PolarGrid />
-          <PolarAngleAxis dataKey="skill" tick={{ fontSize: 12 }} />
+        <RadarChart data={data} margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
+          <PolarGrid stroke="#e0e0e0" />
+          <PolarAngleAxis 
+            dataKey="competency" 
+            tick={{ fontSize: 11, fill: '#333', fontWeight: 500 }} 
+          />
           <PolarRadiusAxis 
             angle={90} 
             domain={[0, 100]} 
-            tick={{ fontSize: 10 }}
-            tickCount={5}
+            tick={{ fontSize: 9, fill: '#666' }}
+            tickCount={6}
+            tickFormatter={(value) => `${value}점`}
           />
-          {dataKeys.map((key, index) => (
-            <Radar
-              key={key}
-              name={key}
-              dataKey={key}
-              stroke={colors[index % colors.length]}
-              fill={colors[index % colors.length]}
-              fillOpacity={0.1}
-              strokeWidth={2}
-              dot={{ r: 4 }}
-            />
-          ))}
-          <Legend />
+          <Radar
+            name="R&D 역량"
+            dataKey="score"
+            stroke="#3b82f6"
+            fill="#3b82f6"
+            fillOpacity={0.3}
+            strokeWidth={2}
+            dot={{ r: 5, fill: '#3b82f6', stroke: '#fff', strokeWidth: 2 }}
+          />
         </RadarChart>
       </ResponsiveContainer>
     </div>

@@ -6,24 +6,39 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Plus, Search, Filter } from "lucide-react";
 import EmployeeCard from "@/components/employees/employee-card";
+import EmployeeCreateModal from "@/components/employees/employee-create-modal";
 import type { Employee } from "@shared/schema";
 
 export default function Employees() {
   const [searchTerm, setSearchTerm] = useState("");
   const [departmentFilter, setDepartmentFilter] = useState("");
   const [skillLevelFilter, setSkillLevelFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all"); // 전체/활성/비활성 필터
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
   const { data: employees, isLoading } = useQuery<Employee[]>({
-    queryKey: ['/api/employees']
+    queryKey: ['/api/employees?includeInactive=true']
   });
 
-  const filteredEmployees = employees?.filter(employee => {
+  // 상태별 필터링
+  const getFilteredEmployeesByStatus = (employees: Employee[]) => {
+    if (statusFilter === "active") {
+      return employees.filter(employee => employee.isActive !== false);
+    } else if (statusFilter === "inactive") {
+      return employees.filter(employee => employee.isActive === false);
+    }
+    return employees; // "all" - 모든 직원
+  };
+
+  const statusFilteredEmployees = getFilteredEmployeesByStatus(employees || []);
+
+  const filteredEmployees = statusFilteredEmployees.filter(employee => {
     const matchesSearch = employee.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          employee.position.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesDepartment = !departmentFilter || departmentFilter === "all" || employee.department === departmentFilter;
     // Note: Skill level filtering would require skill calculation data
     return matchesSearch && matchesDepartment;
-  }) || [];
+  });
 
   const departments = Array.from(new Set(employees?.map(emp => emp.department) || []));
 
@@ -31,6 +46,7 @@ export default function Employees() {
     setSearchTerm("");
     setDepartmentFilter("all");
     setSkillLevelFilter("all");
+    setStatusFilter("all");
   };
 
   if (isLoading) {
@@ -57,16 +73,22 @@ export default function Employees() {
           <h1 className="text-2xl font-bold">직원 관리</h1>
           <p className="text-muted-foreground">직원 정보 및 능력치 관리</p>
         </div>
-        <Button data-testid="button-add-employee">
+        {/* 새 직원 추가 버튼 숨김 */}
+        {/*         <Button 
+          onClick={() => {
+            setIsCreateModalOpen(true);
+          }}
+          data-testid="button-add-employee"
+        >
           <Plus className="w-4 h-4 mr-2" />
           새 직원 추가
-        </Button>
+        </Button> */}
       </div>
 
       {/* Search and Filters */}
       <Card>
         <CardContent className="p-4">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
@@ -104,6 +126,17 @@ export default function Employees() {
               </SelectContent>
             </Select>
 
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger data-testid="select-status-filter">
+                <SelectValue placeholder="모든 상태" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">모든 상태</SelectItem>
+                <SelectItem value="active">활성</SelectItem>
+                <SelectItem value="inactive">비활성</SelectItem>
+              </SelectContent>
+            </Select>
+
             <Button 
               variant="outline" 
               onClick={handleResetFilters}
@@ -121,7 +154,7 @@ export default function Employees() {
         <span data-testid="text-results-count">
           총 {filteredEmployees.length}명의 직원
         </span>
-        {(searchTerm || departmentFilter || skillLevelFilter) && (
+        {(searchTerm || departmentFilter || skillLevelFilter || statusFilter !== "all") && (
           <span>필터 적용됨</span>
         )}
       </div>
@@ -144,6 +177,12 @@ export default function Employees() {
           ))}
         </div>
       )}
+      
+      {/* Create Employee Modal */}
+      <EmployeeCreateModal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+      />
     </div>
   );
 }

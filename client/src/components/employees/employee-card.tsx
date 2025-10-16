@@ -1,6 +1,9 @@
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { User, Eye, Edit } from "lucide-react";
+import { useLocation } from "wouter";
+import EmployeeEditModal from "./employee-edit-modal";
 import type { Employee } from "@shared/schema";
 
 interface EmployeeCardProps {
@@ -8,6 +11,9 @@ interface EmployeeCardProps {
 }
 
 export default function EmployeeCard({ employee }: EmployeeCardProps) {
+  const [, setLocation] = useLocation();
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  
   const getSkillIndicatorClass = (level?: number) => {
     if (!level) return "bg-gray-400";
     if (level >= 80) return "bg-green-500";
@@ -23,13 +29,11 @@ export default function EmployeeCard({ employee }: EmployeeCardProps) {
     : 0;
 
   const handleViewEmployee = () => {
-    // TODO: Navigate to employee detail or open modal
-    console.log("View employee:", employee.id);
+    setLocation(`/employees/${employee.id}`);
   };
 
   const handleEditEmployee = () => {
-    // TODO: Open edit modal
-    console.log("Edit employee:", employee.id);
+    setIsEditModalOpen(true);
   };
 
   return (
@@ -51,9 +55,22 @@ export default function EmployeeCard({ employee }: EmployeeCardProps) {
             )}
           </div>
           <div className="flex-1">
-            <h4 className="font-semibold" data-testid="employee-name">{employee.name}</h4>
+            <div className="flex items-center gap-2">
+              <h4 className="font-semibold" data-testid="employee-name">{employee.name}</h4>
+              <span 
+                className={`px-2 py-1 text-xs rounded-full ${
+                  employee.isActive === false 
+                    ? 'bg-red-100 text-red-800' 
+                    : 'bg-green-100 text-green-800'
+                }`}
+                data-testid="employee-status"
+              >
+                {employee.isActive === false ? '비활성' : '활성'}
+              </span>
+            </div>
             <p className="text-sm text-muted-foreground" data-testid="employee-position">{employee.position}</p>
             <p className="text-xs text-muted-foreground" data-testid="employee-department">{employee.department}</p>
+            <p className="text-xs text-muted-foreground" data-testid="employee-number">#{employee.employeeNumber || employee.id}</p>
           </div>
           <div className="ml-auto">
             <div 
@@ -106,6 +123,13 @@ export default function EmployeeCard({ employee }: EmployeeCardProps) {
           </Button>
         </div>
       </CardContent>
+      
+      {/* Edit Modal */}
+      <EmployeeEditModal
+        employee={employee}
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+      />
     </Card>
   );
 }

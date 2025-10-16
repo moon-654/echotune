@@ -344,38 +344,6 @@ export function calculateAllSkills(input: SkillCalculationInput): SkillCalculati
   };
 }
 
-/**
- * Get skill level description based on score
- */
-export function getSkillLevelDescription(score: number): string {
-  if (score >= 90) return "최우수";
-  if (score >= 80) return "우수";
-  if (score >= 70) return "양호";
-  if (score >= 60) return "보통";
-  if (score >= 50) return "개선필요";
-  return "미달";
-}
-
-/**
- * Get skill level color class for UI
- */
-export function getSkillLevelColor(score: number): string {
-  if (score >= 80) return "text-green-600";
-  if (score >= 60) return "text-yellow-600";
-  if (score >= 40) return "text-orange-600";
-  return "text-red-600";
-}
-
-/**
- * Get skill indicator background color class for visual indicators
- */
-export function calculateSkillLevel(score: number): 'high' | 'medium' | 'low' | 'none' {
-  if (score >= 80) return 'high';
-  if (score >= 60) return 'medium';
-  if (score >= 40) return 'low';
-  return 'none';
-}
-
 export default {
   calculateAllSkills,
   calculateExperienceScore,
@@ -384,8 +352,5 @@ export default {
   calculateTrainingScore,
   calculateTechnicalScore,
   calculateSoftSkillScore,
-  calculateOverallScore,
-  getSkillLevelDescription,
-  getSkillLevelColor,
-  calculateSkillLevel
+  calculateOverallScore
 };

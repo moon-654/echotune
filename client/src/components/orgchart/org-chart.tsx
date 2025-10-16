@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { calculateSkillLevel } from "@/lib/skill-calculator";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import type { Employee } from "@shared/schema";
@@ -18,30 +17,56 @@ export default function OrgChartComponent({
   zoomLevel, 
   onEmployeeSelect 
 }: OrgChartProps) {
+  
+  // 직원 역할 판별 함수 (명확한 구별)
+  const getEmployeeRole = (employee: Employee): 'CEO' | 'DEPARTMENT_HEAD' | 'TEAM_LEADER' | 'TEAM_MEMBER' => {
+    // 1. 지사장: managerId가 null
+    if (!employee.managerId) return 'CEO';
+    
+    // 2. 부문장: teamCode가 null이거나 빈 문자열
+    if (!employee.teamCode || employee.teamCode === '' || !employee.team || employee.team === '') {
+      return 'DEPARTMENT_HEAD';
+    }
+    
+    // 3. 팀장 vs 팀원: 하위 직원 존재 여부로 판별
+    const hasSubordinates = employees.some(emp => emp.managerId === employee.id);
+    return hasSubordinates ? 'TEAM_LEADER' : 'TEAM_MEMBER';
+  };
+  
+  // 역할별 색상 및 스타일
+  const getRoleStyle = (role: string) => {
+    switch (role) {
+      case 'CEO':
+        return { color: '#FF6B35', bg: '#FFF3E0', border: '#FFB74D', label: 'CEO' };
+      case 'DEPARTMENT_HEAD':
+        return { color: '#1976D2', bg: '#E3F2FD', border: '#2196F3', label: '부문장' };
+      case 'TEAM_LEADER':
+        return { color: '#388E3C', bg: '#E8F5E8', border: '#4CAF50', label: '팀장' };
+      case 'TEAM_MEMBER':
+        return { color: '#7B1FA2', bg: '#F3E5F5', border: '#9C27B0', label: '팀원' };
+      default:
+        return { color: '#757575', bg: '#F5F5F5', border: '#BDBDBD', label: '미분류' };
+    }
+  };
   const containerRef = useRef<HTMLDivElement>(null);
   const [draggedEmployee, setDraggedEmployee] = useState<Employee | null>(null);
   const [dragOverTarget, setDragOverTarget] = useState<string | null>(null);
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
-  // Mutation for updating employee hierarchy
+  // Mutation for updating employee hierarchy - D3.js 시스템 사용으로 비활성화
   const updateEmployeeMutation = useMutation({
-    mutationFn: async ({ employeeId, managerId }: { employeeId: string; managerId: string | null }) => {
-      return apiRequest('PUT', `/api/employees/${employeeId}`, { managerId });
+    mutationFn: async ({ employeeId, managerId, targetEmployee }: { 
+      employeeId: string; 
+      managerId: string | null;
+      targetEmployee?: Employee;
+    }) => {
+      // D3.js 시스템이 처리하므로 여기서는 아무것도 하지 않음
+      return Promise.resolve({ id: employeeId, message: 'D3.js 시스템에서 처리됨' });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/employees'] });
-      toast({
-        title: "조직도 업데이트 완료",
-        description: "직원의 보고 관계가 성공적으로 변경되었습니다.",
-      });
     },
     onError: () => {
-      toast({
-        variant: "destructive",
-        title: "업데이트 실패",
-        description: "직원 정보 업데이트 중 오류가 발생했습니다.",
-      });
     }
   });
 
@@ -52,12 +77,6 @@ export default function OrgChartComponent({
     emp.department.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const getSkillIndicatorClass = (level: number) => {
-    if (level >= 80) return "bg-green-500";
-    if (level >= 60) return "bg-yellow-500";
-    if (level >= 40) return "bg-red-500";
-    return "bg-gray-400";
-  };
 
   const handleEmployeeClick = (employeeId: string) => {
     onEmployeeSelect(employeeId);
@@ -83,36 +102,15 @@ export default function OrgChartComponent({
   const handleDrop = (e: React.DragEvent, targetEmployeeId: string) => {
     e.preventDefault();
     
+    // D3.js 드래그 앤 드롭 시스템이 활성화되어 있으므로 React 시스템 비활성화
+    
     if (!draggedEmployee || draggedEmployee.id === targetEmployeeId) {
       setDraggedEmployee(null);
       setDragOverTarget(null);
       return;
     }
 
-    // Prevent dropping an employee on their own subordinate
-    const isDropOnSubordinate = (employeeId: string, targetId: string): boolean => {
-      const subordinates = employees.filter(emp => emp.managerId === employeeId);
-      if (subordinates.some(sub => sub.id === targetId)) return true;
-      return subordinates.some(sub => isDropOnSubordinate(sub.id, targetId));
-    };
-
-    if (isDropOnSubordinate(draggedEmployee.id, targetEmployeeId)) {
-      toast({
-        variant: "destructive",
-        title: "이동 불가",
-        description: "직원을 자신의 부하직원 아래로 이동할 수 없습니다.",
-      });
-      setDraggedEmployee(null);
-      setDragOverTarget(null);
-      return;
-    }
-
-    // Update the employee's manager
-    updateEmployeeMutation.mutate({
-      employeeId: draggedEmployee.id,
-      managerId: targetEmployeeId
-    });
-
+    // D3.js 시스템이 처리하므로 여기서는 아무것도 하지 않음
     setDraggedEmployee(null);
     setDragOverTarget(null);
   };
@@ -180,13 +178,6 @@ export default function OrgChartComponent({
                   <h3 className="font-bold text-lg">{ceo.name}</h3>
                   <p className="text-sm text-muted-foreground">{ceo.position}</p>
                   <p className="text-xs text-muted-foreground">{ceo.department}</p>
-                  <div className="flex justify-center space-x-1 mt-3">
-                    {/* Mock skill indicators - in real app, these would come from skill calculations */}
-                    <div className={`w-3 h-3 rounded-full ${getSkillIndicatorClass(85)}`} title="경력"></div>
-                    <div className={`w-3 h-3 rounded-full ${getSkillIndicatorClass(90)}`} title="자격증"></div>
-                    <div className={`w-3 h-3 rounded-full ${getSkillIndicatorClass(75)}`} title="어학"></div>
-                    <div className={`w-3 h-3 rounded-full ${getSkillIndicatorClass(80)}`} title="교육"></div>
-                  </div>
                 </div>
               );
             })}
@@ -219,13 +210,6 @@ export default function OrgChartComponent({
                       const isDraggedOver = dragOverTarget === employee.id;
                       const isBeingDragged = draggedEmployee?.id === employee.id;
                       
-                      // Mock skill levels - in real app, fetch from skill calculations
-                      const mockSkillLevels = {
-                        experience: Math.floor(Math.random() * 40) + 60,
-                        certification: Math.floor(Math.random() * 40) + 50,
-                        language: Math.floor(Math.random() * 50) + 40,
-                        training: Math.floor(Math.random() * 30) + 70
-                      };
 
                       return (
                         <div
@@ -246,24 +230,6 @@ export default function OrgChartComponent({
                         >
                           <h5 className="font-semibold">{employee.name}</h5>
                           <p className="text-sm text-muted-foreground">{employee.position}</p>
-                          <div className="flex justify-center space-x-1 mt-3">
-                            <div 
-                              className={`w-3 h-3 rounded-full ${getSkillIndicatorClass(mockSkillLevels.experience)}`} 
-                              title={`경력: ${mockSkillLevels.experience}%`}
-                            ></div>
-                            <div 
-                              className={`w-3 h-3 rounded-full ${getSkillIndicatorClass(mockSkillLevels.certification)}`} 
-                              title={`자격증: ${mockSkillLevels.certification}%`}
-                            ></div>
-                            <div 
-                              className={`w-3 h-3 rounded-full ${getSkillIndicatorClass(mockSkillLevels.language)}`} 
-                              title={`어학: ${mockSkillLevels.language}%`}
-                            ></div>
-                            <div 
-                              className={`w-3 h-3 rounded-full ${getSkillIndicatorClass(mockSkillLevels.training)}`} 
-                              title={`교육: ${mockSkillLevels.training}%`}
-                            ></div>
-                          </div>
                         </div>
                       );
                     })}

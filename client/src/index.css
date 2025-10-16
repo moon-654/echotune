@@ -421,3 +421,152 @@
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background: hsl(221.2, 83.2%, 53.3%);
 }
+
+/* D3 Org Chart Expand/Collapse Button Styles */
+/* 확장/축소 버튼 크기를 1.5배로 증가 */
+.d3-org-chart .node .expand-collapse-button,
+.d3-org-chart .node .expand-collapse,
+.d3-org-chart .node .node-expand-collapse,
+.d3-org-chart .node .expand-button,
+.d3-org-chart .node .collapse-button,
+.d3-org-chart .node .node-button,
+.d3-org-chart .node button[title*="expand"],
+.d3-org-chart .node button[title*="collapse"],
+.d3-org-chart .node button[title*="Expand"],
+.d3-org-chart .node button[title*="Collapse"],
+.d3-org-chart .node .node-expand,
+.d3-org-chart .node .node-collapse,
+.d3-org-chart .node .expand,
+.d3-org-chart .node .collapse {
+  width: 24px !important;
+  height: 24px !important;
+  font-size: 36px !important; /* 24px * 1.5 = 36px */
+  line-height: 24px !important;
+  border-radius: 50% !important;
+  background-color: #4285f4 !important;
+  color: white !important;
+  border: none !important;
+  cursor: pointer !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2) !important;
+  transition: all 0.2s ease !important;
+  z-index: 10 !important;
+}
+
+.d3-org-chart .node .expand-collapse-button:hover,
+.d3-org-chart .node .expand-collapse:hover,
+.d3-org-chart .node .node-expand-collapse:hover,
+.d3-org-chart .node .expand-button:hover,
+.d3-org-chart .node .collapse-button:hover,
+.d3-org-chart .node .node-button:hover,
+.d3-org-chart .node button[title*="expand"]:hover,
+.d3-org-chart .node button[title*="collapse"]:hover,
+.d3-org-chart .node button[title*="Expand"]:hover,
+.d3-org-chart .node button[title*="Collapse"]:hover,
+.d3-org-chart .node .node-expand:hover,
+.d3-org-chart .node .node-collapse:hover,
+.d3-org-chart .node .expand:hover,
+.d3-org-chart .node .collapse:hover {
+  background-color: #3367d6 !important;
+  transform: scale(1.1) !important;
+}
+
+/* D3 Org Chart의 일반적인 확장/축소 버튼 선택자들 */
+.d3-org-chart .node circle,
+.d3-org-chart .node .node-circle,
+.d3-org-chart .node .expand-circle,
+.d3-org-chart .node .collapse-circle {
+  r: 12px !important;
+  stroke-width: 3px !important;
+  stroke: #4285f4 !important;
+  fill: white !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+}
+
+.d3-org-chart .node circle:hover,
+.d3-org-chart .node .node-circle:hover,
+.d3-org-chart .node .expand-circle:hover,
+.d3-org-chart .node .collapse-circle:hover {
+  r: 15px !important;
+  stroke: #3367d6 !important;
+  fill: #f0f8ff !important;
+}
+
+/* D3 Org Chart의 텍스트 기반 확장/축소 버튼 */
+.d3-org-chart .node text,
+.d3-org-chart .node .node-text,
+.d3-org-chart .node .expand-text,
+.d3-org-chart .node .collapse-text {
+  font-size: 40.5px !important; /* 27px * 1.5 = 40.5px */
+  font-weight: bold !important;
+  cursor: pointer !important;
+  fill: #4285f4 !important;
+  transition: all 0.2s ease !important;
+}
+
+.d3-org-chart .node text:hover,
+.d3-org-chart .node .node-text:hover,
+.d3-org-chart .node .expand-text:hover,
+.d3-org-chart .node .collapse-text:hover {
+  fill: #3367d6 !important;
+  font-size: 45px !important; /* 30px * 1.5 = 45px */
+}
+
+/* D3 Org Chart의 SVG 기반 확장/축소 버튼 */
+.d3-org-chart .node svg,
+.d3-org-chart .node .node-svg,
+.d3-org-chart .node .expand-svg,
+.d3-org-chart .node .collapse-svg {
+  width: 24px !important;
+  height: 24px !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+}
+
+.d3-org-chart .node svg:hover,
+.d3-org-chart .node .node-svg:hover,
+.d3-org-chart .node .expand-svg:hover,
+.d3-org-chart .node .collapse-svg:hover {
+  transform: scale(1.2) !important;
+}
+
+/* D3 Org Chart의 모든 가능한 확장/축소 버튼에 대한 일반적인 스타일 */
+.d3-org-chart .node [class*="expand"],
+.d3-org-chart .node [class*="collapse"],
+.d3-org-chart .node [class*="Expand"],
+.d3-org-chart .node [class*="Collapse"],
+.d3-org-chart .node [id*="expand"],
+.d3-org-chart .node [id*="collapse"],
+.d3-org-chart .node [id*="Expand"],
+.d3-org-chart .node [id*="Collapse"] {
+  width: 24px !important;
+  height: 24px !important;
+  font-size: 36px !important; /* 24px * 1.5 = 36px */
+  line-height: 24px !important;
+  border-radius: 50% !important;
+  background-color: #4285f4 !important;
+  color: white !important;
+  border: none !important;
+  cursor: pointer !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2) !important;
+  transition: all 0.2s ease !important;
+  z-index: 10 !important;
+}
+
+.d3-org-chart .node [class*="expand"]:hover,
+.d3-org-chart .node [class*="collapse"]:hover,
+.d3-org-chart .node [class*="Expand"]:hover,
+.d3-org-chart .node [class*="Collapse"]:hover,
+.d3-org-chart .node [id*="expand"]:hover,
+.d3-org-chart .node [id*="collapse"]:hover,
+.d3-org-chart .node [id*="Expand"]:hover,
+.d3-org-chart .node [id*="Collapse"]:hover {
+  background-color: #3367d6 !important;
+  transform: scale(1.1) !important;
+}

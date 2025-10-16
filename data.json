@@ -1,0 +1,2400 @@
+{
+  "employees": {
+    "emp0": {
+      "id": "emp0",
+      "employeeNumber": "000",
+      "departmentCode": "HQ",
+      "teamCode": "",
+      "name": "이지사",
+      "position": "지사장",
+      "department": "아시모리코리아",
+      "team": "",
+      "email": "lee.ceo@ashimori.co.kr",
+      "phone": "010-0000-0000",
+      "hireDate": "2015-01-01T00:00:00.000Z",
+      "managerId": null,
+      "photoUrl": null,
+      "isDepartmentHead": true,
+      "isActive": true,
+      "createdAt": "2025-09-21T00:04:14.912Z",
+      "updatedAt": "2025-09-21T12:53:22.213Z"
+    },
+    "emp1": {
+      "id": "emp1",
+      "employeeNumber": "001",
+      "departmentCode": "SL",
+      "teamCode": "",
+      "name": "김영업",
+      "position": "영업부문장",
+      "department": "영업부문",
+      "team": "",
+      "email": "kim.sales@ashimori.co.kr",
+      "phone": "010-1234-5678",
+      "hireDate": "2018-03-15T00:00:00.000Z",
+      "managerId": "emp0",
+      "photoUrl": null,
+      "isActive": true,
+      "createdAt": "2025-09-21T00:04:14.912Z",
+      "updatedAt": "2025-09-21T01:20:43.868Z",
+      "isDepartmentHead": false
+    },
+    "emp2": {
+      "id": "emp2",
+      "employeeNumber": "002",
+      "departmentCode": "RD",
+      "teamCode": null,
+      "name": "박연구",
+      "position": "연구소장",
+      "department": "기술연구소",
+      "team": "",
+      "email": "park.rd@ashimori.co.kr",
+      "phone": "010-2345-6789",
+      "hireDate": "2019-07-01T00:00:00.000Z",
+      "managerId": "emp0",
+      "photoUrl": null,
+      "isActive": true,
+      "createdAt": "2025-09-21T00:04:14.912Z",
+      "updatedAt": "2025-09-21T09:31:43.366Z",
+      "isDepartmentHead": true
+    },
+    "emp3": {
+      "id": "emp3",
+      "employeeNumber": "003",
+      "departmentCode": "QC",
+      "teamCode": null,
+      "name": "이품질",
+      "position": "품질부문장",
+      "department": "품질부문",
+      "team": "",
+      "email": "lee.qc@ashimori.co.kr",
+      "phone": "010-3456-7890",
+      "hireDate": "2017-11-20T00:00:00.000Z",
+      "managerId": "emp0",
+      "photoUrl": null,
+      "isActive": true,
+      "createdAt": "2025-09-21T00:04:14.912Z",
+      "updatedAt": "2025-09-21T01:20:48.795Z",
+      "isDepartmentHead": false
+    },
+    "emp4": {
+      "id": "emp4",
+      "employeeNumber": "18031",
+      "departmentCode": "PM",
+      "teamCode": null,
+      "name": "정생부",
+      "position": "생산관리부문장",
+      "department": "생산관리부문",
+      "team": "",
+      "email": "jung.pm@ashimori.co.kr",
+      "phone": "010-4567-8901",
+      "hireDate": "2016-09-10T00:00:00.000Z",
+      "managerId": "emp0",
+      "photoUrl": null,
+      "isActive": true,
+      "createdAt": "2025-09-21T00:04:14.912Z",
+      "updatedAt": "2025-09-21T09:22:52.330Z",
+      "isDepartmentHead": false
+    },
+    "emp5": {
+      "id": "emp5",
+      "employeeNumber": "005",
+      "departmentCode": "GN",
+      "name": "최영업",
+      "position": "국내영업팀장",
+      "department": "일반부서",
+      "email": "choi.sales@ashimori.co.kr",
+      "phone": "010-5678-9012",
+      "hireDate": "2020-02-15T00:00:00.000Z",
+      "managerId": "emp1",
+      "photoUrl": null,
+      "isActive": true,
+      "createdAt": "2025-09-21T00:04:14.912Z",
+      "updatedAt": "2025-09-27T14:34:59.775Z",
+      "isDepartmentHead": false
+    },
+    "emp6": {
+      "id": "emp6",
+      "employeeNumber": "006",
+      "departmentCode": "GN",
+      "name": "한해외",
+      "position": "해외영업팀장",
+      "department": "일반부서",
+      "email": "han.overseas@ashimori.co.kr",
+      "phone": "010-6789-0123",
+      "hireDate": "2019-05-20T00:00:00.000Z",
+      "managerId": "emp1",
+      "photoUrl": null,
+      "isActive": true,
+      "createdAt": "2025-09-21T00:04:14.912Z",
+      "updatedAt": "2025-09-27T14:34:59.726Z",
+      "isDepartmentHead": false
+    },
+    "emp7": {
+      "id": "emp7",
+      "employeeNumber": "007",
+      "departmentCode": "RD",
+      "teamCode": "RD02",
+      "name": "김개발",
+      "position": "개발팀장",
+      "department": "기술연구소",
+      "team": "개발팀",
+      "email": "kim.dev@ashimori.co.kr",
+      "phone": "010-7890-1234",
+      "hireDate": "2020-08-10T00:00:00.000Z",
+      "managerId": "emp2",
+      "photoUrl": null,
+      "isActive": true,
+      "createdAt": "2025-09-21T00:04:14.912Z",
+      "updatedAt": "2025-09-21T10:01:05.954Z",
+      "isDepartmentHead": true
+    },
+    "emp8": {
+      "id": "emp8",
+      "employeeNumber": "008",
+      "departmentCode": "RD",
+      "teamCode": "RD04",
+      "name": "박연구",
+      "position": "연구팀장",
+      "department": "기술연구소",
+      "team": "기술팀",
+      "email": "park.research@ashimori.co.kr",
+      "phone": "010-8901-2345",
+      "hireDate": "2018-12-01T00:00:00.000Z",
+      "managerId": "emp2",
+      "photoUrl": null,
+      "isActive": true,
+      "createdAt": "2025-09-21T00:04:14.912Z",
+      "updatedAt": "2025-09-28T11:09:19.718Z",
+      "isDepartmentHead": true,
+      "education": "",
+      "major": "",
+      "school": "",
+      "previousExperienceYears": 0,
+      "previousExperienceMonths": 0
+    },
+    "emp9": {
+      "id": "emp9",
+      "employeeNumber": "009",
+      "departmentCode": "QC",
+      "teamCode": null,
+      "name": "김품질",
+      "position": "품질관리팀장",
+      "department": "품질부문",
+      "team": "품질팀",
+      "email": "lee.quality@ashimori.co.kr",
+      "phone": "010-9012-3456",
+      "hireDate": "2019-03-15T00:00:00.000Z",
+      "managerId": "emp3",
+      "photoUrl": null,
+      "isActive": true,
+      "createdAt": "2025-09-21T00:04:14.912Z",
+      "updatedAt": "2025-09-21T09:17:15.371Z",
+      "isDepartmentHead": false
+    },
+    "emp10": {
+      "id": "emp10",
+      "employeeNumber": "010",
+      "departmentCode": "PM",
+      "teamCode": "RD02",
+      "name": "정생산",
+      "position": "생산팀장",
+      "department": "생산관리부문",
+      "team": "생산관리",
+      "email": "jung.production@ashimori.co.kr",
+      "phone": "010-0123-4567",
+      "hireDate": "2017-06-01T00:00:00.000Z",
+      "managerId": "emp4",
+      "photoUrl": null,
+      "isActive": true,
+      "createdAt": "2025-09-21T00:04:14.912Z",
+      "updatedAt": "2025-09-21T09:16:36.598Z",
+      "isDepartmentHead": false
+    },
+    "emp11": {
+      "id": "emp11",
+      "employeeNumber": "011",
+      "departmentCode": "GN",
+      "name": "김국내",
+      "position": "국내영업팀 사원",
+      "department": "일반부서",
+      "email": "kim.domestic@ashimori.co.kr",
+      "phone": "010-1234-5678",
+      "hireDate": "2021-01-15T00:00:00.000Z",
+      "managerId": "emp5",
+      "photoUrl": null,
+      "isActive": true,
+      "createdAt": "2025-09-21T00:04:14.912Z",
+      "updatedAt": "2025-09-27T14:34:59.691Z",
+      "isDepartmentHead": false
+    },
+    "emp12": {
+      "id": "emp12",
+      "employeeNumber": "012",
+      "departmentCode": "HQ",
+      "teamCode": "RD02",
+      "name": "박개발",
+      "position": "개발팀 사원",
+      "department": "기술연구소",
+      "team": "연구팀",
+      "email": "park.dev@ashimori.co.kr",
+      "phone": "010-2345-6789",
+      "hireDate": "2021-07-01T00:00:00.000Z",
+      "managerId": "emp7",
+      "photoUrl": null,
+      "isActive": true,
+      "createdAt": "2025-09-21T00:04:14.912Z",
+      "updatedAt": "2025-09-21T09:32:00.614Z",
+      "isDepartmentHead": true
+    },
+    "d81a6f90-3d14-45e6-8d58-c49755620385": {
+      "id": "d81a6f90-3d14-45e6-8d58-c49755620385",
+      "employeeNumber": "25011",
+      "departmentCode": "QC",
+      "teamCode": "",
+      "name": "김신품",
+      "position": "사원",
+      "department": "품질부문",
+      "team": "품질팀",
+      "email": "",
+      "phone": "",
+      "isActive": true,
+      "createdAt": "2025-09-21T10:06:00.971Z",
+      "updatedAt": "2025-09-21T10:13:05.572Z",
+      "managerId": "emp9"
+    },
+    "91ea437f-9424-4205-b783-575d048c273b": {
+      "id": "91ea437f-9424-4205-b783-575d048c273b",
+      "employeeNumber": "18033",
+      "departmentCode": "QC",
+      "teamCode": "",
+      "name": "이신품",
+      "position": "사원",
+      "department": "품질부문",
+      "team": "품질팀",
+      "email": "",
+      "phone": "",
+      "isActive": true,
+      "createdAt": "2025-09-21T10:10:24.431Z",
+      "updatedAt": "2025-09-21T10:13:04.463Z",
+      "managerId": "emp9"
+    },
+    "50e671c5-4de9-4561-ad69-7b1355e3b71e": {
+      "id": "50e671c5-4de9-4561-ad69-7b1355e3b71e",
+      "employeeNumber": "15011",
+      "departmentCode": "QC",
+      "teamCode": "",
+      "name": "박신품",
+      "position": "사원",
+      "department": "품질부문",
+      "team": "품질팀",
+      "email": "",
+      "phone": "",
+      "managerId": "emp9",
+      "isActive": true,
+      "createdAt": "2025-09-21T10:12:51.309Z",
+      "updatedAt": "2025-09-21T10:12:51.309Z"
+    },
+    "9c83109f-17ac-460b-a146-40d4bc915c72": {
+      "id": "9c83109f-17ac-460b-a146-40d4bc915c72",
+      "employeeNumber": "11154",
+      "departmentCode": "RD",
+      "teamCode": "RD02",
+      "name": "김신연",
+      "position": "사원",
+      "department": "기술연구소",
+      "team": "개발팀",
+      "email": "",
+      "phone": "",
+      "managerId": "emp7",
+      "isActive": true,
+      "createdAt": "2025-09-21T10:15:50.326Z",
+      "updatedAt": "2025-09-21T10:15:50.326Z"
+    },
+    "a7650234-9e64-4585-8037-3353ee86c423": {
+      "id": "a7650234-9e64-4585-8037-3353ee86c423",
+      "employeeNumber": "15554",
+      "departmentCode": "RD",
+      "teamCode": "RD02",
+      "name": "박신연",
+      "position": "사원",
+      "department": "기술연구소",
+      "team": "개발팀",
+      "email": "",
+      "phone": "",
+      "managerId": "emp7",
+      "isActive": true,
+      "createdAt": "2025-09-21T10:17:45.392Z",
+      "updatedAt": "2025-09-21T10:17:45.392Z"
+    },
+    "a9875ca1-76b5-4405-a85d-d163786593ed": {
+      "id": "a9875ca1-76b5-4405-a85d-d163786593ed",
+      "employeeNumber": "15445",
+      "departmentCode": "SL",
+      "teamCode": "",
+      "name": "박신영",
+      "position": "사원",
+      "department": "영업부문",
+      "team": "",
+      "email": "",
+      "phone": "",
+      "managerId": "emp1",
+      "isActive": true,
+      "createdAt": "2025-09-21T10:20:02.026Z",
+      "updatedAt": "2025-09-21T10:20:02.026Z"
+    },
+    "eb170c01-d8fe-476f-a0bf-2e0ba442b234": {
+      "id": "eb170c01-d8fe-476f-a0bf-2e0ba442b234",
+      "employeeNumber": "15245",
+      "departmentCode": "GN",
+      "name": "박국내",
+      "position": "사원",
+      "department": "일반부서",
+      "email": "",
+      "phone": "",
+      "managerId": "emp5",
+      "isActive": true,
+      "createdAt": "2025-09-21T10:20:22.626Z",
+      "updatedAt": "2025-09-27T14:34:59.809Z"
+    },
+    "c62ed8f6-0b36-4393-88a2-d2f1c66f6228": {
+      "id": "c62ed8f6-0b36-4393-88a2-d2f1c66f6228",
+      "employeeNumber": "15455",
+      "departmentCode": "RD",
+      "teamCode": "",
+      "name": "박신연",
+      "position": "사원",
+      "department": "기술연구소",
+      "team": "",
+      "email": "",
+      "phone": "",
+      "managerId": "emp2",
+      "isActive": true,
+      "createdAt": "2025-09-21T10:25:35.326Z",
+      "updatedAt": "2025-09-21T10:25:35.326Z"
+    },
+    "c0525668-a73e-4abd-bb12-4a27525ab47e": {
+      "id": "c0525668-a73e-4abd-bb12-4a27525ab47e",
+      "employeeNumber": "14444",
+      "departmentCode": "RD",
+      "teamCode": "SL1",
+      "name": "박연신",
+      "position": "사원",
+      "department": "기술연구소",
+      "team": "기술팀",
+      "email": "",
+      "phone": "",
+      "managerId": "emp8",
+      "isActive": true,
+      "createdAt": "2025-09-21T10:25:56.249Z",
+      "updatedAt": "2025-09-21T10:25:56.249Z"
+    },
+    "14054958-20f3-4f7f-bb66-d71f4995a925": {
+      "id": "14054958-20f3-4f7f-bb66-d71f4995a925",
+      "employeeNumber": "12345",
+      "departmentCode": "RD",
+      "teamCode": "",
+      "name": "박연신",
+      "position": "사원",
+      "department": "기술연구소",
+      "team": "",
+      "email": "",
+      "phone": "",
+      "managerId": "emp2",
+      "isActive": true,
+      "createdAt": "2025-09-21T10:27:32.241Z",
+      "updatedAt": "2025-09-21T10:27:32.241Z"
+    },
+    "9ce00395-6d01-41f4-8f67-2010da82a048": {
+      "id": "9ce00395-6d01-41f4-8f67-2010da82a048",
+      "employeeNumber": "12346",
+      "departmentCode": "QC",
+      "teamCode": "",
+      "name": "김신김심",
+      "position": "사원",
+      "department": "품질부문",
+      "team": "",
+      "email": "",
+      "phone": "",
+      "managerId": "emp3",
+      "isActive": true,
+      "createdAt": "2025-09-21T10:29:36.330Z",
+      "updatedAt": "2025-09-21T10:29:36.330Z"
+    },
+    "8141ea62-3a33-4066-b2e0-2c636dfed1d6": {
+      "id": "8141ea62-3a33-4066-b2e0-2c636dfed1d6",
+      "employeeNumber": "123111",
+      "departmentCode": "QC",
+      "teamCode": "",
+      "name": "신품질",
+      "position": "사원",
+      "department": "품질부문",
+      "team": "",
+      "email": "",
+      "phone": "",
+      "managerId": "emp3",
+      "isActive": true,
+      "createdAt": "2025-09-21T10:31:56.604Z",
+      "updatedAt": "2025-09-21T10:31:56.604Z"
+    },
+    "0c5b4c64-5bb2-4c19-a655-1745073d1c3b": {
+      "id": "0c5b4c64-5bb2-4c19-a655-1745073d1c3b",
+      "employeeNumber": "16555",
+      "departmentCode": "RD",
+      "teamCode": "RD02",
+      "name": "김연구신",
+      "position": "사원",
+      "department": "기술연구소",
+      "team": "개발팀",
+      "email": "",
+      "phone": "",
+      "managerId": "emp7",
+      "isActive": true,
+      "createdAt": "2025-09-21T10:34:47.334Z",
+      "updatedAt": "2025-09-21T10:34:47.334Z"
+    },
+    "42cce55b-906a-451d-ba60-6d9e123aff4a": {
+      "id": "42cce55b-906a-451d-ba60-6d9e123aff4a",
+      "employeeNumber": "12352",
+      "departmentCode": "RD",
+      "teamCode": "RD02",
+      "name": "박연규신",
+      "position": "사원",
+      "department": "기술연구소",
+      "team": "개발팀",
+      "email": "",
+      "phone": "",
+      "managerId": "emp7",
+      "isActive": true,
+      "createdAt": "2025-09-21T10:35:13.034Z",
+      "updatedAt": "2025-09-21T10:35:13.034Z"
+    },
+    "8be903b0-56ad-4a0e-8892-f04d3f98da44": {
+      "id": "8be903b0-56ad-4a0e-8892-f04d3f98da44",
+      "employeeNumber": "53489",
+      "departmentCode": "PM",
+      "teamCode": "RD02",
+      "name": "신생산",
+      "position": "사원",
+      "department": "생산관리부문",
+      "team": "생산관리",
+      "email": "",
+      "phone": "",
+      "managerId": "emp10",
+      "isActive": true,
+      "createdAt": "2025-09-21T10:36:21.216Z",
+      "updatedAt": "2025-09-21T10:36:21.216Z"
+    },
+    "83e93792-3201-43d2-bed9-b352875a38dc": {
+      "id": "83e93792-3201-43d2-bed9-b352875a38dc",
+      "employeeNumber": "334295",
+      "departmentCode": "RD",
+      "teamCode": "RD04",
+      "name": "신신생산",
+      "position": "사원",
+      "department": "기술연구소",
+      "team": "기술팀",
+      "email": "",
+      "phone": "",
+      "managerId": "emp8",
+      "isActive": true,
+      "createdAt": "2025-09-21T10:37:49.842Z",
+      "updatedAt": "2025-09-28T11:09:56.501Z"
+    },
+    "5fecc100-db39-4557-a4fb-1ea291397093": {
+      "id": "5fecc100-db39-4557-a4fb-1ea291397093",
+      "employeeNumber": "214124",
+      "departmentCode": "PM",
+      "teamCode": "RD02",
+      "name": "진신생산",
+      "position": "사원",
+      "department": "생산관리부문",
+      "team": "생산관리",
+      "email": "",
+      "phone": "",
+      "managerId": "emp10",
+      "isActive": true,
+      "createdAt": "2025-09-21T10:38:58.858Z",
+      "updatedAt": "2025-09-21T10:38:58.858Z"
+    },
+    "8bfb665d-7356-4fc9-b25f-9225e2d7912c": {
+      "id": "8bfb665d-7356-4fc9-b25f-9225e2d7912c",
+      "employeeNumber": "353258",
+      "departmentCode": "GN",
+      "name": "신해외",
+      "position": "사원",
+      "department": "일반부서",
+      "email": "",
+      "phone": "",
+      "managerId": "emp6",
+      "isActive": true,
+      "createdAt": "2025-09-21T10:40:35.452Z",
+      "updatedAt": "2025-09-27T14:34:59.830Z"
+    },
+    "4142d6a4-9951-423c-8752-eeb3751caf63": {
+      "id": "4142d6a4-9951-423c-8752-eeb3751caf63",
+      "employeeNumber": "35320",
+      "departmentCode": "GN",
+      "name": "신신애",
+      "position": "사원",
+      "department": "일반부서",
+      "email": "",
+      "phone": "",
+      "managerId": "emp6",
+      "isActive": true,
+      "createdAt": "2025-09-21T10:40:57.516Z",
+      "updatedAt": "2025-09-27T14:34:59.869Z"
+    },
+    "2cef6f6f-22b6-4bfd-b2c3-eb063e14bb53": {
+      "id": "2cef6f6f-22b6-4bfd-b2c3-eb063e14bb53",
+      "employeeNumber": "1353",
+      "departmentCode": "GN",
+      "name": "신신규규",
+      "position": "사원",
+      "department": "일반부서",
+      "email": "",
+      "phone": "",
+      "managerId": "emp6",
+      "isActive": true,
+      "createdAt": "2025-09-21T10:43:17.880Z",
+      "updatedAt": "2025-09-27T14:34:59.899Z"
+    },
+    "36374d31-115e-424d-9bf7-b8db70e0f7df": {
+      "id": "36374d31-115e-424d-9bf7-b8db70e0f7df",
+      "employeeNumber": "325",
+      "departmentCode": "QC",
+      "teamCode": "",
+      "name": "김신신규규규",
+      "position": "사원",
+      "department": "품질부문",
+      "team": "",
+      "email": "",
+      "phone": "",
+      "managerId": "9ce00395-6d01-41f4-8f67-2010da82a048",
+      "isActive": true,
+      "createdAt": "2025-09-21T10:43:35.967Z",
+      "updatedAt": "2025-09-21T10:43:35.967Z"
+    },
+    "58093382-ffa9-4316-9ab8-3d7e9036ee36": {
+      "id": "58093382-ffa9-4316-9ab8-3d7e9036ee36",
+      "employeeNumber": "33642632",
+      "departmentCode": "RD",
+      "teamCode": "RD04",
+      "name": "박시신",
+      "position": "사원",
+      "department": "기술연구소",
+      "team": "기술팀",
+      "email": "",
+      "phone": "",
+      "managerId": "emp8",
+      "isActive": true,
+      "createdAt": "2025-09-21T10:45:10.103Z",
+      "updatedAt": "2025-09-28T11:10:16.901Z"
+    },
+    "914dfcd9-8f56-487f-9b08-22a687cba1d7": {
+      "id": "914dfcd9-8f56-487f-9b08-22a687cba1d7",
+      "employeeNumber": "33525789",
+      "departmentCode": "RD",
+      "teamCode": "SL1",
+      "name": "수수래",
+      "position": "사원",
+      "department": "기술연구소",
+      "team": "기술팀",
+      "email": "",
+      "phone": "",
+      "managerId": "c0525668-a73e-4abd-bb12-4a27525ab47e",
+      "isActive": true,
+      "createdAt": "2025-09-21T10:47:58.442Z",
+      "updatedAt": "2025-09-21T10:47:58.442Z"
+    },
+    "a1c4af0c-0fe9-41c9-b019-acbffed7a0c3": {
+      "id": "a1c4af0c-0fe9-41c9-b019-acbffed7a0c3",
+      "employeeNumber": "35235",
+      "departmentCode": "RD",
+      "teamCode": "SL1",
+      "name": "박순피",
+      "position": "사원",
+      "department": "기술연구소",
+      "team": "기술팀",
+      "email": "",
+      "phone": "",
+      "managerId": "58093382-ffa9-4316-9ab8-3d7e9036ee36",
+      "isActive": true,
+      "createdAt": "2025-09-21T10:50:09.641Z",
+      "updatedAt": "2025-09-21T10:50:09.641Z"
+    },
+    "ec60b733-0fb4-48e1-ae25-597c3a23d4f8": {
+      "id": "ec60b733-0fb4-48e1-ae25-597c3a23d4f8",
+      "employeeNumber": "325325",
+      "departmentCode": "RD",
+      "teamCode": "SL1",
+      "name": "김신서",
+      "position": "사원",
+      "department": "기술연구소",
+      "team": "기술팀",
+      "email": "",
+      "phone": "",
+      "managerId": "c0525668-a73e-4abd-bb12-4a27525ab47e",
+      "isActive": true,
+      "createdAt": "2025-09-21T10:50:38.167Z",
+      "updatedAt": "2025-09-21T10:50:38.167Z"
+    },
+    "d2b5029e-d630-489d-8d05-2983f5518984": {
+      "id": "d2b5029e-d630-489d-8d05-2983f5518984",
+      "employeeNumber": "45543",
+      "departmentCode": "RD",
+      "teamCode": "",
+      "name": "수수깡",
+      "position": "사원",
+      "department": "기술연구소",
+      "team": "",
+      "email": "",
+      "phone": "",
+      "managerId": "c62ed8f6-0b36-4393-88a2-d2f1c66f6228",
+      "isActive": true,
+      "createdAt": "2025-09-21T10:55:20.177Z",
+      "updatedAt": "2025-09-21T10:55:20.177Z"
+    },
+    "eeb20810-49a4-4218-a50e-ee28e4bfe560": {
+      "id": "eeb20810-49a4-4218-a50e-ee28e4bfe560",
+      "employeeNumber": "23532",
+      "departmentCode": "RD",
+      "teamCode": "RD04",
+      "name": "수어와",
+      "position": "사원",
+      "department": "기술연구소",
+      "team": "기술팀",
+      "email": "",
+      "phone": "",
+      "managerId": "emp8",
+      "isActive": true,
+      "createdAt": "2025-09-21T10:55:55.728Z",
+      "updatedAt": "2025-09-28T11:10:09.790Z"
+    },
+    "a30200f2-2837-4354-bba1-9d18a6e7b935": {
+      "id": "a30200f2-2837-4354-bba1-9d18a6e7b935",
+      "employeeNumber": "32552",
+      "departmentCode": "RD",
+      "teamCode": "RD04",
+      "name": "신우리",
+      "position": "사원",
+      "department": "기술연구소",
+      "team": "기술팀",
+      "email": "",
+      "phone": "",
+      "managerId": "emp8",
+      "isActive": true,
+      "createdAt": "2025-09-21T10:58:44.793Z",
+      "updatedAt": "2025-09-28T11:10:12.821Z"
+    },
+    "f10f3ebb-7060-41ea-986f-4503b4171b05": {
+      "id": "f10f3ebb-7060-41ea-986f-4503b4171b05",
+      "employeeNumber": "543426",
+      "departmentCode": "RD",
+      "teamCode": "RD02",
+      "name": "김시시시신",
+      "position": "사원",
+      "department": "기술연구소",
+      "team": "개발팀",
+      "email": "",
+      "phone": "",
+      "managerId": "emp7",
+      "isActive": true,
+      "createdAt": "2025-09-21T11:01:12.772Z",
+      "updatedAt": "2025-09-21T11:01:12.772Z"
+    },
+    "a01b24c4-c6b9-445a-9a66-db6260d5cb93": {
+      "id": "a01b24c4-c6b9-445a-9a66-db6260d5cb93",
+      "employeeNumber": "12355",
+      "departmentCode": "RD",
+      "teamCode": "",
+      "name": "구구구지",
+      "position": "사원",
+      "department": "기술연구소",
+      "team": "",
+      "email": "",
+      "phone": "",
+      "managerId": "c62ed8f6-0b36-4393-88a2-d2f1c66f6228",
+      "isActive": true,
+      "createdAt": "2025-09-21T11:04:07.521Z",
+      "updatedAt": "2025-09-21T11:04:07.521Z"
+    },
+    "7a827876-3399-4fdb-87eb-974942e9fea6": {
+      "id": "7a827876-3399-4fdb-87eb-974942e9fea6",
+      "employeeNumber": "32352",
+      "departmentCode": "RD",
+      "teamCode": "",
+      "name": "기기두",
+      "position": "사원",
+      "department": "기술연구소",
+      "team": "",
+      "email": "",
+      "phone": "",
+      "managerId": "14054958-20f3-4f7f-bb66-d71f4995a925",
+      "isActive": true,
+      "createdAt": "2025-09-21T11:32:48.799Z",
+      "updatedAt": "2025-09-21T11:32:48.799Z"
+    },
+    "d832e5ba-06dc-4a2c-87cf-36ef13e234a9": {
+      "id": "d832e5ba-06dc-4a2c-87cf-36ef13e234a9",
+      "employeeNumber": "12315",
+      "departmentCode": "PM",
+      "teamCode": "RD02",
+      "name": "구신상",
+      "position": "사원",
+      "department": "생산관리부문",
+      "team": "생산관리",
+      "email": "",
+      "phone": "",
+      "managerId": "8be903b0-56ad-4a0e-8892-f04d3f98da44",
+      "isActive": true,
+      "createdAt": "2025-09-21T12:01:28.731Z",
+      "updatedAt": "2025-09-21T12:01:28.731Z"
+    },
+    "a2e3efba-7eb4-41c4-bea8-2c3fbb808aab": {
+      "id": "a2e3efba-7eb4-41c4-bea8-2c3fbb808aab",
+      "employeeNumber": "2412421",
+      "departmentCode": "RD",
+      "teamCode": "",
+      "name": "구미호",
+      "position": "사원",
+      "department": "기술연구소",
+      "team": "",
+      "email": "",
+      "phone": "",
+      "managerId": "14054958-20f3-4f7f-bb66-d71f4995a925",
+      "isActive": true,
+      "createdAt": "2025-09-21T12:07:53.295Z",
+      "updatedAt": "2025-09-21T12:07:53.295Z"
+    },
+    "65d36960-35e6-41f6-a049-54253d82f5be": {
+      "id": "65d36960-35e6-41f6-a049-54253d82f5be",
+      "employeeNumber": "3532",
+      "departmentCode": "RD",
+      "teamCode": "",
+      "name": "박효신",
+      "position": "사원",
+      "department": "기술연구소",
+      "team": "",
+      "email": "",
+      "phone": "",
+      "managerId": "14054958-20f3-4f7f-bb66-d71f4995a925",
+      "isActive": true,
+      "createdAt": "2025-09-21T12:11:44.931Z",
+      "updatedAt": "2025-09-21T12:11:44.931Z"
+    },
+    "d3b678a0-2dfe-4262-8c3c-ade478da76cc": {
+      "id": "d3b678a0-2dfe-4262-8c3c-ade478da76cc",
+      "employeeNumber": "456465",
+      "departmentCode": "RD",
+      "teamCode": "SL1",
+      "name": "신신고고",
+      "position": "사원",
+      "department": "기술연구소",
+      "team": "기술팀",
+      "email": "",
+      "phone": "",
+      "managerId": "eeb20810-49a4-4218-a50e-ee28e4bfe560",
+      "isActive": true,
+      "createdAt": "2025-09-21T12:16:24.999Z",
+      "updatedAt": "2025-09-21T12:16:24.999Z"
+    },
+    "00888a92-47e2-4cc8-9b8b-215a2a0b0bb3": {
+      "id": "00888a92-47e2-4cc8-9b8b-215a2a0b0bb3",
+      "employeeNumber": "2351",
+      "departmentCode": "RD",
+      "teamCode": "",
+      "name": "팔미호",
+      "position": "사원",
+      "department": "기술연구소",
+      "team": "",
+      "email": "",
+      "phone": "",
+      "managerId": "14054958-20f3-4f7f-bb66-d71f4995a925",
+      "isActive": true,
+      "createdAt": "2025-09-21T12:18:32.027Z",
+      "updatedAt": "2025-09-21T12:18:32.027Z"
+    },
+    "ff57a59f-3349-43c1-be68-509c91cf3a5e": {
+      "id": "ff57a59f-3349-43c1-be68-509c91cf3a5e",
+      "employeeNumber": "4478",
+      "departmentCode": "PM",
+      "teamCode": "RD02",
+      "name": "고구마",
+      "position": "사원",
+      "department": "생산관리부문",
+      "team": "생산관리",
+      "email": "",
+      "phone": "",
+      "managerId": "emp10",
+      "isActive": true,
+      "createdAt": "2025-09-21T12:21:37.783Z",
+      "updatedAt": "2025-09-21T12:21:37.783Z"
+    },
+    "fefaa9a4-5e63-4dbe-8853-c50062f0d710": {
+      "id": "fefaa9a4-5e63-4dbe-8853-c50062f0d710",
+      "employeeNumber": "2353252",
+      "departmentCode": "PM",
+      "teamCode": "RD02",
+      "name": "감자",
+      "position": "사원",
+      "department": "생산관리부문",
+      "team": "생산관리",
+      "email": "",
+      "phone": "",
+      "managerId": "56271c10-4eaf-4986-a7a5-d6a98d84677f",
+      "isActive": true,
+      "createdAt": "2025-09-21T12:24:19.664Z",
+      "updatedAt": "2025-09-21T12:34:15.969Z"
+    },
+    "56271c10-4eaf-4986-a7a5-d6a98d84677f": {
+      "id": "56271c10-4eaf-4986-a7a5-d6a98d84677f",
+      "employeeNumber": "2323",
+      "departmentCode": "PM",
+      "teamCode": "",
+      "name": "카고메",
+      "position": "사원",
+      "department": "생산관리부문",
+      "team": "",
+      "email": "",
+      "phone": "",
+      "managerId": "emp4",
+      "isActive": true,
+      "createdAt": "2025-09-21T12:24:50.377Z",
+      "updatedAt": "2025-09-21T12:24:50.377Z"
+    },
+    "367551f7-5e96-40ae-87c0-5997cc985908": {
+      "id": "367551f7-5e96-40ae-87c0-5997cc985908",
+      "employeeNumber": "35345",
+      "departmentCode": "PM",
+      "teamCode": "",
+      "name": "스즈메",
+      "position": "사원",
+      "department": "생산관리부문",
+      "team": "",
+      "email": "",
+      "phone": "",
+      "managerId": "56271c10-4eaf-4986-a7a5-d6a98d84677f",
+      "isActive": true,
+      "createdAt": "2025-09-21T12:33:00.368Z",
+      "updatedAt": "2025-09-21T12:33:00.368Z"
+    },
+    "6cb4a92b-6d53-4f7c-86d8-0262e6b9dd87": {
+      "id": "6cb4a92b-6d53-4f7c-86d8-0262e6b9dd87",
+      "employeeNumber": "234324",
+      "departmentCode": "PM",
+      "teamCode": "RD02",
+      "name": "스즈메1",
+      "position": "사원",
+      "department": "생산관리부문",
+      "team": "생산관리",
+      "email": "",
+      "phone": "",
+      "managerId": "emp10",
+      "isActive": true,
+      "createdAt": "2025-09-21T12:33:11.187Z",
+      "updatedAt": "2025-09-21T12:34:13.388Z"
+    },
+    "8ba0432f-39c3-47eb-b706-cccd586a31c6": {
+      "id": "8ba0432f-39c3-47eb-b706-cccd586a31c6",
+      "employeeNumber": "325325",
+      "departmentCode": "PM",
+      "teamCode": "",
+      "name": "휲파람",
+      "position": "사원",
+      "department": "생산관리부문",
+      "team": "",
+      "email": "",
+      "phone": "",
+      "managerId": "56271c10-4eaf-4986-a7a5-d6a98d84677f",
+      "isActive": true,
+      "createdAt": "2025-09-21T12:33:17.120Z",
+      "updatedAt": "2025-09-21T12:34:05.617Z"
+    },
+    "37ad4ae2-e9bd-4194-9127-e710ea266638": {
+      "id": "37ad4ae2-e9bd-4194-9127-e710ea266638",
+      "employeeNumber": "132432",
+      "departmentCode": "PM",
+      "teamCode": "",
+      "name": "고나리",
+      "position": "사원",
+      "department": "생산관리부문",
+      "team": "",
+      "email": "",
+      "phone": "",
+      "managerId": "56271c10-4eaf-4986-a7a5-d6a98d84677f",
+      "isActive": true,
+      "createdAt": "2025-09-21T12:33:24.392Z",
+      "updatedAt": "2025-09-21T12:34:04.156Z"
+    },
+    "ef202e24-47a6-434d-ae9a-3a47c87b64be": {
+      "id": "ef202e24-47a6-434d-ae9a-3a47c87b64be",
+      "employeeNumber": "akc18031",
+      "departmentCode": "RD",
+      "teamCode": "RD01",
+      "name": "문현진",
+      "position": "책임매니저",
+      "department": "기술연구소",
+      "team": "연구기획팀",
+      "email": "hyunjin_moon@ashimori.co.kr",
+      "phone": "010-9507-7771",
+      "hireDate": "2018-07-02T00:00:00.000Z",
+      "birthDate": "1986-01-10T00:00:00.000Z",
+      "managerId": "emp2",
+      "photoUrl": "",
+      "isDepartmentHead": true,
+      "isActive": true,
+      "createdAt": "2025-09-27T07:45:40.303Z",
+      "updatedAt": "2025-09-28T11:05:53.049Z",
+      "education": "bachelor",
+      "major": "기계제어공학과",
+      "school": "고려사이버대학교",
+      "previousExperienceYears": 6,
+      "previousExperienceMonths": 0,
+      "graduationYear": 2016
+    },
+    "53fd46eb-3810-4f3a-a78a-74ee7474de0c": {
+      "id": "53fd46eb-3810-4f3a-a78a-74ee7474de0c",
+      "employeeNumber": "2124412",
+      "departmentCode": "RD",
+      "teamCode": "",
+      "name": "사치코",
+      "position": "사원",
+      "department": "기술연구소",
+      "team": "",
+      "email": "",
+      "phone": "",
+      "managerId": "emp2",
+      "isActive": false,
+      "createdAt": "2025-09-27T22:56:47.520Z",
+      "updatedAt": "2025-09-27T22:57:05.465Z",
+      "photoUrl": "",
+      "education": "",
+      "major": "",
+      "school": ""
+    }
+  },
+  "trainingHistory": {
+    "4b1e8cb1-fdd6-4220-a2f5-b0581b321079": {
+      "id": "4b1e8cb1-fdd6-4220-a2f5-b0581b321079",
+      "employeeId": "emp7",
+      "courseName": "다른교육",
+      "provider": "",
+      "type": "optional",
+      "category": "",
+      "startDate": null,
+      "completionDate": "2024-12-01T15:00:00.000Z",
+      "duration": 5,
+      "status": "planned",
+      "createdAt": "2025-09-27T15:04:31.204Z",
+      "updatedAt": "2025-09-27T15:04:31.204Z"
+    },
+    "9611f538-b26a-4932-a27e-d82446e1de33": {
+      "id": "9611f538-b26a-4932-a27e-d82446e1de33",
+      "employeeId": "emp2",
+      "courseName": "1",
+      "provider": "",
+      "type": "optional",
+      "category": "",
+      "startDate": null,
+      "completionDate": null,
+      "status": "planned",
+      "createdAt": "2025-09-27T23:31:41.254Z",
+      "updatedAt": "2025-09-27T23:31:41.254Z"
+    },
+    "c06d1e74-6718-44ec-9592-8d49e318d44e": {
+      "id": "c06d1e74-6718-44ec-9592-8d49e318d44e",
+      "employeeId": "ef202e24-47a6-434d-ae9a-3a47c87b64be",
+      "courseName": "test 교육11",
+      "provider": "온라인",
+      "type": "optional",
+      "category": "기술",
+      "startDate": "2024-12-10T00:00:00.000Z",
+      "completionDate": null,
+      "duration": 8,
+      "status": "completed",
+      "instructorRole": null,
+      "certificateUrl": "",
+      "notes": "",
+      "createdAt": "2025-10-12T08:41:30.870Z",
+      "updatedAt": "2025-10-12T08:41:30.870Z"
+    },
+    "19c45785-17cb-4b5a-8284-478e04afd88d": {
+      "id": "19c45785-17cb-4b5a-8284-478e04afd88d",
+      "employeeId": "ef202e24-47a6-434d-ae9a-3a47c87b64be",
+      "courseName": "tset211",
+      "provider": "",
+      "type": "optional",
+      "category": "",
+      "startDate": "2023-09-10T00:00:00.000Z",
+      "completionDate": "2023-09-11T00:00:00.000Z",
+      "duration": 40,
+      "status": "completed",
+      "instructorRole": null,
+      "certificateUrl": "",
+      "notes": "",
+      "createdAt": "2025-10-12T08:41:30.878Z",
+      "updatedAt": "2025-10-12T08:41:30.878Z"
+    },
+    "2fd1ebf5-fe03-446b-9009-8f628d67b5ce": {
+      "id": "2fd1ebf5-fe03-446b-9009-8f628d67b5ce",
+      "employeeId": "ef202e24-47a6-434d-ae9a-3a47c87b64be",
+      "courseName": "멘토테스트1",
+      "provider": "",
+      "type": "optional",
+      "category": "",
+      "startDate": "2022-10-06T00:00:00.000Z",
+      "completionDate": "2022-10-09T00:00:00.000Z",
+      "duration": 0,
+      "status": "completed",
+      "instructorRole": "mentor",
+      "certificateUrl": "",
+      "notes": "",
+      "createdAt": "2025-10-12T08:41:30.885Z",
+      "updatedAt": "2025-10-12T08:41:30.885Z"
+    },
+    "324d10bc-2adf-428d-9929-d121d81f2251": {
+      "id": "324d10bc-2adf-428d-9929-d121d81f2251",
+      "employeeId": "ef202e24-47a6-434d-ae9a-3a47c87b64be",
+      "courseName": "강사테스틑",
+      "provider": "",
+      "type": "optional",
+      "category": "",
+      "startDate": "2024-10-07T00:00:00.000Z",
+      "completionDate": "2024-10-08T00:00:00.000Z",
+      "duration": 0,
+      "status": "completed",
+      "instructorRole": "instructor",
+      "certificateUrl": "",
+      "notes": "",
+      "createdAt": "2025-10-12T08:41:30.893Z",
+      "updatedAt": "2025-10-12T08:41:30.893Z"
+    }
+  },
+  "certifications": {
+    "2089b8da-508e-4f4a-a42b-e232cae18a50": {
+      "id": "2089b8da-508e-4f4a-a42b-e232cae18a50",
+      "employeeId": "emp0",
+      "name": "123",
+      "issuer": "",
+      "category": "technical",
+      "isActive": true,
+      "createdAt": "2025-09-27T11:33:12.816Z",
+      "updatedAt": "2025-10-12T07:36:44.075Z",
+      "scoreAtAcquisition": 10,
+      "scoringCriteriaVersion": "2025-10-12",
+      "useFixedScore": true,
+      "credentialId": "",
+      "verificationUrl": "",
+      "level": "advanced",
+      "score": 10,
+      "issueDate": "2025-09-30T15:00:00.000Z"
+    },
+    "66e0f15c-ac6e-4d46-b899-c90871108dc6": {
+      "id": "66e0f15c-ac6e-4d46-b899-c90871108dc6",
+      "employeeId": "emp0",
+      "name": "123",
+      "issuer": "",
+      "credentialId": "",
+      "category": "technical",
+      "isActive": true,
+      "createdAt": "2025-09-27T11:33:43.482Z",
+      "updatedAt": "2025-10-12T07:36:49.160Z",
+      "scoreAtAcquisition": 10,
+      "scoringCriteriaVersion": "2025-10-12",
+      "useFixedScore": true,
+      "verificationUrl": "",
+      "level": "advanced",
+      "score": 10,
+      "issueDate": "2025-10-12T15:00:00.000Z"
+    },
+    "69d84dde-651c-45f2-973b-478e01f40007": {
+      "id": "69d84dde-651c-45f2-973b-478e01f40007",
+      "employeeId": "emp0",
+      "name": "123123",
+      "issuer": "",
+      "category": "technical",
+      "isActive": true,
+      "createdAt": "2025-09-27T11:33:43.487Z",
+      "updatedAt": "2025-10-12T07:36:52.926Z",
+      "scoreAtAcquisition": 5,
+      "scoringCriteriaVersion": "2025-10-12",
+      "useFixedScore": true,
+      "credentialId": "",
+      "verificationUrl": "",
+      "level": "intermediate",
+      "score": 5,
+      "issueDate": "2025-10-05T15:00:00.000Z"
+    },
+    "fa980059-f7b5-4d73-9dc5-355fe58b26be": {
+      "id": "fa980059-f7b5-4d73-9dc5-355fe58b26be",
+      "employeeId": "ef202e24-47a6-434d-ae9a-3a47c87b64be",
+      "name": "정보처리기사",
+      "issuer": "대한상공회의소",
+      "credentialId": "",
+      "category": "technical",
+      "level": "advanced",
+      "score": 10,
+      "isActive": true,
+      "createdAt": "2025-10-03T13:49:58.090Z",
+      "updatedAt": "2025-10-12T07:33:36.802Z",
+      "verificationUrl": "",
+      "scoreAtAcquisition": 10,
+      "scoringCriteriaVersion": "2025-10-12",
+      "issueDate": "2021-10-08T00:00:00.000Z",
+      "expiryDate": "2025-10-05T15:00:00.000Z"
+    },
+    "ef8304ed-130e-4d03-9c61-507a14417f8f": {
+      "id": "ef8304ed-130e-4d03-9c61-507a14417f8f",
+      "employeeId": "ef202e24-47a6-434d-ae9a-3a47c87b64be",
+      "name": "기계설계산업기사",
+      "issuer": "대한상공회의소",
+      "credentialId": "",
+      "category": "technical",
+      "level": "intermediate",
+      "score": 5,
+      "isActive": true,
+      "createdAt": "2025-10-03T13:49:58.095Z",
+      "updatedAt": "2025-10-12T07:33:39.737Z",
+      "verificationUrl": "",
+      "scoreAtAcquisition": 5,
+      "scoringCriteriaVersion": "2025-10-12"
+    }
+  },
+  "languages": {
+    "b01d9269-af73-4e23-b8a7-53603958b9b0": {
+      "id": "b01d9269-af73-4e23-b8a7-53603958b9b0",
+      "employeeId": "emp0",
+      "language": "1111",
+      "proficiencyLevel": "beginner",
+      "isActive": true,
+      "createdAt": "2025-09-27T11:23:48.171Z",
+      "updatedAt": "2025-09-27T11:23:48.171Z"
+    },
+    "af0fa2c5-3c0f-4055-b9e3-601af0712a1b": {
+      "id": "af0fa2c5-3c0f-4055-b9e3-601af0712a1b",
+      "employeeId": "ef202e24-47a6-434d-ae9a-3a47c87b64be",
+      "language": "Japanese",
+      "proficiencyLevel": "advanced",
+      "testType": "JLPT",
+      "testLevel": "N1",
+      "testDate": "2013-06-01T00:00:00.000Z",
+      "certificateUrl": "",
+      "isActive": true,
+      "createdAt": "2025-10-11T21:42:42.968Z",
+      "updatedAt": "2025-10-11T21:42:42.968Z"
+    },
+    "012bbcb4-ce12-46e7-822e-2f2ff972f23a": {
+      "id": "012bbcb4-ce12-46e7-822e-2f2ff972f23a",
+      "employeeId": "ef202e24-47a6-434d-ae9a-3a47c87b64be",
+      "language": "English",
+      "proficiencyLevel": "advanced",
+      "testType": "TOEIC",
+      "testLevel": "",
+      "score": 850,
+      "maxScore": 990,
+      "testDate": "2017-06-06T00:00:00.000Z",
+      "certificateUrl": "",
+      "isActive": true,
+      "createdAt": "2025-10-11T21:42:42.976Z",
+      "updatedAt": "2025-10-11T21:42:42.976Z"
+    }
+  },
+  "skills": {
+    "9cf44297-a756-4d3a-966a-0d0a56e81526": {
+      "id": "9cf44297-a756-4d3a-966a-0d0a56e81526",
+      "employeeId": "emp0",
+      "skillType": "technical",
+      "skillName": "111",
+      "proficiencyLevel": 50,
+      "yearsOfExperience": 0,
+      "assessedBy": "",
+      "createdAt": "2025-09-27T11:26:55.232Z",
+      "updatedAt": "2025-09-27T11:26:55.232Z"
+    },
+    "b6f8701a-78ce-44b8-a8ab-50d22f259ff5": {
+      "id": "b6f8701a-78ce-44b8-a8ab-50d22f259ff5",
+      "employeeId": "ef202e24-47a6-434d-ae9a-3a47c87b64be",
+      "skillType": "technical",
+      "skillName": "test1",
+      "proficiencyLevel": 74,
+      "yearsOfExperience": 15,
+      "assessedBy": "",
+      "createdAt": "2025-09-28T11:30:45.312Z",
+      "updatedAt": "2025-09-28T11:30:45.312Z"
+    }
+  },
+  "skillCalculations": {},
+  "patents": {
+    "ccda652f-9696-4c0f-8f9e-08c236bfebcd": {
+      "id": "ccda652f-9696-4c0f-8f9e-08c236bfebcd",
+      "employeeId": "ef202e24-47a6-434d-ae9a-3a47c87b64be",
+      "title": "테스트특허",
+      "status": "registered",
+      "applicationNumber": "",
+      "patentNumber": "",
+      "inventors": [],
+      "description": "",
+      "createdAt": "2025-10-04T11:02:48.051Z",
+      "updatedAt": "2025-10-12T08:59:00.526Z",
+      "authors": [],
+      "teamMembers": [],
+      "applicationDate": "2023-06-12",
+      "registrationDate": "2025-10-06"
+    },
+    "afa13c52-3002-4351-a5df-ad2a6e38031f": {
+      "id": "afa13c52-3002-4351-a5df-ad2a6e38031f",
+      "title": "테스트특허3",
+      "patentNumber": "3",
+      "applicationDate": "",
+      "registrationDate": "",
+      "status": "pending",
+      "inventors": [],
+      "description": "",
+      "category": "",
+      "authors": [],
+      "journal": "",
+      "doi": "",
+      "impactFactor": "",
+      "level": "사내",
+      "organization": "",
+      "awardDate": "",
+      "certificateUrl": "",
+      "teamMembers": [],
+      "employeeId": "ef202e24-47a6-434d-ae9a-3a47c87b64be",
+      "createdAt": "2025-10-11T07:40:36.291Z",
+      "updatedAt": "2025-10-11T07:47:00.388Z"
+    },
+    "890b1f64-7c0e-4eb4-83d7-6a8b7375cd57": {
+      "id": "890b1f64-7c0e-4eb4-83d7-6a8b7375cd57",
+      "title": "테스트 특허 1",
+      "patentNumber": "",
+      "applicationDate": "",
+      "registrationDate": "",
+      "status": "pending",
+      "inventors": [],
+      "description": "",
+      "category": "",
+      "employeeId": "ef202e24-47a6-434d-ae9a-3a47c87b64be",
+      "createdAt": "2025-10-11T07:47:31.396Z",
+      "updatedAt": "2025-10-11T07:47:31.396Z"
+    },
+    "68293c4b-e357-4192-9684-d819cbe705c8": {
+      "id": "68293c4b-e357-4192-9684-d819cbe705c8",
+      "title": "테스트특허4",
+      "patentNumber": "",
+      "applicationDate": "",
+      "registrationDate": "",
+      "status": "pending",
+      "inventors": [],
+      "description": "",
+      "category": "",
+      "authors": [],
+      "journal": "",
+      "doi": "",
+      "impactFactor": "",
+      "level": "사내",
+      "organization": "",
+      "awardDate": "",
+      "certificateUrl": "",
+      "teamMembers": [],
+      "employeeId": "ef202e24-47a6-434d-ae9a-3a47c87b64be",
+      "createdAt": "2025-10-11T07:47:40.123Z",
+      "updatedAt": "2025-10-11T07:47:40.123Z"
+    },
+    "b2aa8941-9d57-4bf3-be44-1717cda6b09c": {
+      "id": "b2aa8941-9d57-4bf3-be44-1717cda6b09c",
+      "title": "테스트특허5",
+      "patentNumber": "",
+      "applicationDate": "",
+      "registrationDate": "",
+      "status": "pending",
+      "inventors": [],
+      "description": "",
+      "category": "",
+      "authors": [],
+      "journal": "",
+      "doi": "",
+      "impactFactor": "",
+      "level": "사내",
+      "organization": "",
+      "awardDate": "",
+      "certificateUrl": "",
+      "teamMembers": [],
+      "employeeId": "ef202e24-47a6-434d-ae9a-3a47c87b64be",
+      "createdAt": "2025-10-11T07:47:42.644Z",
+      "updatedAt": "2025-10-11T07:47:42.644Z"
+    },
+    "3e7ac6c7-f512-4a8a-9394-6975c4438021": {
+      "id": "3e7ac6c7-f512-4a8a-9394-6975c4438021",
+      "title": "테스트특허6",
+      "patentNumber": "",
+      "applicationDate": "",
+      "registrationDate": "",
+      "status": "pending",
+      "inventors": [],
+      "description": "",
+      "category": "",
+      "authors": [],
+      "journal": "",
+      "doi": "",
+      "impactFactor": "",
+      "level": "사내",
+      "organization": "",
+      "awardDate": "",
+      "certificateUrl": "",
+      "teamMembers": [],
+      "employeeId": "ef202e24-47a6-434d-ae9a-3a47c87b64be",
+      "createdAt": "2025-10-11T07:47:45.629Z",
+      "updatedAt": "2025-10-11T07:47:45.629Z"
+    },
+    "78c12f8f-175a-48a3-91c8-91340d36d4f5": {
+      "id": "78c12f8f-175a-48a3-91c8-91340d36d4f5",
+      "title": "테스트특허7",
+      "patentNumber": "",
+      "applicationDate": "",
+      "registrationDate": "",
+      "status": "pending",
+      "inventors": [],
+      "description": "",
+      "category": "",
+      "authors": [],
+      "journal": "",
+      "doi": "",
+      "impactFactor": "",
+      "level": "사내",
+      "organization": "",
+      "awardDate": "",
+      "certificateUrl": "",
+      "teamMembers": [],
+      "employeeId": "ef202e24-47a6-434d-ae9a-3a47c87b64be",
+      "createdAt": "2025-10-11T07:47:48.084Z",
+      "updatedAt": "2025-10-11T07:47:48.084Z"
+    },
+    "719c7436-93ab-4402-b751-47e84fba5ef8": {
+      "id": "719c7436-93ab-4402-b751-47e84fba5ef8",
+      "title": "테스트특허8",
+      "patentNumber": "",
+      "applicationDate": "",
+      "registrationDate": "",
+      "status": "pending",
+      "inventors": [],
+      "description": "",
+      "category": "",
+      "authors": [],
+      "journal": "",
+      "doi": "",
+      "impactFactor": "",
+      "level": "사내",
+      "organization": "",
+      "awardDate": "",
+      "certificateUrl": "",
+      "teamMembers": [],
+      "employeeId": "ef202e24-47a6-434d-ae9a-3a47c87b64be",
+      "createdAt": "2025-10-11T07:47:57.813Z",
+      "updatedAt": "2025-10-11T07:47:57.813Z"
+    },
+    "0fb55176-1fa1-4c29-b4e2-dadbc5899fa0": {
+      "id": "0fb55176-1fa1-4c29-b4e2-dadbc5899fa0",
+      "title": "테스트특허9",
+      "patentNumber": "",
+      "applicationDate": "",
+      "registrationDate": "",
+      "status": "pending",
+      "inventors": [],
+      "description": "",
+      "category": "",
+      "authors": [],
+      "journal": "",
+      "doi": "",
+      "impactFactor": "",
+      "level": "사내",
+      "organization": "",
+      "awardDate": "",
+      "certificateUrl": "",
+      "teamMembers": [],
+      "employeeId": "ef202e24-47a6-434d-ae9a-3a47c87b64be",
+      "createdAt": "2025-10-11T07:48:00.485Z",
+      "updatedAt": "2025-10-11T07:48:00.485Z"
+    },
+    "7aabe075-94bc-43c6-ae19-35b5a30933da": {
+      "id": "7aabe075-94bc-43c6-ae19-35b5a30933da",
+      "title": "테스트특허10",
+      "patentNumber": "",
+      "applicationDate": "",
+      "registrationDate": "",
+      "status": "pending",
+      "inventors": [],
+      "description": "",
+      "category": "",
+      "authors": [],
+      "journal": "",
+      "doi": "",
+      "impactFactor": "",
+      "level": "사내",
+      "organization": "",
+      "awardDate": "",
+      "certificateUrl": "",
+      "teamMembers": [],
+      "employeeId": "ef202e24-47a6-434d-ae9a-3a47c87b64be",
+      "createdAt": "2025-10-11T07:48:03.813Z",
+      "updatedAt": "2025-10-11T07:48:03.813Z"
+    },
+    "82aa4e49-0cb9-41f4-a0fd-ed774fd0d7d6": {
+      "id": "82aa4e49-0cb9-41f4-a0fd-ed774fd0d7d6",
+      "title": "테스트특허11",
+      "patentNumber": "",
+      "applicationDate": "",
+      "registrationDate": "",
+      "status": "pending",
+      "inventors": [],
+      "description": "",
+      "category": "",
+      "employeeId": "ef202e24-47a6-434d-ae9a-3a47c87b64be",
+      "createdAt": "2025-10-12T06:50:30.594Z",
+      "updatedAt": "2025-10-12T06:50:30.594Z"
+    }
+  },
+  "publications": {
+    "af2fb5bd-7369-4464-a6a2-7ae1538e8469": {
+      "id": "af2fb5bd-7369-4464-a6a2-7ae1538e8469",
+      "employeeId": "ef202e24-47a6-434d-ae9a-3a47c87b64be",
+      "title": "테스트논문",
+      "authors": "",
+      "type": "domestic",
+      "createdAt": "2025-10-04T11:02:48.055Z",
+      "updatedAt": "2025-10-04T11:02:48.055Z"
+    }
+  },
+  "awards": {
+    "9518aff6-8a28-4b4c-b398-26249cf71be6": {
+      "id": "9518aff6-8a28-4b4c-b398-26249cf71be6",
+      "title": "테스트수상",
+      "organization": "",
+      "awardDate": "",
+      "level": "사내",
+      "certificateUrl": "",
+      "teamMembers": [],
+      "description": "",
+      "category": "",
+      "employeeId": "ef202e24-47a6-434d-ae9a-3a47c87b64be",
+      "createdAt": "2025-10-08T07:53:36.159Z",
+      "updatedAt": "2025-10-08T07:53:36.159Z"
+    }
+  },
+  "projects": {
+    "184dd358-d97b-4a93-9eab-ca784c909a6b": {
+      "id": "184dd358-d97b-4a93-9eab-ca784c909a6b",
+      "employeeId": "ef202e24-47a6-434d-ae9a-3a47c87b64be",
+      "projectName": "테스트 프로젝트1",
+      "role": "일반 멤버",
+      "status": "completed",
+      "startDate": "2021-01-01T00:00:00.000Z",
+      "endDate": "2021-03-03T00:00:00.000Z",
+      "description": "",
+      "technologies": "",
+      "teamSize": 0,
+      "budget": 0,
+      "client": "",
+      "notes": "",
+      "createdAt": "2025-10-12T07:34:55.805Z",
+      "updatedAt": "2025-10-12T07:34:55.805Z"
+    },
+    "ff7ce587-88c7-4581-a684-276d3456ea0b": {
+      "id": "ff7ce587-88c7-4581-a684-276d3456ea0b",
+      "employeeId": "ef202e24-47a6-434d-ae9a-3a47c87b64be",
+      "projectName": "테스트 프로젝트2",
+      "role": "일반 멤버",
+      "status": "completed",
+      "startDate": "2025-07-06T15:00:00.000Z",
+      "endDate": "2025-10-07T15:00:00.000Z",
+      "description": "",
+      "technologies": "",
+      "teamSize": 0,
+      "budget": 0,
+      "client": "",
+      "notes": "",
+      "createdAt": "2025-10-12T07:34:55.810Z",
+      "updatedAt": "2025-10-12T07:34:55.810Z"
+    },
+    "092a593b-8ca5-4263-ae9f-48e87998dfe6": {
+      "id": "092a593b-8ca5-4263-ae9f-48e87998dfe6",
+      "employeeId": "ef202e24-47a6-434d-ae9a-3a47c87b64be",
+      "projectName": "테스트 프로젝트3",
+      "role": "일반 멤버",
+      "status": "completed",
+      "startDate": "2021-01-10T00:00:00.000Z",
+      "endDate": "2025-10-05T15:00:00.000Z",
+      "description": "",
+      "technologies": "",
+      "teamSize": 0,
+      "budget": 0,
+      "client": "",
+      "notes": "",
+      "createdAt": "2025-10-12T07:34:55.815Z",
+      "updatedAt": "2025-10-12T07:34:55.815Z"
+    }
+  },
+  "trainingHours": {
+    "9b40baad-4a5c-42de-ae41-86f6ba776a6a": {
+      "id": "9b40baad-4a5c-42de-ae41-86f6ba776a6a",
+      "year": 1970,
+      "team": "기술연구소",
+      "trainingType": "optional",
+      "hours": 0,
+      "description": "기술연구소 optional 교육시간 (자동생성)",
+      "createdAt": "2025-09-27T23:31:41.256Z",
+      "updatedAt": "2025-09-27T23:31:41.256Z"
+    },
+    "1cec1e27-c720-404d-9a5c-5b7b939ee7e4": {
+      "id": "1cec1e27-c720-404d-9a5c-5b7b939ee7e4",
+      "year": 2024,
+      "team": "개발팀",
+      "trainingType": "optional",
+      "hours": 5,
+      "description": "개발팀 optional 교육시간 (2024년)",
+      "createdAt": "2025-09-27T23:50:14.799Z",
+      "updatedAt": "2025-09-27T23:50:14.799Z"
+    },
+    "e3b68ceb-eef4-46f2-8669-d584fd34ecf5": {
+      "id": "e3b68ceb-eef4-46f2-8669-d584fd34ecf5",
+      "year": 1970,
+      "team": "연구기획팀",
+      "trainingType": "optional",
+      "hours": 72,
+      "description": "연구기획팀 optional 교육시간 (자동생성)",
+      "createdAt": "2025-09-28T10:13:23.564Z",
+      "updatedAt": "2025-10-12T08:41:30.873Z"
+    },
+    "81507f9c-d6df-422a-b2ab-6fa92d400ec5": {
+      "id": "81507f9c-d6df-422a-b2ab-6fa92d400ec5",
+      "year": 2025,
+      "team": "연구기획팀",
+      "trainingType": "optional",
+      "hours": 280,
+      "description": "연구기획팀 optional 교육시간 (자동생성)",
+      "createdAt": "2025-09-28T11:32:49.208Z",
+      "updatedAt": "2025-10-11T14:05:04.496Z"
+    },
+    "ff9e88d4-9e57-47e8-bd96-0a114462cf4f": {
+      "id": "ff9e88d4-9e57-47e8-bd96-0a114462cf4f",
+      "year": 2023,
+      "team": "연구기획팀",
+      "trainingType": "optional",
+      "hours": 40,
+      "description": "연구기획팀 optional 교육시간 (자동생성)",
+      "createdAt": "2025-10-12T08:41:30.880Z",
+      "updatedAt": "2025-10-12T08:41:30.880Z"
+    },
+    "07bf1a37-882a-476d-b2de-14b15dbbf6b3": {
+      "id": "07bf1a37-882a-476d-b2de-14b15dbbf6b3",
+      "year": 2022,
+      "team": "연구기획팀",
+      "trainingType": "optional",
+      "hours": 0,
+      "description": "연구기획팀 optional 교육시간 (자동생성)",
+      "createdAt": "2025-10-12T08:41:30.888Z",
+      "updatedAt": "2025-10-12T08:41:30.888Z"
+    },
+    "56f4b89f-31f3-4a66-bb2e-2d1a5de63301": {
+      "id": "56f4b89f-31f3-4a66-bb2e-2d1a5de63301",
+      "year": 2024,
+      "team": "연구기획팀",
+      "trainingType": "optional",
+      "hours": 0,
+      "description": "연구기획팀 optional 교육시간 (자동생성)",
+      "createdAt": "2025-10-12T08:41:30.895Z",
+      "updatedAt": "2025-10-12T08:41:30.895Z"
+    }
+  },
+  "teamEmployees": {},
+  "viewState": {
+    "transform": "scale(1)",
+    "gTransform": "translate(-10,140) scale(1)",
+    "zoomLevel": 100,
+    "nodeStates": [
+      {
+        "id": "emp0",
+        "expanded": false
+      },
+      {
+        "id": "emp1",
+        "expanded": false
+      },
+      {
+        "id": "emp2",
+        "expanded": false
+      },
+      {
+        "id": "emp3",
+        "expanded": false
+      },
+      {
+        "id": "emp4",
+        "expanded": false
+      },
+      {
+        "id": "emp5",
+        "expanded": false
+      },
+      {
+        "id": "emp6",
+        "expanded": false
+      },
+      {
+        "id": "emp7",
+        "expanded": false
+      },
+      {
+        "id": "emp8",
+        "expanded": false
+      },
+      {
+        "id": "emp9",
+        "expanded": false
+      },
+      {
+        "id": "emp10",
+        "expanded": false
+      },
+      {
+        "id": "emp11",
+        "expanded": false
+      },
+      {
+        "id": "emp12",
+        "expanded": false
+      },
+      {
+        "id": "d81a6f90-3d14-45e6-8d58-c49755620385",
+        "expanded": false
+      },
+      {
+        "id": "91ea437f-9424-4205-b783-575d048c273b",
+        "expanded": false
+      },
+      {
+        "id": "50e671c5-4de9-4561-ad69-7b1355e3b71e",
+        "expanded": false
+      },
+      {
+        "id": "9c83109f-17ac-460b-a146-40d4bc915c72",
+        "expanded": false
+      },
+      {
+        "id": "a7650234-9e64-4585-8037-3353ee86c423",
+        "expanded": false
+      },
+      {
+        "id": "a9875ca1-76b5-4405-a85d-d163786593ed",
+        "expanded": false
+      },
+      {
+        "id": "eb170c01-d8fe-476f-a0bf-2e0ba442b234",
+        "expanded": false
+      },
+      {
+        "id": "c62ed8f6-0b36-4393-88a2-d2f1c66f6228",
+        "expanded": false
+      },
+      {
+        "id": "c0525668-a73e-4abd-bb12-4a27525ab47e",
+        "expanded": false
+      },
+      {
+        "id": "14054958-20f3-4f7f-bb66-d71f4995a925",
+        "expanded": false
+      },
+      {
+        "id": "9ce00395-6d01-41f4-8f67-2010da82a048",
+        "expanded": false
+      },
+      {
+        "id": "8141ea62-3a33-4066-b2e0-2c636dfed1d6",
+        "expanded": false
+      },
+      {
+        "id": "0c5b4c64-5bb2-4c19-a655-1745073d1c3b",
+        "expanded": false
+      },
+      {
+        "id": "42cce55b-906a-451d-ba60-6d9e123aff4a",
+        "expanded": false
+      },
+      {
+        "id": "8be903b0-56ad-4a0e-8892-f04d3f98da44",
+        "expanded": false
+      },
+      {
+        "id": "83e93792-3201-43d2-bed9-b352875a38dc",
+        "expanded": false
+      },
+      {
+        "id": "5fecc100-db39-4557-a4fb-1ea291397093",
+        "expanded": false
+      },
+      {
+        "id": "8bfb665d-7356-4fc9-b25f-9225e2d7912c",
+        "expanded": false
+      },
+      {
+        "id": "4142d6a4-9951-423c-8752-eeb3751caf63",
+        "expanded": false
+      },
+      {
+        "id": "2cef6f6f-22b6-4bfd-b2c3-eb063e14bb53",
+        "expanded": false
+      },
+      {
+        "id": "36374d31-115e-424d-9bf7-b8db70e0f7df",
+        "expanded": false
+      },
+      {
+        "id": "58093382-ffa9-4316-9ab8-3d7e9036ee36",
+        "expanded": false
+      },
+      {
+        "id": "914dfcd9-8f56-487f-9b08-22a687cba1d7",
+        "expanded": false
+      },
+      {
+        "id": "a1c4af0c-0fe9-41c9-b019-acbffed7a0c3",
+        "expanded": false
+      },
+      {
+        "id": "ec60b733-0fb4-48e1-ae25-597c3a23d4f8",
+        "expanded": false
+      },
+      {
+        "id": "d2b5029e-d630-489d-8d05-2983f5518984",
+        "expanded": false
+      },
+      {
+        "id": "eeb20810-49a4-4218-a50e-ee28e4bfe560",
+        "expanded": false
+      },
+      {
+        "id": "a30200f2-2837-4354-bba1-9d18a6e7b935",
+        "expanded": false
+      },
+      {
+        "id": "f10f3ebb-7060-41ea-986f-4503b4171b05",
+        "expanded": false
+      },
+      {
+        "id": "a01b24c4-c6b9-445a-9a66-db6260d5cb93",
+        "expanded": false
+      },
+      {
+        "id": "7a827876-3399-4fdb-87eb-974942e9fea6",
+        "expanded": false
+      },
+      {
+        "id": "d832e5ba-06dc-4a2c-87cf-36ef13e234a9",
+        "expanded": false
+      },
+      {
+        "id": "a2e3efba-7eb4-41c4-bea8-2c3fbb808aab",
+        "expanded": false
+      },
+      {
+        "id": "65d36960-35e6-41f6-a049-54253d82f5be",
+        "expanded": false
+      },
+      {
+        "id": "d3b678a0-2dfe-4262-8c3c-ade478da76cc",
+        "expanded": false
+      },
+      {
+        "id": "00888a92-47e2-4cc8-9b8b-215a2a0b0bb3",
+        "expanded": false
+      },
+      {
+        "id": "ff57a59f-3349-43c1-be68-509c91cf3a5e",
+        "expanded": false
+      },
+      {
+        "id": "fefaa9a4-5e63-4dbe-8853-c50062f0d710",
+        "expanded": false
+      },
+      {
+        "id": "56271c10-4eaf-4986-a7a5-d6a98d84677f",
+        "expanded": false
+      },
+      {
+        "id": "367551f7-5e96-40ae-87c0-5997cc985908",
+        "expanded": false
+      },
+      {
+        "id": "6cb4a92b-6d53-4f7c-86d8-0262e6b9dd87",
+        "expanded": false
+      },
+      {
+        "id": "8ba0432f-39c3-47eb-b706-cccd586a31c6",
+        "expanded": false
+      },
+      {
+        "id": "37ad4ae2-e9bd-4194-9127-e710ea266638",
+        "expanded": false
+      }
+    ],
+    "timestamp": "2025-09-27T07:32:52.930Z"
+  },
+  "departments": [
+    {
+      "code": "HQ",
+      "name": "아시모리코리아",
+      "description": "본사",
+      "isActive": true,
+      "createdAt": "2025-09-21T00:00:00.000Z",
+      "updatedAt": "2025-09-21T00:00:00.000Z"
+    },
+    {
+      "code": "SL",
+      "name": "영업부문",
+      "description": "영업 및 마케팅",
+      "isActive": true,
+      "createdAt": "2025-09-21T00:00:00.000Z",
+      "updatedAt": "2025-09-21T00:00:00.000Z"
+    },
+    {
+      "code": "RD",
+      "name": "기술연구소",
+      "description": "연구개발",
+      "isActive": true,
+      "createdAt": "2025-09-21T00:00:00.000Z",
+      "updatedAt": "2025-09-21T00:00:00.000Z"
+    },
+    {
+      "code": "MF",
+      "name": "제조부문",
+      "description": "생산 및 제조",
+      "isActive": true,
+      "createdAt": "2025-09-21T00:00:00.000Z",
+      "updatedAt": "2025-09-21T00:00:00.000Z"
+    },
+    {
+      "code": "AD",
+      "name": "관리부문",
+      "description": "인사, 총무, 재무",
+      "isActive": true,
+      "createdAt": "2025-09-21T00:00:00.000Z",
+      "updatedAt": "2025-09-21T00:00:00.000Z"
+    }
+  ],
+  "teams": [
+    {
+      "code": "HQ01",
+      "name": "경영진",
+      "departmentCode": "HQ",
+      "description": "경영진",
+      "isActive": true,
+      "createdAt": "2025-09-21T00:00:00.000Z",
+      "updatedAt": "2025-09-21T00:00:00.000Z"
+    },
+    {
+      "code": "SL01",
+      "name": "영업팀",
+      "departmentCode": "SL",
+      "description": "국내 영업",
+      "isActive": true,
+      "createdAt": "2025-09-21T00:00:00.000Z",
+      "updatedAt": "2025-09-21T00:00:00.000Z"
+    },
+    {
+      "code": "SL02",
+      "name": "마케팅팀",
+      "departmentCode": "SL",
+      "description": "마케팅 및 홍보",
+      "isActive": true,
+      "createdAt": "2025-09-21T00:00:00.000Z",
+      "updatedAt": "2025-09-21T00:00:00.000Z"
+    },
+    {
+      "code": "RD01",
+      "name": "연구기획팀",
+      "departmentCode": "RD",
+      "description": "연구기획 및 관리",
+      "isActive": true,
+      "createdAt": "2025-09-21T00:00:00.000Z",
+      "updatedAt": "2025-09-21T00:00:00.000Z"
+    },
+    {
+      "code": "RD02",
+      "name": "개발팀",
+      "departmentCode": "RD",
+      "description": "제품 개발",
+      "isActive": true,
+      "createdAt": "2025-09-21T00:00:00.000Z",
+      "updatedAt": "2025-09-21T00:00:00.000Z"
+    },
+    {
+      "code": "RD03",
+      "name": "품질팀",
+      "departmentCode": "RD",
+      "description": "품질관리",
+      "isActive": true,
+      "createdAt": "2025-09-21T00:00:00.000Z",
+      "updatedAt": "2025-09-21T00:00:00.000Z"
+    },
+    {
+      "code": "MF01",
+      "name": "생산팀",
+      "departmentCode": "MF",
+      "description": "생산 관리",
+      "isActive": true,
+      "createdAt": "2025-09-21T00:00:00.000Z",
+      "updatedAt": "2025-09-21T00:00:00.000Z"
+    },
+    {
+      "code": "MF02",
+      "name": "설비팀",
+      "departmentCode": "MF",
+      "description": "설비 관리",
+      "isActive": true,
+      "createdAt": "2025-09-21T00:00:00.000Z",
+      "updatedAt": "2025-09-21T00:00:00.000Z"
+    },
+    {
+      "code": "AD01",
+      "name": "인사팀",
+      "departmentCode": "AD",
+      "description": "인사 관리",
+      "isActive": true,
+      "createdAt": "2025-09-21T00:00:00.000Z",
+      "updatedAt": "2025-09-21T00:00:00.000Z"
+    },
+    {
+      "code": "AD02",
+      "name": "총무팀",
+      "departmentCode": "AD",
+      "description": "총무 관리",
+      "isActive": true,
+      "createdAt": "2025-09-21T00:00:00.000Z",
+      "updatedAt": "2025-09-21T00:00:00.000Z"
+    },
+    {
+      "code": "AD03",
+      "name": "재무팀",
+      "departmentCode": "AD",
+      "description": "재무 관리",
+      "isActive": true,
+      "createdAt": "2025-09-21T00:00:00.000Z",
+      "updatedAt": "2025-09-21T00:00:00.000Z"
+    },
+    {
+      "code": "AD04",
+      "name": "IT팀",
+      "departmentCode": "AD",
+      "description": "정보시스템",
+      "isActive": true,
+      "createdAt": "2025-09-21T00:00:00.000Z",
+      "updatedAt": "2025-09-21T00:00:00.000Z"
+    },
+    {
+      "code": "AD05",
+      "name": "구매팀",
+      "departmentCode": "AD",
+      "description": "구매 관리",
+      "isActive": true,
+      "createdAt": "2025-09-21T00:00:00.000Z",
+      "updatedAt": "2025-09-21T00:00:00.000Z"
+    },
+    {
+      "code": "RD04",
+      "name": "기술팀",
+      "departmentCode": "RD",
+      "createdAt": "2025-09-28T11:09:01.898Z",
+      "updatedAt": "2025-09-28T11:09:01.898Z"
+    }
+  ],
+  "proposals": {
+    "proposal_1759059005260_l04dgbv4y": {
+      "id": "proposal_1759059005260_l04dgbv4y",
+      "employeeId": "ef202e24-47a6-434d-ae9a-3a47c87b64be",
+      "title": "test1",
+      "description": "test1",
+      "category": "process",
+      "submissionDate": "2025-09-28T11:26:53.857Z",
+      "status": "submitted",
+      "rewardAmount": 0,
+      "rewardType": "recognition",
+      "impactLevel": "medium",
+      "implementationStatus": "pending",
+      "notes": "",
+      "createdAt": "2025-09-28T11:30:05.260Z",
+      "updatedAt": "2025-09-28T11:30:05.260Z"
+    },
+    "proposal_1759059011408_kn10ov114": {
+      "id": "proposal_1759059011408_kn10ov114",
+      "employeeId": "ef202e24-47a6-434d-ae9a-3a47c87b64be",
+      "title": "test2",
+      "description": "test1",
+      "category": "process",
+      "submissionDate": "2025-09-28T11:26:53.857Z",
+      "status": "submitted",
+      "rewardAmount": 0,
+      "rewardType": "recognition",
+      "impactLevel": "medium",
+      "implementationStatus": "pending",
+      "notes": "",
+      "createdAt": "2025-09-28T11:30:11.408Z",
+      "updatedAt": "2025-09-28T11:30:11.408Z"
+    },
+    "proposal_1759059025849_8dm6xf07e": {
+      "id": "proposal_1759059025849_8dm6xf07e",
+      "employeeId": "ef202e24-47a6-434d-ae9a-3a47c87b64be",
+      "title": "test4",
+      "description": "test4",
+      "category": "process",
+      "submissionDate": "2025-09-28T11:30:13.217Z",
+      "status": "submitted",
+      "rewardAmount": 0,
+      "rewardType": "recognition",
+      "impactLevel": "medium",
+      "implementationStatus": "pending",
+      "notes": "",
+      "createdAt": "2025-09-28T11:30:25.849Z",
+      "updatedAt": "2025-09-28T11:30:25.849Z"
+    }
+  },
+  "rdEvaluationCriteria": {
+    "technical_competency": {
+      "name": "전문기술",
+      "weight": 25,
+      "description": "전문 기술 역량",
+      "maxScore": 80,
+      "scoringRanges": [
+        {
+          "min": 80,
+          "max": 100,
+          "converted": 100,
+          "label": "80점↑ → 100점"
+        },
+        {
+          "min": 60,
+          "max": 79,
+          "converted": 80,
+          "label": "60-79점 → 80점"
+        },
+        {
+          "min": 40,
+          "max": 59,
+          "converted": 60,
+          "label": "40-59점 → 60점"
+        },
+        {
+          "min": 0,
+          "max": 39,
+          "converted": 40,
+          "label": "40점↓ → 40점"
+        }
+      ]
+    },
+    "project_experience": {
+      "name": "프로젝트",
+      "weight": 20,
+      "description": "프로젝트 수행 경험",
+      "maxScore": 60,
+      "scoringRanges": [
+        {
+          "min": 60,
+          "max": 100,
+          "converted": 100,
+          "label": "60점↑ → 100점"
+        },
+        {
+          "min": 30,
+          "max": 59,
+          "converted": 80,
+          "label": "30-59점 → 80점"
+        },
+        {
+          "min": 5,
+          "max": 29,
+          "converted": 60,
+          "label": "5-29점 → 60점"
+        },
+        {
+          "min": 0,
+          "max": 5,
+          "converted": 40,
+          "label": "5점↓ → 40점"
+        }
+      ]
+    },
+    "rd_achievement": {
+      "name": "연구성과",
+      "weight": 25,
+      "description": "연구개발 성과",
+      "maxScore": 40,
+      "scoringRanges": [
+        {
+          "min": 40,
+          "max": 100,
+          "converted": 100,
+          "label": "40점↑ → 100점"
+        },
+        {
+          "min": 25,
+          "max": 39,
+          "converted": 80,
+          "label": "25-39점 → 80점"
+        },
+        {
+          "min": 10,
+          "max": 24,
+          "converted": 60,
+          "label": "10-24점 → 60점"
+        },
+        {
+          "min": 0,
+          "max": 9,
+          "converted": 40,
+          "label": "10점↓ → 40점"
+        }
+      ]
+    },
+    "global_competency": {
+      "name": "글로벌",
+      "weight": 10,
+      "description": "글로벌 역량",
+      "maxScore": 10,
+      "scoringRanges": [
+        {
+          "min": 10,
+          "max": 10,
+          "converted": 100,
+          "label": "10점 → 100점"
+        },
+        {
+          "min": 7,
+          "max": 8,
+          "converted": 80,
+          "label": "7-8점 → 80점"
+        },
+        {
+          "min": 4,
+          "max": 6,
+          "converted": 60,
+          "label": "4-6점 → 60점"
+        },
+        {
+          "min": 0,
+          "max": 2,
+          "converted": 40,
+          "label": "2점 → 40점"
+        }
+      ]
+    },
+    "knowledge_sharing": {
+      "name": "기술확산",
+      "weight": 10,
+      "description": "기술 확산 및 자기계발",
+      "maxScore": 15,
+      "scoringRanges": [
+        {
+          "min": 15,
+          "max": 100,
+          "converted": 100,
+          "label": "15점↑ → 100점"
+        },
+        {
+          "min": 10,
+          "max": 14,
+          "converted": 80,
+          "label": "10-14점 → 80점"
+        },
+        {
+          "min": 5,
+          "max": 9,
+          "converted": 60,
+          "label": "5-9점 → 60점"
+        },
+        {
+          "min": 1,
+          "max": 4,
+          "converted": 40,
+          "label": "1-4점 → 40점"
+        }
+      ]
+    },
+    "innovation_proposal": {
+      "name": "혁신제안",
+      "weight": 10,
+      "description": "업무개선 및 혁신 제안",
+      "maxScore": 60,
+      "scoringRanges": [
+        {
+          "min": 60,
+          "max": 100,
+          "converted": 100,
+          "label": "60점↑ → 100점"
+        },
+        {
+          "min": 30,
+          "max": 59,
+          "converted": 80,
+          "label": "30-59점 → 80점"
+        },
+        {
+          "min": 5,
+          "max": 29,
+          "converted": 60,
+          "label": "5-29점 → 60점"
+        },
+        {
+          "min": 0,
+          "max": 4,
+          "converted": 40,
+          "label": "5점↓ → 40점"
+        }
+      ]
+    }
+  },
+  "detailedCriteria": {
+    "technical_competency": {
+      "education": {
+        "박사": 30,
+        "석사": 20,
+        "학사": 10,
+        "전문대": 5
+      },
+      "experience": {
+        "15년 이상": 50,
+        "10년 이상": 40,
+        "5년 이상": 30,
+        "5년 미만": 20
+      },
+      "certifications": {
+        "기술사": 20,
+        "기사": 10,
+        "산업기사": 5,
+        "기타": 3
+      }
+    },
+    "project_experience": {
+      "leadership": {
+        "Project Leader": 15,
+        "핵심 멤버": 10,
+        "일반 멤버": 5
+      },
+      "count": {
+        "3개 이상": 30,
+        "2개": 20,
+        "1개": 10
+      },
+      "roleMapping": {
+        "project_leader": "Project Leader",
+        "PL": "Project Leader",
+        "lead": "Project Leader",
+        "core_member": "핵심 멤버",
+        "핵심멤버": "핵심 멤버",
+        "member": "일반 멤버",
+        "일반멤버": "일반 멤버",
+        "developer": "일반 멤버"
+      }
+    },
+    "rd_achievement": {
+      "patents": {
+        "등록": 20,
+        "출원": 5
+      },
+      "publications": {
+        "SCI(E)급": 25,
+        "국내 학술지": 10
+      },
+      "awards": {
+        "국제": 15,
+        "국가": 10,
+        "산업": 5
+      }
+    },
+    "global_competency": {
+      "영어 TOEIC": {
+        "950-990": 10,
+        "900-949": 8,
+        "800-899": 6,
+        "700-799": 4,
+        "700미만": 2
+      },
+      "영어 TOEFL": {
+        "113-120": 10,
+        "105-112": 8,
+        "90-104": 6,
+        "70-89": 4,
+        "70미만": 2
+      },
+      "영어 IELTS": {
+        "8.5-9.0": 10,
+        "7.5-8.4": 8,
+        "6.5-7.4": 6,
+        "5.5-6.4": 4,
+        "5.5미만": 2
+      },
+      "영어 TEPS": {
+        "526-600": 10,
+        "453-525": 8,
+        "387-452": 6,
+        "327-386": 4,
+        "327미만": 2
+      },
+      "일본어 JLPT": {
+        "N1": 10,
+        "N2": 7,
+        "N3": 4,
+        "N4": 2,
+        "N5": 1
+      },
+      "일본어 JPT": {
+        "900-990": 8,
+        "800-899": 6,
+        "700-799": 4,
+        "700미만": 2
+      },
+      "중국어 HSK": {
+        "6급": 10,
+        "5급": 8,
+        "4급": 6,
+        "3급": 4,
+        "2급": 2,
+        "1급": 1
+      },
+      "중국어 TOCFL": {
+        "Band C Level 6": 10,
+        "Band C Level 5": 8,
+        "Band B Level 4": 6,
+        "Band B Level 3": 4,
+        "Band A Level 2": 2,
+        "Band A Level 1": 1
+      }
+    },
+    "knowledge_sharing": {
+      "training": {
+        "40시간 이상": 5,
+        "20시간 이상": 3,
+        "10시간 이상": 2
+      },
+      "certifications": {
+        "신규 취득": 5
+      },
+      "mentoring": {
+        "멘토링 1명": 3
+      },
+      "instructor": {
+        "강의 1회": 5,
+        "강의 2회": 10,
+        "강의 3회 이상": 15
+      }
+    },
+    "innovation_proposal": {
+      "awards": {
+        "최우수상": 80,
+        "우수상": 60,
+        "장려상": 40
+      },
+      "adoption": {
+        "채택": 5
+      }
+    }
+  }
+}

@@ -239,6 +239,22 @@ export interface LanguageFormData {
   certificateUrl?: string;
 }
 
+export interface ProposalFormData {
+  id?: number; // 수정/삭제를 위한 ID
+  employeeId: string;
+  title: string;
+  description: string;
+  category: 'process' | 'technology' | 'safety' | 'quality' | 'cost' | 'other';
+  submissionDate: Date;
+  status: 'submitted' | 'under_review' | 'approved' | 'rejected' | 'implemented';
+  adoptionDate?: Date;
+  rewardAmount?: number;
+  rewardType?: 'monetary' | 'recognition' | 'both';
+  impactLevel: 'low' | 'medium' | 'high';
+  implementationStatus?: 'pending' | 'in_progress' | 'completed' | 'cancelled';
+  notes?: string;
+}
+
 export interface SkillFormData {
   employeeId: string;
   skillType: 'technical' | 'soft' | 'leadership' | 'domain';

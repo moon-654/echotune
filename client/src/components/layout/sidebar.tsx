@@ -6,7 +6,11 @@ import {
   Users, 
   BookOpen, 
   BarChart3,
-  User
+  User,
+  Award,
+  Trophy,
+  FileText,
+  Medal
 } from "lucide-react";
 
 const navigation = [
@@ -14,6 +18,8 @@ const navigation = [
   { name: "조직도", href: "/orgchart", icon: Table },
   { name: "직원 관리", href: "/employees", icon: Users },
   { name: "교육 관리", href: "/training", icon: BookOpen },
+  { name: "성과관리", href: "/achievements", icon: Trophy },
+  { name: "R&D 역량평가", href: "/rd-evaluation", icon: Award },
   { name: "보고서", href: "/reports", icon: BarChart3 },
 ];
 
@@ -35,19 +41,19 @@ export default function Sidebar() {
           const Icon = item.icon;
           
           return (
-            <Link 
-              key={item.name} 
-              href={item.href}
-              className={cn(
-                "flex items-center px-4 py-2 text-sm rounded-lg transition-colors",
-                isActive
-                  ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
-              )}
-              data-testid={`nav-link-${item.name.toLowerCase().replace(/\s+/g, '-')}`}
-            >
-              <Icon className="w-4 h-4 mr-3" />
-              {item.name}
+            <Link key={item.name} href={item.href}>
+              <a
+                className={cn(
+                  "flex items-center px-4 py-2 text-sm rounded-lg transition-colors",
+                  isActive
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                )}
+                data-testid={`nav-link-${item.name.toLowerCase().replace(/\s+/g, '-')}`}
+              >
+                <Icon className="w-4 h-4 mr-3" />
+                {item.name}
+              </a>
             </Link>
           );
         })}

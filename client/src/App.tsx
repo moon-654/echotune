@@ -6,7 +6,12 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import Dashboard from "@/pages/dashboard";
 import OrgChart from "@/pages/orgchart";
 import Employees from "@/pages/employees";
+import EmployeeDetail from "@/pages/employee-detail";
+import DepartmentTeamManagement from "@/pages/department-team-management";
 import Training from "@/pages/training";
+import TrainingAnalysis from "@/pages/training-analysis";
+import Achievements from "@/pages/achievements";
+import RdEvaluation from "@/pages/rd-evaluation";
 import Reports from "@/pages/reports";
 import NotFound from "@/pages/not-found";
 import Sidebar from "@/components/layout/sidebar";
@@ -24,7 +29,13 @@ function Router() {
             <Route path="/dashboard" component={Dashboard} />
             <Route path="/orgchart" component={OrgChart} />
             <Route path="/employees" component={Employees} />
+            <Route path="/employees/:id" component={EmployeeDetail} />
+            <Route path="/departments" component={DepartmentTeamManagement} />
+            <Route path="/teams" component={DepartmentTeamManagement} />
             <Route path="/training" component={Training} />
+            <Route path="/training-analysis" component={TrainingAnalysis} />
+            <Route path="/achievements" component={Achievements} />
+            <Route path="/rd-evaluation" component={RdEvaluation} />
             <Route path="/reports" component={Reports} />
             <Route component={NotFound} />
           </Switch>
