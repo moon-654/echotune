@@ -33,10 +33,10 @@ export default function DepartmentTeamManagement() {
     setTeams(data.teams);
   };
 
-  const handleAddDepartment = () => {
+  const handleAddDepartment = async () => {
     try {
-      DepartmentTeamManager.addDepartment(departmentForm.code, departmentForm.name);
-      loadData();
+      await DepartmentTeamManager.addDepartment(departmentForm.code, departmentForm.name);
+      await loadData();
       setIsAddDepartmentOpen(false);
       setDepartmentForm({ code: "", name: "" });
       toast({ title: "부서가 추가되었습니다." });
@@ -49,10 +49,10 @@ export default function DepartmentTeamManagement() {
     }
   };
 
-  const handleAddTeam = () => {
+  const handleAddTeam = async () => {
     try {
-      DepartmentTeamManager.addTeam(teamForm.code, teamForm.name, teamForm.departmentCode);
-      loadData();
+      await DepartmentTeamManager.addTeam(teamForm.code, teamForm.name, teamForm.departmentCode);
+      await loadData();
       setIsAddTeamOpen(false);
       setTeamForm({ code: "", name: "", departmentCode: "" });
       toast({ title: "팀이 추가되었습니다." });
@@ -65,11 +65,11 @@ export default function DepartmentTeamManagement() {
     }
   };
 
-  const handleDeleteDepartment = (code: string) => {
+  const handleDeleteDepartment = async (code: string) => {
     if (confirm('정말로 이 부서를 삭제하시겠습니까? 소속 팀들도 함께 삭제됩니다.')) {
       try {
-        DepartmentTeamManager.removeDepartment(code);
-        loadData();
+        await DepartmentTeamManager.removeDepartment(code);
+        await loadData();
         toast({ title: "부서가 삭제되었습니다." });
       } catch (error) {
         toast({
@@ -81,11 +81,11 @@ export default function DepartmentTeamManagement() {
     }
   };
 
-  const handleDeleteTeam = (code: string) => {
+  const handleDeleteTeam = async (code: string) => {
     if (confirm('정말로 이 팀을 삭제하시겠습니까?')) {
       try {
-        DepartmentTeamManager.removeTeam(code);
-        loadData();
+        await DepartmentTeamManager.removeTeam(code);
+        await loadData();
         toast({ title: "팀이 삭제되었습니다." });
       } catch (error) {
         toast({

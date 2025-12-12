@@ -5,13 +5,13 @@ import multer from "multer";
 import * as XLSX from "xlsx";
 import fs from "fs";
 import path from "path";
-import { 
-  insertEmployeeSchema, 
+import {
+  insertEmployeeSchema,
   insertTrainingHistorySchema,
   insertCertificationSchema,
   insertLanguageSchema,
   insertSkillSchema,
-  insertSkillCalculationSchema 
+  insertSkillCalculationSchema
 } from "@shared/schema";
 import { setupRdEvaluationRoutes } from "./rd-evaluation-routes";
 import { setupAchievementsRoutes } from "./achievements-routes";
@@ -31,13 +31,13 @@ function loadDetailedCriteria(): any {
 // Helper function to parse Excel dates
 function parseExcelDate(cellValue: any): string | null {
   if (!cellValue) return null;
-  
+
   try {
     // If it's already a Date object (from cellDates: true)
     if (cellValue instanceof Date) {
       return cellValue.toISOString();
     }
-    
+
     // If it's a string that can be parsed as a date
     if (typeof cellValue === 'string') {
       const parsedDate = new Date(cellValue);
@@ -45,7 +45,7 @@ function parseExcelDate(cellValue: any): string | null {
         return parsedDate.toISOString();
       }
     }
-    
+
     // If it's a number (Excel serial date)
     if (typeof cellValue === 'number') {
       // Excel serial date: days since January 1, 1900 (with leap year bug)
@@ -54,7 +54,7 @@ function parseExcelDate(cellValue: any): string | null {
       const jsDate = new Date(excelEpoch.getTime() + daysSinceEpoch * 24 * 60 * 60 * 1000);
       return jsDate.toISOString();
     }
-    
+
     return null;
   } catch (error) {
     console.error('Date parsing error:', error, 'for value:', cellValue);
@@ -63,7 +63,7 @@ function parseExcelDate(cellValue: any): string | null {
 }
 
 // Configure multer for file uploads
-const upload = multer({ 
+const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
   fileFilter: (req, file, cb) => {
@@ -86,21 +86,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const department = req.query.department as string;
       const includeInactive = req.query.includeInactive === 'true';
-      
+
       let employees;
       if (includeInactive) {
         // 직원 관리 페이지에서 모든 직원(비활성 포함) 조회
-        employees = department 
+        employees = department
           ? await storage.getEmployeesByDepartment(department)
           : await storage.getAllEmployeesIncludingInactive();
       } else {
         // 다른 페이지에서는 활성 직원만 조회
-        employees = department 
+        employees = department
           ? await storage.getEmployeesByDepartment(department)
           : await storage.getAllEmployees();
       }
-      
-      
+
+
       res.json(employees);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch employees" });
@@ -117,7 +117,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const employees = await storage.getAllEmployees();
-      const filteredEmployees = employees.filter(employee => 
+      const filteredEmployees = employees.filter(employee =>
         employee.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         employee.employeeNumber.includes(searchTerm)
       );
@@ -167,19 +167,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/save-view-state", async (req, res) => {
     try {
       const viewState = req.body;
-      
+
       // 보기 상태를 storage에 저장
       storage.saveViewState(viewState);
-      
-      res.json({ 
-        success: true, 
+
+      res.json({
+        success: true,
         message: "보기 상태가 저장되었습니다.",
         timestamp: new Date().toISOString()
       });
     } catch (error) {
       console.error('❌ 보기 상태 저장 중 오류:', error);
-      res.status(500).json({ 
-        success: false, 
+      res.status(500).json({
+        success: false,
         message: "보기 상태 저장에 실패했습니다.",
         error: error instanceof Error ? error.message : 'Unknown error'
       });
@@ -190,90 +190,90 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/load-view-state", async (req, res) => {
     try {
       const viewState = storage.getViewState();
-      
-      res.json({ 
-        success: true, 
+
+      res.json({
+        success: true,
         viewState: viewState || null
       });
     } catch (error) {
       console.error('❌ 보기 상태 불러오기 중 오류:', error);
-      res.status(500).json({ 
-        success: false, 
+      res.status(500).json({
+        success: false,
         message: "보기 상태 불러오기에 실패했습니다.",
         error: error instanceof Error ? error.message : 'Unknown error'
       });
     }
   });
 
-app.put("/api/employees/:id", async (req, res) => {
-  try {
-    // 기존 직원 데이터 확인
-    const existingEmployee = await storage.getEmployee(req.params.id);
-    
-    if (!existingEmployee) {
-      return res.status(404).json({ error: "Employee not found" });
-    }
-    
-    // null 값들을 undefined로 변환하여 스키마 검증 통과
-    const cleanedBody = { ...req.body };
-    Object.keys(cleanedBody).forEach(key => {
-      if (cleanedBody[key] === null) {
-        cleanedBody[key] = undefined;
+  app.put("/api/employees/:id", async (req, res) => {
+    try {
+      // 기존 직원 데이터 확인
+      const existingEmployee = await storage.getEmployee(req.params.id);
+
+      if (!existingEmployee) {
+        return res.status(404).json({ error: "Employee not found" });
       }
-    });
-    
-    // boolean 필드들을 올바른 타입으로 변환
-    if (cleanedBody.isDepartmentHead !== undefined) {
-      cleanedBody.isDepartmentHead = cleanedBody.isDepartmentHead === 'true' || cleanedBody.isDepartmentHead === true;
+
+      // null 값들을 undefined로 변환하여 스키마 검증 통과
+      const cleanedBody = { ...req.body };
+      Object.keys(cleanedBody).forEach(key => {
+        if (cleanedBody[key] === null) {
+          cleanedBody[key] = undefined;
+        }
+      });
+
+      // boolean 필드들을 올바른 타입으로 변환
+      if (cleanedBody.isDepartmentHead !== undefined) {
+        cleanedBody.isDepartmentHead = cleanedBody.isDepartmentHead === 'true' || cleanedBody.isDepartmentHead === true;
+      }
+      if (cleanedBody.isActive !== undefined) {
+        cleanedBody.isActive = cleanedBody.isActive === 'true' || cleanedBody.isActive === true;
+      }
+
+      // 날짜 필드들을 Date 객체로 변환
+      if (cleanedBody.birthDate && typeof cleanedBody.birthDate === 'string') {
+        cleanedBody.birthDate = new Date(cleanedBody.birthDate);
+      }
+      if (cleanedBody.hireDate && typeof cleanedBody.hireDate === 'string') {
+        cleanedBody.hireDate = new Date(cleanedBody.hireDate);
+      }
+
+      const employeeData = insertEmployeeSchema.partial().parse(cleanedBody);
+
+
+      // 변경사항이 있는지 확인
+      const hasChanges = Object.keys(employeeData).some(key => {
+        const existingValue = existingEmployee?.[key as keyof typeof existingEmployee];
+        const newValue = employeeData[key as keyof typeof employeeData];
+        return existingValue !== newValue;
+      });
+
+      if (!hasChanges) {
+        return res.json(existingEmployee);
+      }
+
+      // 중복 업데이트 방지: 동일한 요청이 연속으로 들어오는 경우 방지
+      const isDuplicateRequest = Object.keys(employeeData).every(key => {
+        const existingValue = existingEmployee?.[key as keyof typeof existingEmployee];
+        const newValue = employeeData[key as keyof typeof employeeData];
+        return existingValue === newValue;
+      });
+
+      if (isDuplicateRequest) {
+        return res.json(existingEmployee);
+      }
+
+      const employee = await storage.updateEmployee(req.params.id, employeeData);
+
+      res.json(employee);
+    } catch (error) {
+      console.error('❌ 직원 업데이트 실패:', error);
+      console.error('❌ 오류 스택:', error.stack);
+      console.error('❌ 오류 타입:', typeof error);
+      console.error('❌ 오류 메시지:', error.message);
+      res.status(400).json({ error: "Failed to update employee", details: error.message });
     }
-    if (cleanedBody.isActive !== undefined) {
-      cleanedBody.isActive = cleanedBody.isActive === 'true' || cleanedBody.isActive === true;
-    }
-    
-    // 날짜 필드들을 Date 객체로 변환
-    if (cleanedBody.birthDate && typeof cleanedBody.birthDate === 'string') {
-      cleanedBody.birthDate = new Date(cleanedBody.birthDate);
-    }
-    if (cleanedBody.hireDate && typeof cleanedBody.hireDate === 'string') {
-      cleanedBody.hireDate = new Date(cleanedBody.hireDate);
-    }
-    
-    const employeeData = insertEmployeeSchema.partial().parse(cleanedBody);
-    
-    
-    // 변경사항이 있는지 확인
-    const hasChanges = Object.keys(employeeData).some(key => {
-      const existingValue = existingEmployee?.[key as keyof typeof existingEmployee];
-      const newValue = employeeData[key as keyof typeof employeeData];
-      return existingValue !== newValue;
-    });
-    
-    if (!hasChanges) {
-      return res.json(existingEmployee);
-    }
-    
-    // 중복 업데이트 방지: 동일한 요청이 연속으로 들어오는 경우 방지
-    const isDuplicateRequest = Object.keys(employeeData).every(key => {
-      const existingValue = existingEmployee?.[key as keyof typeof existingEmployee];
-      const newValue = employeeData[key as keyof typeof employeeData];
-      return existingValue === newValue;
-    });
-    
-    if (isDuplicateRequest) {
-      return res.json(existingEmployee);
-    }
-    
-    const employee = await storage.updateEmployee(req.params.id, employeeData);
-    
-    res.json(employee);
-  } catch (error) {
-    console.error('❌ 직원 업데이트 실패:', error);
-    console.error('❌ 오류 스택:', error.stack);
-    console.error('❌ 오류 타입:', typeof error);
-    console.error('❌ 오류 메시지:', error.message);
-    res.status(400).json({ error: "Failed to update employee", details: error.message });
-  }
-});
+  });
 
   app.delete("/api/employees/:id", async (req, res) => {
     try {
@@ -291,7 +291,7 @@ app.put("/api/employees/:id", async (req, res) => {
   app.get("/api/training", async (req, res) => {
     try {
       const employeeId = req.query.employeeId as string;
-      const training = employeeId 
+      const training = employeeId
         ? await storage.getTrainingHistory(employeeId)
         : await storage.getAllTrainingHistory();
       res.json(training);
@@ -322,9 +322,9 @@ app.put("/api/employees/:id", async (req, res) => {
         return res.status(400).json({ error: "파일이 없습니다." });
       }
 
-      
+
       let workbook: XLSX.WorkBook;
-      
+
       // Parse the uploaded file based on its type
       if (req.file.mimetype === 'text/csv' || req.file.originalname.endsWith('.csv')) {
         const csvData = req.file.buffer.toString('utf8');
@@ -346,7 +346,7 @@ app.put("/api/employees/:id", async (req, res) => {
       // Expected headers mapping (Korean to English)
       const headerMap: Record<string, string> = {
         '직원ID': 'employeeId',
-        '교육과정명': 'courseName', 
+        '교육과정명': 'courseName',
         '교육기관': 'provider',
         '유형': 'type',
         '카테고리': 'category',
@@ -371,13 +371,13 @@ app.put("/api/employees/:id", async (req, res) => {
       // Check required columns
       const requiredHeaders = ['employeeId', 'courseName', 'provider', 'type', 'category'];
       const missingHeaders = requiredHeaders.filter(header => !(header in headerIndices));
-      
+
       if (missingHeaders.length > 0) {
-        const missingKorean = missingHeaders.map(header => 
+        const missingKorean = missingHeaders.map(header =>
           Object.keys(headerMap).find(k => headerMap[k] === header)
         );
-        return res.status(400).json({ 
-          error: `필수 컬럼이 누락되었습니다: ${missingKorean.join(', ')}` 
+        return res.status(400).json({
+          error: `필수 컬럼이 누락되었습니다: ${missingKorean.join(', ')}`
         });
       }
 
@@ -395,18 +395,18 @@ app.put("/api/employees/:id", async (req, res) => {
             provider: row[headerIndices.provider]?.toString().trim(),
             type: row[headerIndices.type]?.toString().trim() || 'optional',
             category: row[headerIndices.category]?.toString().trim() || 'other',
-            startDate: headerIndices.startDate !== undefined ? 
+            startDate: headerIndices.startDate !== undefined ?
               (row[headerIndices.startDate] ? parseExcelDate(row[headerIndices.startDate]) : null) : null,
-            completionDate: headerIndices.completionDate !== undefined ? 
+            completionDate: headerIndices.completionDate !== undefined ?
               (row[headerIndices.completionDate] ? parseExcelDate(row[headerIndices.completionDate]) : null) : null,
-            duration: headerIndices.duration !== undefined ? 
+            duration: headerIndices.duration !== undefined ?
               (row[headerIndices.duration] ? Number(row[headerIndices.duration]) : null) : null,
-            score: headerIndices.score !== undefined ? 
+            score: headerIndices.score !== undefined ?
               (row[headerIndices.score] ? Number(row[headerIndices.score]) : null) : null,
             status: (row[headerIndices.status]?.toString().trim() || 'planned'),
-            certificateUrl: headerIndices.certificateUrl !== undefined ? 
+            certificateUrl: headerIndices.certificateUrl !== undefined ?
               row[headerIndices.certificateUrl]?.toString().trim() || null : null,
-            notes: headerIndices.notes !== undefined ? 
+            notes: headerIndices.notes !== undefined ?
               row[headerIndices.notes]?.toString().trim() || null : null
           };
 
@@ -418,7 +418,7 @@ app.put("/api/employees/:id", async (req, res) => {
           // Validate with schema
           const validatedData = insertTrainingHistorySchema.parse(trainingData);
           const training = await storage.createTrainingHistory(validatedData);
-          
+
           results.push({ success: true, data: training, row: rowNumber });
         } catch (error) {
           console.error(`Row ${rowNumber} validation error:`, error);
@@ -474,27 +474,27 @@ app.put("/api/employees/:id", async (req, res) => {
       const employeeId = req.query.employeeId as string;
       const startDate = req.query.startDate as string;
       const endDate = req.query.endDate as string;
-      
-      let certifications = employeeId 
+
+      let certifications = employeeId
         ? await storage.getCertificationsByEmployee(employeeId)
         : await storage.getAllCertifications();
-      
+
       // 날짜 필터링 적용
       if (startDate || endDate) {
         certifications = certifications.filter(certification => {
           const certDate = certification.issueDate;
           if (!certDate) return false; // 날짜가 없는 자격증은 제외
-          
+
           const date = new Date(certDate);
           if (isNaN(date.getTime())) return false; // 유효하지 않은 날짜는 제외
-          
+
           if (startDate && date < new Date(startDate)) return false;
           if (endDate && date > new Date(endDate)) return false;
-          
+
           return true;
         });
       }
-      
+
       res.json(certifications);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch certifications" });
@@ -504,11 +504,11 @@ app.put("/api/employees/:id", async (req, res) => {
   app.post("/api/certifications", async (req, res) => {
     try {
       const certificationData = insertCertificationSchema.parse(req.body);
-      
+
       // 자격증 점수 자동 계산 및 저장
       const detailedCriteria = loadDetailedCriteria();
       const calculatedScore = calculateCertificationScore(certificationData, detailedCriteria);
-      
+
       // scoreAtAcquisition, scoringCriteriaVersion, useFixedScore 설정
       const enhancedCertificationData = {
         ...certificationData,
@@ -517,7 +517,7 @@ app.put("/api/employees/:id", async (req, res) => {
         useFixedScore: true,
         updatedAt: new Date()
       };
-      
+
       const certification = await storage.createCertification(enhancedCertificationData);
       res.status(201).json(certification);
     } catch (error) {
@@ -531,52 +531,52 @@ app.put("/api/employees/:id", async (req, res) => {
         id: req.params.id,
         body: req.body
       });
-      
+
       const certificationData = insertCertificationSchema.partial().parse(req.body);
       console.log('🔍 파싱된 데이터:', certificationData);
-      
-    // 자격증 정보가 변경된 경우 점수 재계산
-    if (certificationData.name || certificationData.level || certificationData.category) {
-      // ✅ 기존 데이터 가져오기
-      const existing = await storage.getCertification(req.params.id);
-      
-      // ✅ 기존 데이터와 새 데이터 merge
-      const mergedData = {
-        ...existing,
-        ...certificationData
-      };
-      
-      const detailedCriteria = loadDetailedCriteria();
-      const calculatedScore = calculateCertificationScore(mergedData, detailedCriteria);
-      
-      console.log('🔍 계산된 점수:', calculatedScore);
-      
-      const enhancedCertificationData = {
-        ...certificationData,
-        score: calculatedScore,                    // ✅ score 업데이트
-        scoreAtAcquisition: calculatedScore,       // ✅ scoreAtAcquisition 업데이트
-        scoringCriteriaVersion: new Date().toISOString().split('T')[0],
-        updatedAt: new Date()
-      };
-      
-      console.log('🔍 점수 재계산 포함 데이터:', enhancedCertificationData);
-      
-      const certification = await storage.updateCertification(req.params.id, enhancedCertificationData);
-      console.log('✅ 저장 완료:', certification);
-      res.json(certification);
-    } else {
-      // 자격증 정보 변경 없으면 기존 점수 유지
-      const enhancedCertificationData = {
-        ...certificationData,
-        updatedAt: new Date()
-      };
-      
-      console.log('🔍 점수 재계산 없이 데이터:', enhancedCertificationData);
-      
-      const certification = await storage.updateCertification(req.params.id, enhancedCertificationData);
-      console.log('✅ 저장 완료:', certification);
-      res.json(certification);
-    }
+
+      // 자격증 정보가 변경된 경우 점수 재계산
+      if (certificationData.name || certificationData.level || certificationData.category) {
+        // ✅ 기존 데이터 가져오기
+        const existing = await storage.getCertification(req.params.id);
+
+        // ✅ 기존 데이터와 새 데이터 merge
+        const mergedData = {
+          ...existing,
+          ...certificationData
+        };
+
+        const detailedCriteria = loadDetailedCriteria();
+        const calculatedScore = calculateCertificationScore(mergedData, detailedCriteria);
+
+        console.log('🔍 계산된 점수:', calculatedScore);
+
+        const enhancedCertificationData = {
+          ...certificationData,
+          score: calculatedScore,                    // ✅ score 업데이트
+          scoreAtAcquisition: calculatedScore,       // ✅ scoreAtAcquisition 업데이트
+          scoringCriteriaVersion: new Date().toISOString().split('T')[0],
+          updatedAt: new Date()
+        };
+
+        console.log('🔍 점수 재계산 포함 데이터:', enhancedCertificationData);
+
+        const certification = await storage.updateCertification(req.params.id, enhancedCertificationData);
+        console.log('✅ 저장 완료:', certification);
+        res.json(certification);
+      } else {
+        // 자격증 정보 변경 없으면 기존 점수 유지
+        const enhancedCertificationData = {
+          ...certificationData,
+          updatedAt: new Date()
+        };
+
+        console.log('🔍 점수 재계산 없이 데이터:', enhancedCertificationData);
+
+        const certification = await storage.updateCertification(req.params.id, enhancedCertificationData);
+        console.log('✅ 저장 완료:', certification);
+        res.json(certification);
+      }
     } catch (error) {
       console.error('❌ PUT /api/certifications/:id 오류:', error);
       res.status(400).json({ error: "Failed to update certification", details: error });
@@ -619,7 +619,7 @@ app.put("/api/employees/:id", async (req, res) => {
   app.get("/api/languages", async (req, res) => {
     try {
       const employeeId = req.query.employeeId as string;
-      const languages = employeeId 
+      const languages = employeeId
         ? await storage.getLanguages(employeeId)
         : await storage.getAllLanguages();
       res.json(languages);
@@ -664,7 +664,7 @@ app.put("/api/employees/:id", async (req, res) => {
   app.get("/api/skills", async (req, res) => {
     try {
       const employeeId = req.query.employeeId as string;
-      const skills = employeeId 
+      const skills = employeeId
         ? await storage.getSkillsByEmployee(employeeId)
         : await storage.getAllSkills();
       res.json(skills);
@@ -713,13 +713,13 @@ app.put("/api/employees/:id", async (req, res) => {
       if (!employeeId) {
         return res.status(400).json({ error: "Employee ID is required" });
       }
-      
+
       const skills = await storage.getSkillsByEmployee(employeeId);
-      
+
       for (const skill of skills) {
         await storage.deleteSkill(skill.id);
       }
-      
+
       res.json({ success: true, deletedCount: skills.length });
     } catch (error) {
       console.error('🔍 직원 스킬 전체 삭제 오류:', error);
@@ -733,27 +733,27 @@ app.put("/api/employees/:id", async (req, res) => {
       const employeeId = req.query.employeeId as string;
       const startDate = req.query.startDate as string;
       const endDate = req.query.endDate as string;
-      
-      let trainings = employeeId 
+
+      let trainings = employeeId
         ? await storage.getTrainingHistoryByEmployee(employeeId)
         : await storage.getAllTrainingHistory();
-      
+
       // 날짜 필터링 적용
       if (startDate || endDate) {
         trainings = trainings.filter(training => {
           const trainingDate = training.completionDate || training.startDate;
           if (!trainingDate) return false; // 날짜가 없는 교육은 제외
-          
+
           const date = new Date(trainingDate);
           if (isNaN(date.getTime())) return false; // 유효하지 않은 날짜는 제외
-          
+
           if (startDate && date < new Date(startDate)) return false;
           if (endDate && date > new Date(endDate)) return false;
-          
+
           return true;
         });
       }
-      
+
       res.json(trainings);
     } catch (error) {
       console.error('교육 이력 조회 오류:', error);
@@ -765,23 +765,23 @@ app.put("/api/employees/:id", async (req, res) => {
     try {
       const trainingData = insertTrainingHistorySchema.parse(req.body);
       const training = await storage.createTrainingHistory(trainingData);
-      
+
       // 교육 이력 저장 후 자동으로 교육시간 데이터로 변환
       try {
         const trainingYear = new Date(training.completionDate).getFullYear();
         const employee = await storage.getEmployee(training.employeeId);
-        
+
         if (employee) {
           // 팀이 없는 직원은 부서명을 팀으로 사용
           const teamName = employee.team || employee.department || '기타';
-          
+
           // 해당 팀의 해당 연도, 해당 교육유형의 기존 데이터 조회
           const existingHours = await storage.getTrainingHoursByYearRange(trainingYear, trainingYear);
-          const existingData = existingHours.find(th => 
-            th.team === teamName && 
+          const existingData = existingHours.find(th =>
+            th.team === teamName &&
             th.trainingType === (training.type || '기타')
           );
-          
+
           if (existingData) {
             // 기존 데이터 업데이트
             await storage.updateTrainingHours(existingData.id, {
@@ -802,7 +802,7 @@ app.put("/api/employees/:id", async (req, res) => {
         console.error('교육시간 자동 변환 오류:', autoConvertError);
         // 자동 변환 실패해도 교육 이력 저장은 성공으로 처리
       }
-      
+
       res.status(201).json(training);
     } catch (error) {
       res.status(400).json({ error: "Failed to create training history" });
@@ -838,9 +838,9 @@ app.put("/api/employees/:id", async (req, res) => {
       if (!employeeId) {
         return res.status(400).json({ error: "Employee ID is required" });
       }
-      
+
       const trainings = await storage.getTrainingHistoryByEmployee(employeeId);
-      
+
       for (const training of trainings) {
         await storage.deleteTrainingHistory(training.id);
       }
@@ -857,27 +857,27 @@ app.put("/api/employees/:id", async (req, res) => {
       const employeeId = req.query.employeeId as string;
       const startDate = req.query.startDate as string;
       const endDate = req.query.endDate as string;
-      
-      let projects = employeeId 
+
+      let projects = employeeId
         ? await storage.getProjectsByEmployee(employeeId)
         : await storage.getAllProjects();
-      
+
       // 날짜 필터링 적용
       if (startDate || endDate) {
         projects = projects.filter(project => {
           const projectDate = project.startDate;
           if (!projectDate) return false; // 날짜가 없는 프로젝트는 제외
-          
+
           const date = new Date(projectDate);
           if (isNaN(date.getTime())) return false; // 유효하지 않은 날짜는 제외
-          
+
           if (startDate && date < new Date(startDate)) return false;
           if (endDate && date > new Date(endDate)) return false;
-          
+
           return true;
         });
       }
-      
+
       res.json(projects);
     } catch (error) {
       console.error('프로젝트 조회 오류:', error);
@@ -924,13 +924,13 @@ app.put("/api/employees/:id", async (req, res) => {
       if (!employeeId) {
         return res.status(400).json({ error: "Employee ID is required" });
       }
-      
+
       const projects = await storage.getProjectsByEmployee(employeeId);
-      
+
       for (const project of projects) {
         await storage.deleteProject(project.id);
       }
-      
+
       res.json({ success: true, deletedCount: projects.length });
     } catch (error) {
       console.error('🔍 직원 프로젝트 전체 삭제 오류:', error);
@@ -944,27 +944,27 @@ app.put("/api/employees/:id", async (req, res) => {
       const employeeId = req.query.employeeId as string;
       const startDate = req.query.startDate as string;
       const endDate = req.query.endDate as string;
-      
-      let patents = employeeId 
+
+      let patents = employeeId
         ? await storage.getPatentsByEmployee(employeeId)
         : await storage.getAllPatents();
-      
+
       // 날짜 필터링 적용
       if (startDate || endDate) {
         patents = patents.filter(patent => {
           const patentDate = patent.applicationDate;
           if (!patentDate) return false; // 날짜가 없는 특허는 제외
-          
+
           const date = new Date(patentDate);
           if (isNaN(date.getTime())) return false; // 유효하지 않은 날짜는 제외
-          
+
           if (startDate && date < new Date(startDate)) return false;
           if (endDate && date > new Date(endDate)) return false;
-          
+
           return true;
         });
       }
-      
+
       res.json(patents);
     } catch (error) {
       console.error('특허 조회 오류:', error);
@@ -1011,13 +1011,13 @@ app.put("/api/employees/:id", async (req, res) => {
       if (!employeeId) {
         return res.status(400).json({ error: "Employee ID is required" });
       }
-      
+
       const patents = await storage.getPatentsByEmployee(employeeId);
-      
+
       for (const patent of patents) {
         await storage.deletePatent(patent.id);
       }
-      
+
       res.json({ success: true, deletedCount: patents.length });
     } catch (error) {
       console.error('🔍 직원 특허 전체 삭제 오류:', error);
@@ -1031,27 +1031,27 @@ app.put("/api/employees/:id", async (req, res) => {
       const employeeId = req.query.employeeId as string;
       const startDate = req.query.startDate as string;
       const endDate = req.query.endDate as string;
-      
-      let publications = employeeId 
+
+      let publications = employeeId
         ? await storage.getPublicationsByEmployee(employeeId)
         : await storage.getAllPublications();
-      
+
       // 날짜 필터링 적용
       if (startDate || endDate) {
         publications = publications.filter(publication => {
           const publicationDate = publication.publicationDate;
           if (!publicationDate) return false; // 날짜가 없는 논문은 제외
-          
+
           const date = new Date(publicationDate);
           if (isNaN(date.getTime())) return false; // 유효하지 않은 날짜는 제외
-          
+
           if (startDate && date < new Date(startDate)) return false;
           if (endDate && date > new Date(endDate)) return false;
-          
+
           return true;
         });
       }
-      
+
       res.json(publications);
     } catch (error) {
       console.error('논문 조회 오류:', error);
@@ -1098,13 +1098,13 @@ app.put("/api/employees/:id", async (req, res) => {
       if (!employeeId) {
         return res.status(400).json({ error: "Employee ID is required" });
       }
-      
+
       const publications = await storage.getPublicationsByEmployee(employeeId);
-      
+
       for (const publication of publications) {
         await storage.deletePublication(publication.id);
       }
-      
+
       res.json({ success: true, deletedCount: publications.length });
     } catch (error) {
       console.error('🔍 직원 논문 전체 삭제 오류:', error);
@@ -1118,27 +1118,27 @@ app.put("/api/employees/:id", async (req, res) => {
       const employeeId = req.query.employeeId as string;
       const startDate = req.query.startDate as string;
       const endDate = req.query.endDate as string;
-      
-      let awards = employeeId 
+
+      let awards = employeeId
         ? await storage.getAwardsByEmployee(employeeId)
         : await storage.getAllAwards();
-      
+
       // 날짜 필터링 적용
       if (startDate || endDate) {
         awards = awards.filter(award => {
           const awardDate = award.awardDate;
           if (!awardDate) return false; // 날짜가 없는 수상은 제외
-          
+
           const date = new Date(awardDate);
           if (isNaN(date.getTime())) return false; // 유효하지 않은 날짜는 제외
-          
+
           if (startDate && date < new Date(startDate)) return false;
           if (endDate && date > new Date(endDate)) return false;
-          
+
           return true;
         });
       }
-      
+
       res.json(awards);
     } catch (error) {
       console.error('수상 조회 오류:', error);
@@ -1185,13 +1185,13 @@ app.put("/api/employees/:id", async (req, res) => {
       if (!employeeId) {
         return res.status(400).json({ error: "Employee ID is required" });
       }
-      
+
       const awards = await storage.getAwardsByEmployee(employeeId);
-      
+
       for (const award of awards) {
         await storage.deleteAward(award.id);
       }
-      
+
       res.json({ success: true, deletedCount: awards.length });
     } catch (error) {
       console.error('🔍 직원 수상 전체 삭제 오류:', error);
@@ -1202,15 +1202,15 @@ app.put("/api/employees/:id", async (req, res) => {
   // R&D Evaluation Criteria Management routes
   app.get('/api/rd-evaluation-criteria', async (req, res) => {
     try {
-      
+
       // data.json에서 직접 기준 조회
       const dataPath = path.join(process.cwd(), 'data.json');
       const dataContent = fs.readFileSync(dataPath, 'utf8');
       const data = JSON.parse(dataContent);
-      
+
       // detailedCriteria에서 기준 추출
       let criteria = data.detailedCriteria || {};
-      
+
       if (Object.keys(criteria).length === 0) {
         // 기본 설정 반환
         criteria = {
@@ -1232,11 +1232,11 @@ app.put("/api/employees/:id", async (req, res) => {
           }
         };
       }
-      
+
       // 글로벌 역량 설정에서 언어 시험 정보 추출
       const globalCompetency = criteria.global_competency || {};
       const languageTests = {};
-      
+
       // 영어 시험들
       if (globalCompetency.english?.toeic) {
         languageTests.English = languageTests.English || { tests: [] };
@@ -1248,7 +1248,7 @@ app.put("/api/employees/:id", async (req, res) => {
           criteria: globalCompetency.english.toeic
         });
       }
-      
+
       if (globalCompetency.english?.toefl) {
         languageTests.English = languageTests.English || { tests: [] };
         languageTests.English.tests.push({
@@ -1259,7 +1259,7 @@ app.put("/api/employees/:id", async (req, res) => {
           criteria: globalCompetency.english.toefl
         });
       }
-      
+
       if (globalCompetency.english?.ielts) {
         languageTests.English = languageTests.English || { tests: [] };
         languageTests.English.tests.push({
@@ -1270,7 +1270,7 @@ app.put("/api/employees/:id", async (req, res) => {
           criteria: globalCompetency.english.ielts
         });
       }
-      
+
       if (globalCompetency.english?.teps) {
         languageTests.English = languageTests.English || { tests: [] };
         languageTests.English.tests.push({
@@ -1281,7 +1281,7 @@ app.put("/api/employees/:id", async (req, res) => {
           criteria: globalCompetency.english.teps
         });
       }
-      
+
       // 일본어 시험들
       if (globalCompetency.japanese?.jlpt) {
         languageTests.Japanese = languageTests.Japanese || { tests: [] };
@@ -1293,7 +1293,7 @@ app.put("/api/employees/:id", async (req, res) => {
           criteria: globalCompetency.japanese.jlpt
         });
       }
-      
+
       if (globalCompetency.japanese?.jpt) {
         languageTests.Japanese = languageTests.Japanese || { tests: [] };
         languageTests.Japanese.tests.push({
@@ -1304,7 +1304,7 @@ app.put("/api/employees/:id", async (req, res) => {
           criteria: globalCompetency.japanese.jpt
         });
       }
-      
+
       // 중국어 시험들
       if (globalCompetency.chinese?.hsk) {
         languageTests.Chinese = languageTests.Chinese || { tests: [] };
@@ -1316,7 +1316,7 @@ app.put("/api/employees/:id", async (req, res) => {
           criteria: globalCompetency.chinese.hsk
         });
       }
-      
+
       if (globalCompetency.chinese?.tocfl) {
         languageTests.Chinese = languageTests.Chinese || { tests: [] };
         languageTests.Chinese.tests.push({
@@ -1327,8 +1327,8 @@ app.put("/api/employees/:id", async (req, res) => {
           criteria: globalCompetency.chinese.tocfl
         });
       }
-      
-      
+
+
       res.json({
         success: true,
         rdEvaluationCriteria: data.rdEvaluationCriteria || {},
@@ -1336,7 +1336,7 @@ app.put("/api/employees/:id", async (req, res) => {
         criteria: criteria,
         languageTests: languageTests
       });
-      
+
     } catch (error) {
       console.error('R&D 역량평가 기준 조회 오류:', error);
       res.status(500).json({
@@ -1350,27 +1350,27 @@ app.put("/api/employees/:id", async (req, res) => {
   app.post('/api/rd-evaluation-criteria', async (req, res) => {
     try {
       const { criteria, updateEmployeeForms } = req.body;
-      
-      
+
+
       // 1. R&D 역량평가 기준을 파일에 저장
       const criteriaPath = path.join(__dirname, '..', 'data', 'rd-evaluation-criteria.json');
-      
+
       // 디렉토리가 없으면 생성
       const dataDir = path.dirname(criteriaPath);
       if (!fs.existsSync(dataDir)) {
         fs.mkdirSync(dataDir, { recursive: true });
       }
-      
+
       // 기준 저장
       fs.writeFileSync(criteriaPath, JSON.stringify(criteria, null, 2));
-      
+
       // 2. 직원 정보 입력 폼 업데이트가 요청된 경우
       if (updateEmployeeForms) {
-        
+
         // 글로벌 역량 설정에서 언어 시험 정보 추출
         const globalCompetency = criteria.global_competency || {};
         const languageTests = {};
-        
+
         // 영어 시험들
         if (globalCompetency.english_toeic) {
           languageTests.English = languageTests.English || { tests: [] };
@@ -1382,7 +1382,7 @@ app.put("/api/employees/:id", async (req, res) => {
             criteria: globalCompetency.english_toeic
           });
         }
-        
+
         if (globalCompetency.english_toefl) {
           languageTests.English = languageTests.English || { tests: [] };
           languageTests.English.tests.push({
@@ -1393,7 +1393,7 @@ app.put("/api/employees/:id", async (req, res) => {
             criteria: globalCompetency.english_toefl
           });
         }
-        
+
         if (globalCompetency.english_ielts) {
           languageTests.English = languageTests.English || { tests: [] };
           languageTests.English.tests.push({
@@ -1404,7 +1404,7 @@ app.put("/api/employees/:id", async (req, res) => {
             criteria: globalCompetency.english_ielts
           });
         }
-        
+
         if (globalCompetency.english_teps) {
           languageTests.English = languageTests.English || { tests: [] };
           languageTests.English.tests.push({
@@ -1415,7 +1415,7 @@ app.put("/api/employees/:id", async (req, res) => {
             criteria: globalCompetency.english_teps
           });
         }
-        
+
         // 일본어 시험들
         if (globalCompetency.japanese_jlpt) {
           languageTests.Japanese = languageTests.Japanese || { tests: [] };
@@ -1427,7 +1427,7 @@ app.put("/api/employees/:id", async (req, res) => {
             criteria: globalCompetency.japanese_jlpt
           });
         }
-        
+
         if (globalCompetency.japanese_jpt) {
           languageTests.Japanese = languageTests.Japanese || { tests: [] };
           languageTests.Japanese.tests.push({
@@ -1438,7 +1438,7 @@ app.put("/api/employees/:id", async (req, res) => {
             criteria: globalCompetency.japanese_jpt
           });
         }
-        
+
         // 중국어 시험들
         if (globalCompetency.chinese_hsk) {
           languageTests.Chinese = languageTests.Chinese || { tests: [] };
@@ -1450,7 +1450,7 @@ app.put("/api/employees/:id", async (req, res) => {
             criteria: globalCompetency.chinese_hsk
           });
         }
-        
+
         if (globalCompetency.chinese_tocfl) {
           languageTests.Chinese = languageTests.Chinese || { tests: [] };
           languageTests.Chinese.tests.push({
@@ -1461,13 +1461,13 @@ app.put("/api/employees/:id", async (req, res) => {
             criteria: globalCompetency.chinese_tocfl
           });
         }
-        
-        
+
+
         // TODO: 이 설정을 클라이언트의 언어 입력 폼에 반영
         // 방법 1: 클라이언트에서 이 API를 호출하여 설정을 가져오도록 함
         // 방법 2: WebSocket을 통해 실시간으로 클라이언트에 전달
         // 방법 3: 설정을 파일로 저장하고 클라이언트가 주기적으로 확인
-        
+
         res.json({
           success: true,
           message: 'R&D 역량평가 기준이 저장되고 직원 정보 입력 폼이 업데이트되었습니다.',
@@ -1479,7 +1479,7 @@ app.put("/api/employees/:id", async (req, res) => {
           message: 'R&D 역량평가 기준이 저장되었습니다.'
         });
       }
-      
+
     } catch (error) {
       console.error('R&D 역량평가 기준 저장 오류:', error);
       res.status(500).json({
@@ -1493,17 +1493,17 @@ app.put("/api/employees/:id", async (req, res) => {
   // Departments and Teams routes
   app.get("/api/departments", async (req, res) => {
     try {
-      
+
       // data.json에서 부서 데이터 로드
       const dataPath = path.join(process.cwd(), 'data.json');
-      
+
       let departments = [];
       if (fs.existsSync(dataPath)) {
         const fileContent = fs.readFileSync(dataPath, 'utf8');
         const data = JSON.parse(fileContent);
         departments = data.departments || [];
       }
-      
+
       res.json(departments);
     } catch (error) {
       console.error("부서 조회 오류:", error);
@@ -1514,37 +1514,37 @@ app.put("/api/employees/:id", async (req, res) => {
   app.post("/api/departments", async (req, res) => {
     try {
       const { code, name } = req.body;
-      
+
       const dataPath = path.join(process.cwd(), 'data.json');
-      
+
       let data = {};
       if (fs.existsSync(dataPath)) {
         const fileContent = fs.readFileSync(dataPath, 'utf8');
         data = JSON.parse(fileContent);
       }
-      
+
       // 부서 데이터 추가
       if (!data.departments) {
         data.departments = [];
       }
-      
+
       // 중복 체크
       if (data.departments.find((d: any) => d.code === code)) {
         return res.status(400).json({ error: "이미 존재하는 부서코드입니다." });
       }
-      
+
       const newDepartment = {
         code,
         name,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
       };
-      
+
       data.departments.push(newDepartment);
-      
+
       // 파일 저장
       fs.writeFileSync(dataPath, JSON.stringify(data, null, 2));
-      
+
       res.json({ success: true, data: newDepartment });
     } catch (error) {
       console.error("부서 추가 오류:", error);
@@ -1556,33 +1556,33 @@ app.put("/api/employees/:id", async (req, res) => {
     try {
       const { code } = req.params;
       const { name } = req.body;
-      
+
       const dataPath = path.join(process.cwd(), 'data.json');
-      
+
       let data = {};
       if (fs.existsSync(dataPath)) {
         const fileContent = fs.readFileSync(dataPath, 'utf8');
         data = JSON.parse(fileContent);
       }
-      
+
       if (!data.departments) {
         return res.status(404).json({ error: "부서를 찾을 수 없습니다." });
       }
-      
+
       const departmentIndex = data.departments.findIndex((d: any) => d.code === code);
       if (departmentIndex === -1) {
         return res.status(404).json({ error: "부서를 찾을 수 없습니다." });
       }
-      
+
       data.departments[departmentIndex] = {
         ...data.departments[departmentIndex],
         name,
         updatedAt: new Date().toISOString()
       };
-      
+
       // 파일 저장
       fs.writeFileSync(dataPath, JSON.stringify(data, null, 2));
-      
+
       res.json({ success: true, data: data.departments[departmentIndex] });
     } catch (error) {
       console.error("부서 수정 오류:", error);
@@ -1593,34 +1593,34 @@ app.put("/api/employees/:id", async (req, res) => {
   app.delete("/api/departments/:code", async (req, res) => {
     try {
       const { code } = req.params;
-      
+
       const dataPath = path.join(process.cwd(), 'data.json');
-      
+
       let data = {};
       if (fs.existsSync(dataPath)) {
         const fileContent = fs.readFileSync(dataPath, 'utf8');
         data = JSON.parse(fileContent);
       }
-      
+
       if (!data.departments) {
         return res.status(404).json({ error: "부서를 찾을 수 없습니다." });
       }
-      
+
       const departmentIndex = data.departments.findIndex((d: any) => d.code === code);
       if (departmentIndex === -1) {
         return res.status(404).json({ error: "부서를 찾을 수 없습니다." });
       }
-      
+
       // 관련 팀도 삭제
       if (data.teams) {
         data.teams = data.teams.filter((t: any) => t.departmentCode !== code);
       }
-      
+
       data.departments.splice(departmentIndex, 1);
-      
+
       // 파일 저장
       fs.writeFileSync(dataPath, JSON.stringify(data, null, 2));
-      
+
       res.json({ success: true });
     } catch (error) {
       console.error("부서 삭제 오류:", error);
@@ -1631,22 +1631,22 @@ app.put("/api/employees/:id", async (req, res) => {
   app.get("/api/teams", async (req, res) => {
     try {
       const { departmentCode } = req.query;
-      
+
       // data.json에서 팀 데이터 로드
       const dataPath = path.join(process.cwd(), 'data.json');
-      
+
       let teams = [];
       if (fs.existsSync(dataPath)) {
         const fileContent = fs.readFileSync(dataPath, 'utf8');
         const data = JSON.parse(fileContent);
         teams = data.teams || [];
-        
+
         // 부서코드가 있으면 필터링
         if (departmentCode) {
           teams = teams.filter((t: any) => t.departmentCode === departmentCode);
         }
       }
-      
+
       res.json(teams);
     } catch (error) {
       console.error("팀 조회 오류:", error);
@@ -1657,25 +1657,25 @@ app.put("/api/employees/:id", async (req, res) => {
   app.post("/api/teams", async (req, res) => {
     try {
       const { code, name, departmentCode } = req.body;
-      
+
       const dataPath = path.join(process.cwd(), 'data.json');
-      
+
       let data = {};
       if (fs.existsSync(dataPath)) {
         const fileContent = fs.readFileSync(dataPath, 'utf8');
         data = JSON.parse(fileContent);
       }
-      
+
       // 팀 데이터 추가
       if (!data.teams) {
         data.teams = [];
       }
-      
+
       // 중복 체크
       if (data.teams.find((t: any) => t.code === code)) {
         return res.status(400).json({ error: "이미 존재하는 팀코드입니다." });
       }
-      
+
       const newTeam = {
         code,
         name,
@@ -1683,12 +1683,12 @@ app.put("/api/employees/:id", async (req, res) => {
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
       };
-      
+
       data.teams.push(newTeam);
-      
+
       // 파일 저장
       fs.writeFileSync(dataPath, JSON.stringify(data, null, 2));
-      
+
       res.json({ success: true, data: newTeam });
     } catch (error) {
       console.error("팀 추가 오류:", error);
@@ -1700,34 +1700,34 @@ app.put("/api/employees/:id", async (req, res) => {
     try {
       const { code } = req.params;
       const { name, departmentCode } = req.body;
-      
+
       const dataPath = path.join(process.cwd(), 'data.json');
-      
+
       let data = {};
       if (fs.existsSync(dataPath)) {
         const fileContent = fs.readFileSync(dataPath, 'utf8');
         data = JSON.parse(fileContent);
       }
-      
+
       if (!data.teams) {
         return res.status(404).json({ error: "팀을 찾을 수 없습니다." });
       }
-      
+
       const teamIndex = data.teams.findIndex((t: any) => t.code === code);
       if (teamIndex === -1) {
         return res.status(404).json({ error: "팀을 찾을 수 없습니다." });
       }
-      
+
       data.teams[teamIndex] = {
         ...data.teams[teamIndex],
         name,
         departmentCode,
         updatedAt: new Date().toISOString()
       };
-      
+
       // 파일 저장
       fs.writeFileSync(dataPath, JSON.stringify(data, null, 2));
-      
+
       res.json({ success: true, data: data.teams[teamIndex] });
     } catch (error) {
       console.error("팀 수정 오류:", error);
@@ -1738,29 +1738,30 @@ app.put("/api/employees/:id", async (req, res) => {
   app.delete("/api/teams/:code", async (req, res) => {
     try {
       const { code } = req.params;
-      
+
       const dataPath = path.join(process.cwd(), 'data.json');
-      
-      let data = {};
+
+      let data: any = {};
       if (fs.existsSync(dataPath)) {
         const fileContent = fs.readFileSync(dataPath, 'utf8');
         data = JSON.parse(fileContent);
       }
-      
+
       if (!data.teams) {
         return res.status(404).json({ error: "팀을 찾을 수 없습니다." });
       }
-      
+
       const teamIndex = data.teams.findIndex((t: any) => t.code === code);
+
       if (teamIndex === -1) {
         return res.status(404).json({ error: "팀을 찾을 수 없습니다." });
       }
-      
+
       data.teams.splice(teamIndex, 1);
-      
+
       // 파일 저장
       fs.writeFileSync(dataPath, JSON.stringify(data, null, 2));
-      
+
       res.json({ success: true });
     } catch (error) {
       console.error("팀 삭제 오류:", error);
@@ -1772,15 +1773,15 @@ app.put("/api/employees/:id", async (req, res) => {
   app.get("/api/proposals", async (req, res) => {
     try {
       const { employeeId, startDate, endDate } = req.query;
-      
+
       // data.json에서 제안제도 데이터 로드
       const dataPath = path.join(process.cwd(), 'data.json');
-      
+
       let proposals = [];
       if (fs.existsSync(dataPath)) {
         const fileContent = fs.readFileSync(dataPath, 'utf8');
         const data = JSON.parse(fileContent);
-        
+
         // proposals가 객체인 경우 배열로 변환
         if (data.proposals) {
           if (Array.isArray(data.proposals)) {
@@ -1790,29 +1791,29 @@ app.put("/api/employees/:id", async (req, res) => {
             proposals = Object.values(data.proposals);
           }
         }
-        
+
         // employeeId가 있으면 필터링
         if (employeeId) {
           proposals = proposals.filter((p: any) => p.employeeId === employeeId);
         }
-        
+
         // 날짜 필터링 적용
         if (startDate || endDate) {
           proposals = proposals.filter((proposal: any) => {
             const proposalDate = proposal.submissionDate;
             if (!proposalDate) return false; // 날짜가 없는 제안은 제외
-            
+
             const date = new Date(proposalDate);
             if (isNaN(date.getTime())) return false; // 유효하지 않은 날짜는 제외
-            
+
             if (startDate && date < new Date(startDate)) return false;
             if (endDate && date > new Date(endDate)) return false;
-            
+
             return true;
           });
         }
       }
-      
+
       console.log('✅ 제안제도 데이터 로드 완료:', proposals.length, '개');
       res.json(proposals);
     } catch (error) {
@@ -1827,20 +1828,20 @@ app.put("/api/employees/:id", async (req, res) => {
       console.log('🔧 제안제도 저장 요청:', JSON.stringify(proposalData, null, 2));
       console.log('🔧 요청 헤더:', req.headers);
       console.log('🔧 Content-Type:', req.headers['content-type']);
-      
+
       const dataPath = path.join(process.cwd(), 'data.json');
-      
+
       let data = {};
       if (fs.existsSync(dataPath)) {
         const fileContent = fs.readFileSync(dataPath, 'utf8');
         data = JSON.parse(fileContent);
       }
-      
+
       // 제안제도 데이터 추가
       if (!data.proposals) {
         data.proposals = {};
       }
-      
+
       // ID 생성
       const newId = `proposal_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       const newProposal = {
@@ -1849,22 +1850,22 @@ app.put("/api/employees/:id", async (req, res) => {
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
       };
-      
+
       data.proposals[newId] = newProposal;
-      
+
       // 파일 저장
       fs.writeFileSync(dataPath, JSON.stringify(data, null, 2));
       console.log('✅ 제안제도 저장 완료:', newId);
       console.log('✅ 저장된 제안제도 데이터:', JSON.stringify(newProposal, null, 2));
-      
+
       res.json({ success: true, id: newId, data: newProposal });
     } catch (error) {
       console.error("❌ 제안제도 저장 오류:", error);
       console.error("❌ 오류 스택:", error.stack);
       console.error("❌ 오류 메시지:", error.message);
-      res.status(500).json({ 
-        error: "제안제도를 저장할 수 없습니다.", 
-        details: error.message 
+      res.status(500).json({
+        error: "제안제도를 저장할 수 없습니다.",
+        details: error.message
       });
     }
   });
@@ -1873,37 +1874,37 @@ app.put("/api/employees/:id", async (req, res) => {
   app.delete("/api/proposals", async (req, res) => {
     try {
       const { employeeId } = req.query;
-      
+
       if (!employeeId) {
         return res.status(400).json({ error: "employeeId is required" });
       }
-      
+
       const dataPath = path.join(process.cwd(), 'data.json');
-      
+
       if (!fs.existsSync(dataPath)) {
         return res.json({ success: true, deletedCount: 0 });
       }
-      
+
       const fileContent = fs.readFileSync(dataPath, 'utf8');
       const data = JSON.parse(fileContent);
-      
+
       if (!data.proposals) {
         return res.json({ success: true, deletedCount: 0 });
       }
-      
+
       // 해당 직원의 제안들만 삭제
       const proposalsToDelete = Object.keys(data.proposals).filter(
         key => data.proposals[key].employeeId === employeeId
       );
-      
+
       proposalsToDelete.forEach(key => {
         delete data.proposals[key];
       });
-      
+
       // 파일 저장
       fs.writeFileSync(dataPath, JSON.stringify(data, null, 2));
       console.log(`✅ ${employeeId} 직원의 제안제도 ${proposalsToDelete.length}개 삭제 완료`);
-      
+
       res.json({ success: true, deletedCount: proposalsToDelete.length });
     } catch (error) {
       console.error("❌ 제안제도 삭제 오류:", error);
@@ -1951,7 +1952,7 @@ app.put("/api/employees/:id", async (req, res) => {
       const completedTrainings = trainings.filter(t => t.status === 'completed').length;
       const totalTrainings = trainings.length;
       const completionRate = totalTrainings > 0 ? (completedTrainings / totalTrainings) * 100 : 0;
-      
+
       const thisMonthTrainingHours = trainings
         .filter(t => t.completionDate && t.completionDate.getMonth() === new Date().getMonth())
         .reduce((sum, t) => sum + (t.duration || 0), 0);
@@ -1973,10 +1974,10 @@ app.put("/api/employees/:id", async (req, res) => {
     try {
       const skillCalculations = await storage.getAllSkillCalculations();
       const employees = await storage.getAllEmployees();
-      
+
       // 비활성 직원 제외
       const activeEmployees = employees.filter(emp => emp.isActive !== false);
-      
+
       const topPerformers = skillCalculations
         .sort((a, b) => b.overallScore - a.overallScore)
         .slice(0, 10)
@@ -2000,50 +2001,50 @@ app.put("/api/employees/:id", async (req, res) => {
     try {
       const employees = await storage.getAllEmployees();
       const skillCalculations = await storage.getAllSkillCalculations();
-      
+
       // 비활성 직원 제외
       const activeEmployees = employees.filter(emp => emp.isActive !== false);
-      
+
       const departmentStats = activeEmployees.reduce((acc, emp) => {
         if (!acc[emp.department]) {
           acc[emp.department] = { employees: [], calculations: [] };
         }
         acc[emp.department].employees.push(emp);
-        
+
         const calc = skillCalculations.find(sc => sc.employeeId === emp.id);
         if (calc) {
           acc[emp.department].calculations.push(calc);
         }
-        
+
         return acc;
       }, {} as Record<string, { employees: any[], calculations: any[] }>);
 
       const result = Object.entries(departmentStats).map(([department, data]) => {
-        const avgOverallScore = data.calculations.length > 0 
+        const avgOverallScore = data.calculations.length > 0
           ? data.calculations.reduce((sum, calc) => sum + calc.overallScore, 0) / data.calculations.length
           : 0;
-        
-        const avgExperienceScore = data.calculations.length > 0 
+
+        const avgExperienceScore = data.calculations.length > 0
           ? data.calculations.reduce((sum, calc) => sum + calc.experienceScore, 0) / data.calculations.length
           : 0;
 
-        const avgCertificationScore = data.calculations.length > 0 
+        const avgCertificationScore = data.calculations.length > 0
           ? data.calculations.reduce((sum, calc) => sum + calc.certificationScore, 0) / data.calculations.length
           : 0;
 
-        const avgLanguageScore = data.calculations.length > 0 
+        const avgLanguageScore = data.calculations.length > 0
           ? data.calculations.reduce((sum, calc) => sum + calc.languageScore, 0) / data.calculations.length
           : 0;
 
-        const avgTrainingScore = data.calculations.length > 0 
+        const avgTrainingScore = data.calculations.length > 0
           ? data.calculations.reduce((sum, calc) => sum + calc.trainingScore, 0) / data.calculations.length
           : 0;
 
-        const avgTechnicalScore = data.calculations.length > 0 
+        const avgTechnicalScore = data.calculations.length > 0
           ? data.calculations.reduce((sum, calc) => sum + calc.technicalScore, 0) / data.calculations.length
           : 0;
 
-        const avgSoftSkillScore = data.calculations.length > 0 
+        const avgSoftSkillScore = data.calculations.length > 0
           ? data.calculations.reduce((sum, calc) => sum + calc.softSkillScore, 0) / data.calculations.length
           : 0;
 
@@ -2071,11 +2072,11 @@ app.put("/api/employees/:id", async (req, res) => {
   app.get("/api/dashboard/department-ratios", async (req, res) => {
     try {
       const employees = await storage.getAllEmployees();
-      
+
       // 비활성 직원 제외
       const activeEmployees = employees.filter(emp => emp.isActive !== false);
       const totalEmployees = activeEmployees.length;
-      
+
       const departmentCounts = activeEmployees.reduce((acc, emp) => {
         acc[emp.department] = (acc[emp.department] || 0) + 1;
         return acc;
@@ -2102,7 +2103,7 @@ app.put("/api/employees/:id", async (req, res) => {
   app.post("/api/init-mock-data", async (req, res) => {
     try {
       const { employeeId } = req.body;
-      
+
       if (!employeeId) {
         return res.status(400).json({ error: "Employee ID is required" });
       }
@@ -2201,10 +2202,10 @@ app.put("/api/employees/:id", async (req, res) => {
         results.awards.push(savedAward);
       }
 
-      res.json({ 
-        success: true, 
+      res.json({
+        success: true,
         message: "Mock data initialized successfully",
-        data: results 
+        data: results
       });
 
     } catch (error) {
@@ -2219,7 +2220,7 @@ app.put("/api/employees/:id", async (req, res) => {
     try {
       const employeeId = req.query.employeeId as string;
       console.log('🔍 어학능력 조회 API 호출:', { employeeId });
-      const languages = employeeId 
+      const languages = employeeId
         ? await storage.getLanguagesByEmployee(employeeId)
         : await storage.getAllLanguages();
       console.log('🔍 어학능력 조회 결과:', languages);
@@ -2287,13 +2288,13 @@ app.put("/api/employees/:id", async (req, res) => {
       console.log('🔍 자격증 현황 분석 API 호출');
       const allCertifications = await storage.getAllCertifications();
       console.log('🔍 전체 자격증 데이터:', allCertifications.length);
-      
+
       // 자격증별 보유 현황 계산
       const certificationStats = new Map<string, { name: string; count: number; percentage: number }>();
       const allEmployees = await storage.getAllEmployees();
       const activeEmployees = allEmployees.filter(emp => emp.isActive !== false);
       const totalEmployees = activeEmployees.length;
-      
+
       allCertifications.forEach(cert => {
         const key = cert.name;
         if (certificationStats.has(key)) {
@@ -2302,12 +2303,12 @@ app.put("/api/employees/:id", async (req, res) => {
           certificationStats.set(key, { name: key, count: 1, percentage: 0 });
         }
       });
-      
+
       // 백분율 계산
       certificationStats.forEach((stat, key) => {
         stat.percentage = totalEmployees > 0 ? (stat.count / totalEmployees) * 100 : 0;
       });
-      
+
       const result = Array.from(certificationStats.values()).sort((a, b) => b.count - a.count);
       console.log('🔍 자격증 현황 분석 결과:', result);
       res.json(result);
@@ -2323,10 +2324,10 @@ app.put("/api/employees/:id", async (req, res) => {
       console.log('🔍 어학능력 현황 분석 API 호출');
       const allLanguages = await storage.getAllLanguages();
       console.log('🔍 전체 어학능력 데이터:', allLanguages.length);
-      
+
       // 언어별 수준 분포 계산
       const languageStats = new Map<string, { language: string; levels: { [key: string]: number } }>();
-      
+
       allLanguages.forEach(lang => {
         const key = lang.language;
         if (!languageStats.has(key)) {
@@ -2335,13 +2336,13 @@ app.put("/api/employees/:id", async (req, res) => {
         const level = lang.proficiencyLevel || 'unknown';
         languageStats.get(key)!.levels[level] = (languageStats.get(key)!.levels[level] || 0) + 1;
       });
-      
+
       const result = Array.from(languageStats.values()).map(stat => ({
         language: stat.language,
         total: Object.values(stat.levels).reduce((sum, count) => sum + count, 0),
         levels: stat.levels
       }));
-      
+
       console.log('🔍 어학능력 현황 분석 결과:', result);
       res.json(result);
     } catch (error) {
@@ -2351,18 +2352,18 @@ app.put("/api/employees/:id", async (req, res) => {
   });
 
   // ===== 교육 시간 분석 API =====
-  
+
   // 교육 시간 데이터 CRUD
   app.get("/api/training-hours", async (req, res) => {
     try {
       const { startYear, endYear } = req.query;
       let trainingHours;
-      
+
       console.log(`🔍 교육시간 데이터 조회: ${startYear}-${endYear}`);
-      
+
       if (startYear && endYear) {
         trainingHours = await storage.getTrainingHoursByYearRange(
-          parseInt(startYear as string), 
+          parseInt(startYear as string),
           parseInt(endYear as string)
         );
         console.log(`🔍 ${startYear}-${endYear}년 교육시간 데이터:`, trainingHours);
@@ -2370,7 +2371,7 @@ app.put("/api/employees/:id", async (req, res) => {
         trainingHours = await storage.getAllTrainingHours();
         console.log(`🔍 전체 교육시간 데이터:`, trainingHours);
       }
-      
+
       res.json(trainingHours);
     } catch (error) {
       console.error('교육 시간 조회 오류:', error);
@@ -2415,16 +2416,16 @@ app.put("/api/employees/:id", async (req, res) => {
     try {
       const { startYear, endYear } = req.query;
       let teamEmployees;
-      
+
       if (startYear && endYear) {
         teamEmployees = await storage.getTeamEmployeesByYearRange(
-          parseInt(startYear as string), 
+          parseInt(startYear as string),
           parseInt(endYear as string)
         );
       } else {
         teamEmployees = await storage.getAllTeamEmployees();
       }
-      
+
       res.json(teamEmployees);
     } catch (error) {
       console.error('팀 인원 조회 오류:', error);
@@ -2469,7 +2470,7 @@ app.put("/api/employees/:id", async (req, res) => {
     try {
       const { deleteAll } = req.query;
       console.log(`🗑️ 팀 인원 전체 삭제 요청: ${deleteAll}`);
-      
+
       if (deleteAll === 'true') {
         const allTeamEmployees = await storage.getAllTeamEmployees();
         for (const teamEmployee of allTeamEmployees) {
@@ -2492,7 +2493,7 @@ app.put("/api/employees/:id", async (req, res) => {
       console.log('📊 R&D 인원 목록 조회 API 호출');
       const allEmployees = await storage.getAllEmployees();
       console.log(`📊 전체 직원 데이터 로드: ${allEmployees.length}명`);
-      
+
       // 비활성 직원 제외 후 R&D 인원 필터링
       const activeEmployees = allEmployees.filter(emp => emp.isActive !== false);
       const rdEmployees = activeEmployees.filter(employee => {
@@ -2504,28 +2505,28 @@ app.put("/api/employees/:id", async (req, res) => {
           employee.department.includes('연구') ||
           employee.departmentCode === 'RD' // 부서 코드가 RD인 경우
         );
-        
+
         // 팀명이 연구 관련인 경우도 포함
         const isRdTeam = employee.team && (
           employee.team.includes('연구') ||
           employee.team.includes('개발') ||
           employee.team.includes('R&D')
         );
-        
+
         return isRdDepartment || isRdTeam;
       });
 
       console.log(`📊 R&D 인원 목록: ${rdEmployees.length}명`);
-      console.log(`📊 R&D 직원 상세:`, rdEmployees.map(emp => ({ 
+      console.log(`📊 R&D 직원 상세:`, rdEmployees.map(emp => ({
         id: emp.id,
-        name: emp.name, 
-        department: emp.department, 
+        name: emp.name,
+        department: emp.department,
         team: emp.team,
         departmentCode: emp.departmentCode,
         position: emp.position,
         isActive: emp.isActive
       })));
-      
+
       res.json({
         total: rdEmployees.length,
         employees: rdEmployees.map(emp => ({
@@ -2552,26 +2553,26 @@ app.put("/api/employees/:id", async (req, res) => {
   app.post("/api/convert-training-to-hours", async (req, res) => {
     try {
       const { year } = req.body;
-      
+
       if (!year) {
         return res.status(400).json({ error: "year is required" });
       }
-      
+
       console.log(`🔄 전사 직원 교육 이력을 교육시간으로 변환: ${year}년`);
-      
+
       // 기존 교육시간 데이터 삭제 (중복 방지)
       const existingTrainingHours = await storage.getTrainingHoursByYearRange(year, year);
       console.log(`🗑️ 기존 ${year}년 교육시간 데이터 ${existingTrainingHours.length}개 삭제 중...`);
-      
+
       for (const existingData of existingTrainingHours) {
         await storage.deleteTrainingHours(existingData.id);
       }
       console.log(`✅ 기존 ${year}년 교육시간 데이터 삭제 완료`);
-      
+
       // 모든 직원 조회
       const allEmployees = await storage.getAllEmployees();
       console.log(`🔄 전체 직원 수: ${allEmployees.length}명`);
-      
+
       // 박연구 직원 찾기
       const parkEmployee = allEmployees.find(emp => emp.name === '박연구');
       if (parkEmployee) {
@@ -2581,11 +2582,11 @@ app.put("/api/employees/:id", async (req, res) => {
           team: parkEmployee.team,
           department: parkEmployee.department
         });
-        
+
         // 박연구의 교육 이력 조회
         const parkTrainings = await storage.getTrainingHistoryByEmployee(parkEmployee.id);
         console.log(`🔍 박연구의 교육 이력:`, parkTrainings);
-        
+
         parkTrainings.forEach(training => {
           const trainingYear = new Date(training.completionDate).getFullYear();
           console.log(`🔍 교육 이력 상세:`, {
@@ -2598,36 +2599,36 @@ app.put("/api/employees/:id", async (req, res) => {
           });
         });
       }
-      
+
       let convertedCount = 0;
       const teamTrainingHours = new Map<string, Map<string, number>>(); // team -> trainingType -> hours
-      
+
       // 각 직원의 교육 이력을 조회하여 팀별, 교육유형별로 집계
       for (const employee of allEmployees) {
         // 팀이 없는 직원은 부서명을 팀으로 사용
         const teamName = employee.team || employee.department || '기타';
-        
+
         if (!employee.team) {
           console.log(`⚠️ ${employee.name}은 팀이 없어서 부서명(${teamName})을 팀으로 사용`);
         }
-        
+
         const trainings = await storage.getTrainingHistoryByEmployee(employee.id);
         console.log(`🔄 ${employee.name}(${teamName})의 교육 이력: ${trainings.length}개`);
-        
+
         trainings.forEach(training => {
           const trainingYear = new Date(training.completionDate).getFullYear();
           console.log(`🔍 ${employee.name} 교육 상세: ${training.courseName}, ${trainingYear}년, ${training.duration}시간`);
-          
+
           if (trainingYear === year) {
             const type = training.type || '기타';
             const hours = training.duration || 0;
-            
+
             console.log(`✅ ${employee.name} - ${year}년 교육 매칭: ${type}, ${hours}시간`);
-            
+
             if (!teamTrainingHours.has(teamName)) {
               teamTrainingHours.set(teamName, new Map());
             }
-            
+
             const teamHours = teamTrainingHours.get(teamName)!;
             if (!teamHours.has(type)) {
               teamHours.set(type, 0);
@@ -2636,9 +2637,9 @@ app.put("/api/employees/:id", async (req, res) => {
           }
         });
       }
-      
+
       console.log(`🔍 팀별 집계 결과:`, teamTrainingHours);
-      
+
       // 집계된 데이터를 교육시간 데이터로 생성
       for (const [team, trainingTypes] of teamTrainingHours) {
         for (const [trainingType, totalHours] of trainingTypes) {
@@ -2650,17 +2651,17 @@ app.put("/api/employees/:id", async (req, res) => {
               hours: totalHours,
               description: `${team} ${trainingType} 교육시간 (${year}년)`
             };
-            
+
             await storage.createTrainingHours(trainingHoursData);
             convertedCount++;
             console.log(`✅ ${team} - ${trainingType}: ${totalHours}시간 변환 완료`);
           }
         }
       }
-      
+
       console.log(`🔄 총 ${convertedCount}개의 교육시간 데이터 변환 완료`);
-      res.json({ 
-        success: true, 
+      res.json({
+        success: true,
         convertedCount,
         message: `전사 직원 ${year}년 교육시간 데이터 ${convertedCount}개 변환 완료`
       });
@@ -2674,48 +2675,48 @@ app.put("/api/employees/:id", async (req, res) => {
   app.get("/api/team-training-analysis", async (req, res) => {
     try {
       const { startYear, endYear } = req.query;
-      
+
       if (!startYear || !endYear) {
         return res.status(400).json({ error: "startYear and endYear are required" });
       }
 
       const start = parseInt(startYear as string);
       const end = parseInt(endYear as string);
-      
+
       console.log(`📊 팀별 교육시간 분석: ${start}-${end}`);
-      
+
       // 교육 시간 데이터 조회
       const trainingHoursData = await storage.getTrainingHoursByYearRange(start, end);
       console.log(`📊 교육 시간 데이터: ${trainingHoursData.length}개`);
       console.log(`📊 교육 시간 데이터 상세:`, trainingHoursData);
-      
+
       // 팀별 분석
-      const teamAnalysis = new Map<string, { 
-        totalHours: number; 
+      const teamAnalysis = new Map<string, {
+        totalHours: number;
         trainingTypes: Map<string, number>;
         years: Map<number, number>;
         employeeCount: number;
         averageHoursPerEmployee: number;
       }>();
-      
+
       trainingHoursData.forEach(th => {
         console.log(`🔍 교육시간 데이터 처리: 팀=${th.team}, 유형=${th.trainingType}, 시간=${th.hours}, 연도=${th.year}`);
-        
+
         if (!teamAnalysis.has(th.team)) {
-          teamAnalysis.set(th.team, { 
-            totalHours: 0, 
+          teamAnalysis.set(th.team, {
+            totalHours: 0,
             trainingTypes: new Map(),
             years: new Map(),
             employeeCount: 0,
             averageHoursPerEmployee: 0
           });
         }
-        
+
         const teamData = teamAnalysis.get(th.team)!;
         const beforeHours = teamData.totalHours;
         teamData.totalHours += th.hours;
         console.log(`🔍 ${th.team} 팀 시간 누적: ${beforeHours} + ${th.hours} = ${teamData.totalHours}`);
-        
+
         // 교육 유형별 집계
         if (!teamData.trainingTypes.has(th.trainingType)) {
           teamData.trainingTypes.set(th.trainingType, 0);
@@ -2723,7 +2724,7 @@ app.put("/api/employees/:id", async (req, res) => {
         const beforeTypeHours = teamData.trainingTypes.get(th.trainingType)!;
         teamData.trainingTypes.set(th.trainingType, beforeTypeHours + th.hours);
         console.log(`🔍 ${th.team} 팀 ${th.trainingType} 유형 시간 누적: ${beforeTypeHours} + ${th.hours} = ${teamData.trainingTypes.get(th.trainingType)}`);
-        
+
         // 연도별 집계
         if (!teamData.years.has(th.year)) {
           teamData.years.set(th.year, 0);
@@ -2732,7 +2733,7 @@ app.put("/api/employees/:id", async (req, res) => {
         teamData.years.set(th.year, beforeYearHours + th.hours);
         console.log(`🔍 ${th.team} 팀 ${th.year}년 시간 누적: ${beforeYearHours} + ${th.hours} = ${teamData.years.get(th.year)}`);
       });
-      
+
       // R&D 인원 자동 계산을 위한 전체 직원 데이터 조회
       const allEmployees = await storage.getAllEmployees();
       const activeEmployees = allEmployees.filter(emp => emp.isActive !== false);
@@ -2744,40 +2745,40 @@ app.put("/api/employees/:id", async (req, res) => {
           employee.department.includes('연구') ||
           employee.departmentCode === 'RD'
         );
-        
+
         const isRdTeam = employee.team && (
           employee.team.includes('연구') ||
           employee.team.includes('개발') ||
           employee.team.includes('R&D')
         );
-        
+
         const isRd = isRdDepartment || isRdTeam;
-        
+
         if (isRd) {
           console.log(`🔍 R&D 직원 발견: ${employee.name} (부서: ${employee.department}, 팀: ${employee.team}, 부서코드: ${employee.departmentCode})`);
         }
-        
+
         return isRd;
       });
-      
+
       // 팀별 인원 수 계산 (R&D 팀만)
       console.log(`🔍 R&D 직원 목록 (${rdEmployees.length}명):`, rdEmployees.map(emp => ({
         name: emp.name,
         department: emp.department,
         team: emp.team
       })));
-      
+
       rdEmployees.forEach(emp => {
         // 팀이 없는 직원은 팀별 분석에서 제외 (실제 팀에 속한 직원만 계산)
         if (!emp.team || emp.team === '') {
           console.log(`⚠️ ${emp.name}은 팀이 없어서 팀별 분석에서 제외됨`);
           return;
         }
-        
+
         const teamName = emp.team;
-        
+
         console.log(`🔍 ${emp.name} 매칭 시도: 팀=${emp.team}, 부서=${emp.department}`);
-        
+
         if (teamAnalysis.has(teamName)) {
           teamAnalysis.get(teamName)!.employeeCount += 1;
           console.log(`✅ ${emp.name} → ${teamName} 팀 인원 추가 (총 ${teamAnalysis.get(teamName)!.employeeCount}명)`);
@@ -2786,14 +2787,14 @@ app.put("/api/employees/:id", async (req, res) => {
           console.log(`🔍 현재 분석 결과에 있는 팀들:`, Array.from(teamAnalysis.keys()));
         }
       });
-      
+
       // 1인당 평균 교육시간 계산
       teamAnalysis.forEach((teamData, team) => {
         if (teamData.employeeCount > 0) {
           teamData.averageHoursPerEmployee = Math.round((teamData.totalHours / teamData.employeeCount) * 100) / 100;
         }
       });
-      
+
       // 결과 포맷팅
       const result = Array.from(teamAnalysis.entries()).map(([team, data]) => ({
         team,
@@ -2803,7 +2804,7 @@ app.put("/api/employees/:id", async (req, res) => {
         trainingTypes: Object.fromEntries(data.trainingTypes),
         yearlyBreakdown: Object.fromEntries(data.years)
       })).sort((a, b) => b.totalHours - a.totalHours);
-      
+
       console.log(`📊 팀별 분석 결과: ${result.length}개 팀`);
       console.log(`📊 팀별 분석 상세:`, result.map(r => ({
         team: r.team,
@@ -2822,18 +2823,18 @@ app.put("/api/employees/:id", async (req, res) => {
   app.get("/api/training-analysis", async (req, res) => {
     try {
       const { startYear, endYear, includeTrainingTypeBreakdown, includeYearlyBreakdown, useAutoRdEmployees } = req.query;
-      
+
       if (!startYear || !endYear) {
         return res.status(400).json({ error: "startYear and endYear are required" });
       }
 
       const start = parseInt(startYear as string);
       const end = parseInt(endYear as string);
-      
+
       // 데이터 조회
       const trainingHoursData = await storage.getTrainingHoursByYearRange(start, end);
       const teamEmployeesData = await storage.getTeamEmployeesByYearRange(start, end);
-      
+
       // R&D 인원 자동 계산을 위한 전체 직원 데이터 조회
       let allEmployees = undefined;
       if (useAutoRdEmployees === 'true') {
@@ -2841,10 +2842,10 @@ app.put("/api/employees/:id", async (req, res) => {
         allEmployees = allEmployeesData.filter(emp => emp.isActive !== false);
         console.log(`📊 활성 직원 데이터 로드: ${allEmployees.length}명`);
       }
-      
+
       // 분석 모듈 import 및 실행
       const { TrainingAnalysisModule } = await import('./training-analysis');
-      
+
       const result = await TrainingAnalysisModule.analyzeTrainingHours(
         trainingHoursData,
         teamEmployeesData,
@@ -2857,7 +2858,7 @@ app.put("/api/employees/:id", async (req, res) => {
         },
         allEmployees
       );
-      
+
       res.json(result);
     } catch (error) {
       console.error('교육 시간 분석 오류:', error);
@@ -2869,12 +2870,12 @@ app.put("/api/employees/:id", async (req, res) => {
   app.get("/api/rd-evaluations/criteria", async (req, res) => {
     try {
       console.log('🔍 R&D 역량평가 기준 조회 요청 (routes.ts)');
-      
+
       // 서버 측 기본 역량 항목 정의 (프론트엔드와 동일한 구조)
       const defaultCompetencyItems = {
-        technical_competency: { 
-          name: "전문기술", 
-          weight: 25, 
+        technical_competency: {
+          name: "전문기술",
+          weight: 25,
           description: "전문 기술 역량",
           maxScore: 25,
           scoringRanges: [
@@ -2884,9 +2885,9 @@ app.put("/api/employees/:id", async (req, res) => {
             { min: 0, max: 39, converted: 40, label: "40점↓ → 40점" }
           ]
         },
-        project_experience: { 
-          name: "프로젝트", 
-          weight: 20, 
+        project_experience: {
+          name: "프로젝트",
+          weight: 20,
           description: "프로젝트 수행 경험",
           maxScore: 20,
           scoringRanges: [
@@ -2896,9 +2897,9 @@ app.put("/api/employees/:id", async (req, res) => {
             { min: 0, max: 9, converted: 40, label: "10점↓ → 40점" }
           ]
         },
-        rd_achievement: { 
-          name: "연구성과", 
-          weight: 25, 
+        rd_achievement: {
+          name: "연구성과",
+          weight: 25,
           description: "연구개발 성과",
           maxScore: 25,
           scoringRanges: [
@@ -2908,9 +2909,9 @@ app.put("/api/employees/:id", async (req, res) => {
             { min: 0, max: 9, converted: 40, label: "10점↓ → 40점" }
           ]
         },
-        global_competency: { 
-          name: "글로벌", 
-          weight: 10, 
+        global_competency: {
+          name: "글로벌",
+          weight: 10,
           description: "글로벌 역량",
           maxScore: 10,
           scoringRanges: [
@@ -2920,9 +2921,9 @@ app.put("/api/employees/:id", async (req, res) => {
             { min: 0, max: 2, converted: 40, label: "2점 → 40점" }
           ]
         },
-        knowledge_sharing: { 
-          name: "기술확산", 
-          weight: 10, 
+        knowledge_sharing: {
+          name: "기술확산",
+          weight: 10,
           description: "기술 확산 및 자기계발",
           maxScore: 10,
           scoringRanges: [
@@ -2932,9 +2933,9 @@ app.put("/api/employees/:id", async (req, res) => {
             { min: 1, max: 4, converted: 40, label: "1-4점 → 40점" }
           ]
         },
-        innovation_proposal: { 
-          name: "혁신제안", 
-          weight: 10, 
+        innovation_proposal: {
+          name: "혁신제안",
+          weight: 10,
           description: "업무개선 및 혁신 제안",
           maxScore: 10,
           scoringRanges: [
@@ -2984,10 +2985,10 @@ app.put("/api/employees/:id", async (req, res) => {
           adoption: { 채택: 5 }
         }
       };
-      
+
       // data.json에서 기준 조회
       const dataPath = path.join(process.cwd(), 'data.json');
-      
+
       let criteria: any;
       let data: any = {}; // data 변수를 함수 스코프로 이동
       if (fs.existsSync(dataPath)) {
@@ -3035,11 +3036,11 @@ app.put("/api/employees/:id", async (req, res) => {
           }
         }
       }
-      
+
       // 언어 테스트 정보 추출
       const globalCompetency = criteria.global_competency || {};
       const languageTests: any = {};
-      
+
       // 영어 테스트
       if (globalCompetency.english?.toeic) {
         languageTests.English = languageTests.English || {};
@@ -3057,7 +3058,7 @@ app.put("/api/employees/:id", async (req, res) => {
         languageTests.English = languageTests.English || {};
         languageTests.English.TEPS = Object.keys(globalCompetency.english.teps);
       }
-      
+
       // 일본어 테스트
       if (globalCompetency.japanese?.jlpt) {
         languageTests.Japanese = languageTests.Japanese || {};
@@ -3067,7 +3068,7 @@ app.put("/api/employees/:id", async (req, res) => {
         languageTests.Japanese = languageTests.Japanese || {};
         languageTests.Japanese.JPT = Object.keys(globalCompetency.japanese.jpt);
       }
-      
+
       // 중국어 테스트
       if (globalCompetency.chinese?.hsk) {
         languageTests.Chinese = languageTests.Chinese || {};
@@ -3077,7 +3078,7 @@ app.put("/api/employees/:id", async (req, res) => {
         languageTests.Chinese = languageTests.Chinese || {};
         languageTests.Chinese.TOCFL = Object.keys(globalCompetency.chinese.tocfl);
       }
-      
+
       res.json({
         success: true,
         rdEvaluationCriteria: mergedCriteria,
@@ -3095,27 +3096,27 @@ app.put("/api/employees/:id", async (req, res) => {
   app.put("/api/rd-evaluations/criteria", async (req, res) => {
     try {
       const { criteria, detailedCriteria, updateEmployeeForms } = req.body;
-      
+
       console.log('🔧 R&D 역량평가 기준 저장 요청 (routes.ts):', { criteria, detailedCriteria, updateEmployeeForms });
-      
+
       // data.json에 기준 저장
-      
+
       // 프로젝트 루트 기준으로 경로 설정
       const dataPath = path.join(process.cwd(), 'data.json');
-      
+
       // 기존 data.json 로드
       let data: any = {};
       if (fs.existsSync(dataPath)) {
         const fileContent = fs.readFileSync(dataPath, 'utf8');
         data = JSON.parse(fileContent);
       }
-      
+
       // R&D 평가 기준 업데이트
       data.rdEvaluationCriteria = criteria;
       if (detailedCriteria) {
         data.detailedCriteria = detailedCriteria;
       }
-      
+
       // 기준 저장
       try {
         fs.writeFileSync(dataPath, JSON.stringify(data, null, 2));
@@ -3124,7 +3125,7 @@ app.put("/api/employees/:id", async (req, res) => {
         console.error('❌ 파일 쓰기 오류:', writeError);
         throw new Error(`파일 저장 실패: ${writeError.message}`);
       }
-      
+
       res.json({
         success: true,
         message: 'R&D 역량평가 기준이 저장되었습니다.'
@@ -3139,16 +3140,16 @@ app.put("/api/employees/:id", async (req, res) => {
   app.get("/api/achievements/categories", async (req, res) => {
     try {
       console.log('🔍 성과관리 분야/카테고리 조회 요청');
-      
+
       // data.json에서 상세 기준 조회
       const dataPath = path.join(process.cwd(), 'data.json');
       let data: any = {};
-      
+
       if (fs.existsSync(dataPath)) {
         const fileContent = fs.readFileSync(dataPath, 'utf8');
         data = JSON.parse(fileContent);
       }
-      
+
       // ⚠️ 폴백용 기본 상세 기준 (data.json에 저장된 값이 없을 경우에만 사용)
       // 사용자가 UI에서 설정한 값이 항상 우선됩니다.
       const defaultDetailedCriteria = {
@@ -3180,25 +3181,25 @@ app.put("/api/employees/:id", async (req, res) => {
           implementation: { "3건 이상": 15, "2건": 10, "1건": 5, "0건": 0 }
         }
       };
-      
+
       const detailedCriteria = data.detailedCriteria || defaultDetailedCriteria;
-      
+
       // 성과관리 등록용 카테고리 추출 (각 메뉴에 맞는 항목만)
       const categories = {
         // 특허 등록용: 특허 상태만 (등록/출원)
-        patentStatus: Array.isArray(Object.keys(detailedCriteria.rd_achievement?.patents || {})) 
+        patentStatus: Array.isArray(Object.keys(detailedCriteria.rd_achievement?.patents || {}))
           ? Object.keys(detailedCriteria.rd_achievement?.patents || {})
           : [],
-        
+
         // 논문 등록용: 논문 등급만 (SCI(E)급, 국내 학술지)
         publicationLevels: Array.isArray(Object.keys(detailedCriteria.rd_achievement?.publications || {}))
           ? Object.keys(detailedCriteria.rd_achievement?.publications || {})
           : [],
-        
+
         // 수상 등록용: 실제 사용하는 수상 등급 (국제, 국가, 산업, 사내)
         awardLevels: ["국제", "국가", "산업", "사내"]
       };
-      
+
       res.json({
         success: true,
         categories: categories
@@ -3217,15 +3218,15 @@ app.put("/api/employees/:id", async (req, res) => {
     try {
       const { employeeId } = req.query;
       console.log(`🔍 R&D 역량평가 데이터 조회: ${employeeId}`);
-      
+
       if (!employeeId) {
         return res.status(400).json({ error: "직원 ID가 필요합니다." });
       }
-      
+
       // 자동 평가 계산
       const { calculateAutoRdEvaluation } = await import("./rd-evaluation-auto");
       const result = await calculateAutoRdEvaluation(employeeId);
-      
+
       console.log(`✅ R&D 역량평가 결과:`, result);
       res.json(result);
     } catch (error) {
@@ -3240,16 +3241,16 @@ app.put("/api/employees/:id", async (req, res) => {
       const { employeeId } = req.params;
       const { startDate, endDate } = req.query;
       console.log(`🔍 R&D 역량평가 테스트 시작: ${employeeId}`, { startDate, endDate });
-      
+
       // 자동 평가 계산 (날짜 필터 적용)
       const { calculateAutoRdEvaluation } = await import("./rd-evaluation-auto");
       const result = await calculateAutoRdEvaluation(
-        employeeId, 
-        new Date().getFullYear(), 
-        startDate as string, 
+        employeeId,
+        new Date().getFullYear(),
+        startDate as string,
         endDate as string
       );
-      
+
       console.log(`✅ R&D 역량평가 결과:`, result);
       console.log(`📊 scores 상세:`, result.scores);
       console.log(`🎯 totalScore: ${result.totalScore}`);

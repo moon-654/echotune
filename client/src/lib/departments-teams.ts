@@ -25,18 +25,18 @@ export const DEFAULT_TEAMS: Team[] = [
   { code: "SL01", name: "국내영업팀", departmentCode: "SL" },
   { code: "SL02", name: "해외영업팀", departmentCode: "SL" },
   { code: "SL03", name: "마케팅팀", departmentCode: "SL" },
-  
+
   // 기술연구소 팀들
   { code: "RND01", name: "연구기획팀", departmentCode: "RND" },
   { code: "RND02", name: "개발팀", departmentCode: "RND" },
   { code: "RND03", name: "연구팀", departmentCode: "RND" },
   { code: "RND04", name: "기술팀", departmentCode: "RND" },
-  
+
   // 품질부문 팀들
   { code: "QC01", name: "품질관리팀", departmentCode: "QC" },
   { code: "QC02", name: "검사팀", departmentCode: "QC" },
   { code: "QC03", name: "인증팀", departmentCode: "QC" },
-  
+
   // 생산관리부문 팀들
   { code: "PM01", name: "생산팀", departmentCode: "PM" },
   { code: "PM02", name: "물류팀", departmentCode: "PM" },
@@ -48,26 +48,27 @@ export class DepartmentTeamManager {
   // 서버에서 부서/팀 데이터 가져오기
   static async getStoredData(): Promise<{ departments: Department[], teams: Team[] }> {
     try {
+      const headers = { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' };
       const [departmentsResponse, teamsResponse] = await Promise.all([
-        fetch('/api/departments'),
-        fetch('/api/teams')
+        fetch('/api/departments', { headers, cache: 'no-store' }),
+        fetch('/api/teams', { headers, cache: 'no-store' })
       ]);
-      
+
       if (!departmentsResponse.ok || !teamsResponse.ok) {
         throw new Error('API 요청 실패');
       }
-      
+
       const departments = await departmentsResponse.json();
       const teams = await teamsResponse.json();
-      
+
       return { departments, teams };
     } catch (error) {
-      console.error('서버에서 부서/팀 데이터를 불러오는데 실패:', error);
-      
-      // 기본 데이터 반환
+      console.error('서버에서 부서/팀 데이터를 불러오는데 실패 (DEBUG - Falling back to defaults):', error);
+
+      // FALLBACK DISABLE: 기본 데이터 반환하지 않음 (유령 데이터 방지)
       return {
-        departments: DEFAULT_DEPARTMENTS,
-        teams: DEFAULT_TEAMS
+        departments: [],
+        teams: []
       };
     }
   }
@@ -82,7 +83,7 @@ export class DepartmentTeamManager {
         },
         body: JSON.stringify({ code, name }),
       });
-      
+
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.error || '부서 추가에 실패했습니다.');
@@ -103,7 +104,7 @@ export class DepartmentTeamManager {
         },
         body: JSON.stringify({ code, name, departmentCode }),
       });
-      
+
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.error || '팀 추가에 실패했습니다.');
@@ -120,7 +121,7 @@ export class DepartmentTeamManager {
       const response = await fetch(`/api/departments/${code}`, {
         method: 'DELETE',
       });
-      
+
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.error || '부서 삭제에 실패했습니다.');
@@ -137,7 +138,7 @@ export class DepartmentTeamManager {
       const response = await fetch(`/api/teams/${code}`, {
         method: 'DELETE',
       });
-      
+
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.error || '팀 삭제에 실패했습니다.');
@@ -166,13 +167,13 @@ export class DepartmentTeamManager {
   static async getAllDepartments(): Promise<Department[]> {
     try {
       const response = await fetch('/api/departments');
-      
+
       if (!response.ok) {
         const errorText = await response.text();
         console.error('❌ 부서 목록 API 오류:', response.status, errorText);
         throw new Error(`부서 목록을 불러올 수 없습니다. (${response.status})`);
       }
-      
+
       const data = await response.json();
       // 배열이 아닌 경우 빈 배열 반환
       return Array.isArray(data) ? data : [];
@@ -186,13 +187,13 @@ export class DepartmentTeamManager {
   static async getAllTeams(): Promise<Team[]> {
     try {
       const response = await fetch('/api/teams');
-      
+
       if (!response.ok) {
         const errorText = await response.text();
         console.error('❌ 팀 목록 API 오류:', response.status, errorText);
         throw new Error(`팀 목록을 불러올 수 없습니다. (${response.status})`);
       }
-      
+
       const data = await response.json();
       // 배열이 아닌 경우 빈 배열 반환
       return Array.isArray(data) ? data : [];
@@ -212,7 +213,7 @@ export class DepartmentTeamManager {
         },
         body: JSON.stringify({ name }),
       });
-      
+
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.error || '부서 수정에 실패했습니다.');
@@ -233,7 +234,7 @@ export class DepartmentTeamManager {
         },
         body: JSON.stringify({ name, departmentCode }),
       });
-      
+
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.error || '팀 수정에 실패했습니다.');
