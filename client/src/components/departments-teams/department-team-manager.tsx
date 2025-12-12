@@ -10,7 +10,7 @@ import { Plus, Edit, Trash2, Building2, Users } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { DepartmentTeamManager, type Department, type Team } from "@/lib/departments-teams";
 
-export default function DepartmentTeamManager() {
+export default function DepartmentTeamManagement() {
   const [departments, setDepartments] = useState<Department[]>([]);
   const [teams, setTeams] = useState<Team[]>([]);
   const [isAddDepartmentOpen, setIsAddDepartmentOpen] = useState(false);
@@ -27,8 +27,8 @@ export default function DepartmentTeamManager() {
     loadData();
   }, []);
 
-  const loadData = () => {
-    const data = DepartmentTeamManager.getStoredData();
+  const loadData = async () => {
+    const data = await DepartmentTeamManager.getStoredData();
     setDepartments(data.departments);
     setTeams(data.teams);
   };
@@ -41,10 +41,10 @@ export default function DepartmentTeamManager() {
       setDepartmentForm({ code: "", name: "" });
       toast({ title: "부서가 추가되었습니다." });
     } catch (error) {
-      toast({ 
-        title: "부서 추가 실패", 
+      toast({
+        title: "부서 추가 실패",
         description: error instanceof Error ? error.message : "알 수 없는 오류",
-        variant: "destructive" 
+        variant: "destructive"
       });
     }
   };
@@ -57,10 +57,10 @@ export default function DepartmentTeamManager() {
       setTeamForm({ code: "", name: "", departmentCode: "" });
       toast({ title: "팀이 추가되었습니다." });
     } catch (error) {
-      toast({ 
-        title: "팀 추가 실패", 
+      toast({
+        title: "팀 추가 실패",
         description: error instanceof Error ? error.message : "알 수 없는 오류",
-        variant: "destructive" 
+        variant: "destructive"
       });
     }
   };
@@ -72,10 +72,10 @@ export default function DepartmentTeamManager() {
         loadData();
         toast({ title: "부서가 삭제되었습니다." });
       } catch (error) {
-        toast({ 
-          title: "부서 삭제 실패", 
+        toast({
+          title: "부서 삭제 실패",
           description: error instanceof Error ? error.message : "알 수 없는 오류",
-          variant: "destructive" 
+          variant: "destructive"
         });
       }
     }
@@ -88,10 +88,10 @@ export default function DepartmentTeamManager() {
         loadData();
         toast({ title: "팀이 삭제되었습니다." });
       } catch (error) {
-        toast({ 
-          title: "팀 삭제 실패", 
+        toast({
+          title: "팀 삭제 실패",
           description: error instanceof Error ? error.message : "알 수 없는 오류",
-          variant: "destructive" 
+          variant: "destructive"
         });
       }
     }
@@ -136,8 +136,8 @@ export default function DepartmentTeamManager() {
                   <span className="text-sm text-muted-foreground">
                     {teams.filter(t => t.departmentCode === dept.code).length}개 팀
                   </span>
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     size="sm"
                     onClick={() => handleDeleteDepartment(dept.code)}
                     className="text-destructive hover:text-destructive"
@@ -171,8 +171,8 @@ export default function DepartmentTeamManager() {
                   <span className="text-sm text-muted-foreground">
                     {departments.find(d => d.code === team.departmentCode)?.name}
                   </span>
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     size="sm"
                     onClick={() => handleDeleteTeam(team.code)}
                     className="text-destructive hover:text-destructive"
@@ -250,8 +250,8 @@ export default function DepartmentTeamManager() {
             </div>
             <div>
               <Label htmlFor="departmentCode">소속 부서</Label>
-              <Select 
-                value={teamForm.departmentCode} 
+              <Select
+                value={teamForm.departmentCode}
                 onValueChange={(value) => setTeamForm(prev => ({ ...prev, departmentCode: value }))}
               >
                 <SelectTrigger>
